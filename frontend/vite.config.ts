@@ -8,4 +8,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // Same-origin API calls in dev; the backend runs on :4000 (npm run dev in backend/)
+    proxy: {
+      '/api': 'http://127.0.0.1:4000',
+    },
+  },
 })

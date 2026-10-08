@@ -1,1 +1,61 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-display: "Jua", "IBM Plex Sans KR", sans-serif;
+
+  --color-brand: #00a896;
+  --color-brand-strong: #00796b;
+  --color-brand-soft: #e6f7f5;
+  --color-coral: #ff6b6b;
+  --color-coral-strong: #e05252;
+  --color-coral-soft: #fff0ee;
+  --color-amber: #ffb703;
+  --color-amber-strong: #b07d00;
+  --color-amber-ink: #7a5600;
+  --color-amber-soft: #fff6dd;
+
+  --color-ink: #2d3748;
+  --color-muted: #718096;
+  --color-faint: #a0aec0;
+  --color-placeholder: #9ca3af;
+
+  --color-cream: #fbf8ec;
+  --color-sand: #efebdd;
+  --color-sand-soft: #f4f1e6;
+  --color-segment: #f6f3e8;
+  --color-field: #f8f6ee;
+  --color-field-border: #ede8d8;
+  --color-chip-border: #e6e1d0;
+  --color-card-border: #f0ede2;
+  --color-handle: #e2ddcc;
+
+  --shadow-card: 0 8px 22px rgba(45, 55, 72, 0.15);
+  --shadow-photo: 0 5px 12px rgba(45, 55, 72, 0.25);
+  --shadow-sheet: 0 -5px 20px rgba(45, 55, 72, 0.19);
+  --shadow-cta: 0 8px 18px rgba(0, 168, 150, 0.44);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-cream font-sans text-ink antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -13,6 +13,7 @@
 # frontend (http://localhost:5173)
 cd frontend
 npm install
+cp .env.example .env.local  # Google Maps 키와 지도 ID
 npm run dev
 
 # backend (http://127.0.0.1:4000)
