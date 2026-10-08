@@ -14,6 +14,8 @@ const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+  // Temporary stand-in for login: every request acts as this couple. Ignored in production.
+  DEV_COUPLE_CODE: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

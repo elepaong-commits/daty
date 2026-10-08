@@ -30,6 +30,21 @@
 
 스키마를 바꿀 때는 로컬 개발 DB에서 `npm run db:migrate`(`prisma migrate dev`)로 마이그레이션 파일을 만들어 커밋하고, 운영 DB에는 `npx prisma migrate deploy`만 쓴다. 운영 DB에 `migrate dev`, `db push`, `migrate reset`을 실행하지 않는다.
 
+## API (`backend/src/modules/`)
+
+모든 `/api/*` 요청은 `requireCouple` 미들웨어를 거쳐 `req.coupleId`가 정해지고, 모든 쿼리는 반드시 이 `coupleId`로 범위를 제한한다 (`where: { id, coupleId }`).
+
+- `GET /api/couple` — 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산
+- `GET|POST /api/places`, `PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
+- `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id`
+  - 생성 시 `placeId` 또는 `placeName`(같은 이름이면 기존 장소 재사용, 없으면 생성)
+  - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
+- `GET|POST /api/albums`, `GET|DELETE /api/albums/:id` — 사진 업로드는 R2 연동 때 추가
+
+**임시 인증:** 로그인이 생기기 전까지는 `DEV_COUPLE_CODE`(기본 `DEV-COUPLE`, `npx prisma db seed`가 생성)의 커플로 동작한다. 운영(`NODE_ENV=production`)에서는 항상 401. 로그인을 붙일 때는 `src/middlewares/couple-context.ts`만 교체한다.
+
+**시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터를 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다.
+
 ## 이미지 업로드 패턴
 
 오라클 서버의 I/O 부하를 피하기 위해 이미지 파일은 백엔드를 거치지 않는다.
