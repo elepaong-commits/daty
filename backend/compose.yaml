@@ -1,0 +1,21 @@
+# Local development database only. Production runs its own compose on the server (~/app-db).
+services:
+  db:
+    image: postgres:15-alpine # same as production
+    container_name: daty_dev_postgres
+    environment:
+      POSTGRES_USER: daty
+      POSTGRES_PASSWORD: daty
+      POSTGRES_DB: daty_dev
+    ports:
+      - "127.0.0.1:5433:5432" # 5433 so it never collides with the SSH tunnel to production on 5432
+    volumes:
+      - daty_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daty -d daty_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  daty_dev_pgdata:
