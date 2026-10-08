@@ -5,7 +5,7 @@
 ## 저장소 구조 (모노레포)
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
-- `backend/` — Express + TypeScript + Prisma (아직 없음)
+- `backend/` — Express 5 + Prisma 7 (PostgreSQL). 현재는 Prisma 스키마와 마이그레이션만 있고 서버 코드와 TypeScript 설정은 아직 없음
 - 프론트와 백엔드가 같이 쓰는 API 타입이 생기면 `shared/`로 분리를 검토
 
 각 패키지는 자기 디렉토리에서 독립적으로 `npm install` / `npm run ...` 한다. 루트에는 package.json이 없다.
@@ -14,8 +14,17 @@
 
 - **Frontend 배포:** Vercel(또는 Netlify). 프로젝트 Root Directory는 `frontend`.
 - **Backend 배포:** Oracle Cloud Always Free ARM 인스턴스 (Ubuntu). 서버에서 `git pull`로 배포.
-- **DB:** PostgreSQL, 같은 Oracle VM에서 구동.
+- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
 - **이미지 저장:** Cloudflare R2.
+
+## 데이터 모델 (`backend/prisma/schema.prisma`)
+
+- 커플 단위 앱: `Couple`에 `User` 두 명이 `coupleCode`로 묶이고, 모든 데이터는 `coupleId`로 소유된다.
+- `Place`: 지도 핀. Google Maps 기반(`googlePlaceId`). 상태는 `WISH`(가고 싶은 곳) / `VISITED`.
+- `DateRecord`: 캘린더 항목. `PLAN`(일정) / `RECORD`(기록). 장소 하나와 연결되고, 앨범에 묶일 수 있다.
+- `Album` / `Photo`: 앨범 탭. 하루 데이트의 여러 기록과 사진을 하나의 앨범으로 묶는다.
+
+스키마를 바꿀 때는 `npx prisma migrate dev`로 마이그레이션 파일을 만들어 커밋하고, 운영 DB에는 `npx prisma migrate deploy`만 쓴다. 운영 DB에 `migrate dev`, `db push`, `migrate reset`을 실행하지 않는다.
 
 ## 이미지 업로드 패턴
 

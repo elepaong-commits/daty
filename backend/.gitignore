@@ -1,0 +1,11 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# AI agent skill bundles (reinstall locally when needed)
+.agents
+.claude
+.windsurf
+skills-lock.json
