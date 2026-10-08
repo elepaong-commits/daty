@@ -4,13 +4,13 @@ import { Chip, QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { CATEGORIES } from '../../lib/categories'
 import { daysTogether } from '../../lib/dates'
-import { useCouple, usePlaces } from '../../lib/queries'
+import { useMe, usePlaces } from '../../lib/queries'
 import type { PlaceCategory, PlaceStatus } from '../../lib/types'
 import { DateMap } from './DateMap'
 import { PlaceSheet } from './PlaceSheet'
 
 export function MapPage() {
-  const { data: couple } = useCouple()
+  const couple = useMe().data?.couple
   const { data: places = [], isLoading, error } = usePlaces()
   const [status, setStatus] = useState<PlaceStatus>('VISITED')
   const [category, setCategory] = useState<PlaceCategory | null>(null)
