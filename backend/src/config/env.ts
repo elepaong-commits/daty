@@ -14,11 +14,18 @@ const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
-  // Temporary stand-in for login: every request acts as this couple. Ignored in production.
-  DEV_COUPLE_CODE: z.string().min(1).optional(),
+  // Signs session cookies. Generate with: openssl rand -base64 48
+  SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
+  // Number of reverse proxies in front of the API (Nginx = 1), so rate limits see the real client IP.
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema
+  .refine((e) => e.NODE_ENV !== "production" || !e.SESSION_SECRET.startsWith("change-me"), {
+    path: ["SESSION_SECRET"],
+    message: "Replace the example SESSION_SECRET before running in production",
+  })
+  .safeParse(process.env);
 
 if (!parsed.success) {
   console.error("Invalid environment variables:", z.flattenError(parsed.error).fieldErrors);

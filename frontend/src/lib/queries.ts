@@ -1,15 +1,53 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from './api'
+import { api, ApiError } from './api'
+import type { Me } from './types'
 import { addMonths, startOfMonth } from './dates'
 
 export const keys = {
-  couple: ['couple'] as const,
+  me: ['me'] as const,
   places: ['places'] as const,
   records: (month: Date) => ['records', month.getFullYear(), month.getMonth()] as const,
   albums: ['albums'] as const,
 }
 
-export const useCouple = () => useQuery({ queryKey: keys.couple, queryFn: api.couple })
+/** `null` means logged out; the backend answers 401 rather than an empty user. */
+export const useMe = () =>
+  useQuery({
+    queryKey: keys.me,
+    queryFn: () =>
+      api.me().catch((err) => {
+        if (err instanceof ApiError && err.status === 401) return null
+        throw err
+      }),
+    staleTime: Infinity,
+  })
+
+/** Login, signup, and couple setup all answer with the fresh `Me`. */
+function useMeMutation<TInput>(mutationFn: (input: TInput) => Promise<Me>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: (me) => queryClient.setQueryData(keys.me, me),
+  })
+}
+
+export const useLogin = () => useMeMutation(api.login)
+export const useSignup = () => useMeMutation(api.signup)
+export const useCreateCouple = () => useMeMutation(api.createCouple)
+export const useJoinCouple = () => useMeMutation(api.joinCouple)
+
+export function useLogout() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.logout,
+    onSuccess: () => {
+      // Flip `me` in place (clear() would detach the gate watching it), then drop every
+      // other cached screen so the next account never sees the previous one's data.
+      queryClient.setQueryData(keys.me, null)
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+    },
+  })
+}
 
 export const usePlaces = () => useQuery({ queryKey: keys.places, queryFn: api.places })
 

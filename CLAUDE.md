@@ -21,6 +21,7 @@
 ## 인프라
 
 - **Frontend 배포:** Vercel(또는 Netlify). 프로젝트 Root Directory는 `frontend`.
+  - 로그인 쿠키가 SameSite=Lax라서 **API는 프론트와 같은 사이트에서 불러야 한다.** 배포 시 Vercel rewrite로 `/api/*`를 백엔드로 넘기거나 같은 상위 도메인(예: `app.example.com` + `api.example.com`)을 쓴다. 서로 다른 도메인에서 직접 호출하면 쿠키가 전송되지 않는다
 - **Backend 배포:** Oracle Cloud Always Free AMD 인스턴스 (x86_64, **메모리 1GB**, Ubuntu 22.04). 서버에서 `git pull`로 배포. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
 - **로컬 개발 DB:** Mac의 OrbStack(Docker)에서 `backend/compose.yaml`로 구동 (`npm run db:up`). `localhost:5433`, 계정 `daty`/`daty`, DB `daty_dev`. 개발과 테스트는 이 DB로 하고, 운영 DB에는 붙지 않는다.
 - **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
@@ -37,18 +38,22 @@
 
 ## API (`backend/src/modules/`)
 
-모든 `/api/*` 요청은 `requireCouple` 미들웨어를 거쳐 `req.coupleId`가 정해지고, 모든 쿼리는 반드시 이 `coupleId`로 범위를 제한한다 (`where: { id, coupleId }`).
+**인증:** 이메일 + 비밀번호. 로그인하면 `daty_session` 쿠키(httpOnly, SameSite=Lax, 30일, HS256 JWT)가 발급된다. 비밀번호는 `node:crypto` scrypt로 해시(`src/lib/password.ts`). 로그인·가입은 IP당 15분에 10회 실패로 제한.
 
-- `GET /api/couple` — 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산
+- `requireAuth` → `req.userId`, `requireCouple` → `req.coupleId` (`src/middlewares/auth.ts`). 커플 데이터 라우터(places, records, albums)는 둘 다 거친다
+- 커플 데이터 쿼리는 반드시 `req.coupleId`로 범위를 제한한다 (`where: { id, coupleId }`)
+- 에러 응답은 `{ error, code }`. 프론트는 `code`(`UNAUTHENTICATED`, `COUPLE_REQUIRED`, `INVALID_CREDENTIALS` 등)로 분기한다
+
+- `POST /api/auth/signup|login|logout`, `GET /api/auth/me` — 응답은 `{ user, couple | null }`
+- `POST /api/couple` (기념일 → 6자리 초대 코드 발급), `POST /api/couple/join` (코드로 합류, 최대 2명)
+- `GET /api/couple` — 초대 코드, 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산
 - `GET|POST /api/places`, `PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id`
   - 생성 시 `placeId` 또는 `placeName`(같은 이름이면 기존 장소 재사용, 없으면 생성)
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
 - `GET|POST /api/albums`, `GET|DELETE /api/albums/:id` — 사진 업로드는 R2 연동 때 추가
 
-**임시 인증:** 로그인이 생기기 전까지는 `DEV_COUPLE_CODE`(기본 `DEV-COUPLE`, `npx prisma db seed`가 생성)의 커플로 동작한다. 운영(`NODE_ENV=production`)에서는 항상 401. 로그인을 붙일 때는 `src/middlewares/couple-context.ts`만 교체한다.
-
-**시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터를 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다.
+**시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터와 개발 계정(`dev-a@daty.local` / `dev-b@daty.local`, 비밀번호 `daty1234`)을 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다.
 
 ## 이미지 업로드 패턴
 
@@ -64,4 +69,4 @@
 
 - `main`에 직접 커밋하지 않는다. 브랜치를 만들어 작업하고 PR로 병합한다.
 - 커밋 전에 해당 패키지에서 `npm run build`가 통과해야 한다. `frontend/`는 `npm run lint`도 통과해야 한다.
-- 비밀 값(R2 키, DB URL 등)은 `.env`에 두고 커밋하지 않는다. 필요한 키 목록은 `.env.example`로 남긴다.
+- 비밀 값(R2 키, DB URL, `SESSION_SECRET` 등)은 `.env`에 두고 커밋하지 않는다. 필요한 키 목록은 `.env.example`로 남긴다.

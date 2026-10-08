@@ -2,6 +2,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import type { PlaceCategory, TipType } from "../src/generated/prisma/client.js";
+import { hashPassword } from "../src/lib/password.js";
 
 const url = process.env.DATABASE_URL;
 const dbName = url ? new URL(url).pathname.slice(1) : "";
@@ -12,6 +13,8 @@ if (!dbName.endsWith("_dev")) {
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 const COUPLE_CODE = "DEV-COUPLE";
+// Log in as dev-a@daty.local or dev-b@daty.local with this password.
+const DEV_PASSWORD = "daty1234";
 
 type SeedPlace = {
   name: string;
@@ -68,7 +71,7 @@ const albums: { title: string; date: string; note: string | null; places: string
 const kst = (local: string) => new Date(`${local}:00+09:00`);
 
 async function main() {
-  // Keep the couple row (so DEV_COUPLE_ID stays stable) and rebuild everything under it.
+  // Keep the couple row and rebuild everything under it, so re-seeding is repeatable.
   const anniversaryDate = new Date("2025-08-23");
   const { id: coupleId } = await prisma.couple.upsert({
     where: { coupleCode: COUPLE_CODE },
@@ -80,13 +83,14 @@ async function main() {
   await prisma.place.deleteMany({ where: { coupleId } });
   await prisma.user.deleteMany({ where: { coupleId } });
 
+  const passwordHash = await hashPassword(DEV_PASSWORD);
   const couple = await prisma.couple.update({
     where: { id: coupleId },
     data: {
       users: {
         create: [
-          { email: "dev-a@daty.local", passwordHash: "!", nickname: "토끼" },
-          { email: "dev-b@daty.local", passwordHash: "!", nickname: "곰돌이" },
+          { email: "dev-a@daty.local", passwordHash, nickname: "토끼" },
+          { email: "dev-b@daty.local", passwordHash, nickname: "곰돌이" },
         ],
       },
     },
@@ -149,7 +153,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded couple ${COUPLE_CODE} (id=${couple.id}).`);
+  console.log(`Seeded couple ${COUPLE_CODE} (id=${couple.id}). Log in as dev-a@daty.local / ${DEV_PASSWORD}`);
 }
 
 main()

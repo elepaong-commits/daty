@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import globeIcon from '../assets/icons/globe.svg'
+import { AccountSheet, Avatar } from '../features/auth/AccountSheet'
+import { useMe } from '../lib/queries'
 
 interface Props {
   eyebrow: string
@@ -13,7 +15,10 @@ export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
     <header className="shrink-0 px-5 pt-4 pb-3">
       <div className="flex items-center justify-between">
         <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{eyebrow}</p>
-        <LanguageToggle />
+        <div className="flex items-center gap-2">
+          <AccountButton />
+          <LanguageToggle />
+        </div>
       </div>
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-display text-[26px] leading-[1.25]">{title}</h1>
@@ -21,6 +26,20 @@ export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
       </div>
       {children}
     </header>
+  )
+}
+
+function AccountButton() {
+  const nickname = useMe().data?.user.nickname
+  const [open, setOpen] = useState(false)
+  if (!nickname) return null
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label="내 정보">
+        <Avatar name={nickname} size="sm" />
+      </button>
+      {open && <AccountSheet onClose={() => setOpen(false)} />}
+    </>
   )
 }
 

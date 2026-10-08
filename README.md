@@ -19,9 +19,9 @@ npm run dev
 # backend (http://127.0.0.1:4000)
 cd backend
 npm install
-cp .env.example .env       # 기본값이 로컬 개발 DB를 가리킴
+cp .env.example .env       # 기본값이 로컬 개발 DB. SESSION_SECRET은 openssl rand -base64 48 로 교체
 npm run db:up              # 개발용 PostgreSQL (Docker, localhost:5433)
 npm run db:migrate:deploy  # 마이그레이션 적용
-npx prisma db seed         # 디자인 시안과 같은 샘플 데이터
+npx prisma db seed         # 샘플 데이터 + 개발 계정 dev-a@daty.local / daty1234
 npm run dev
 ```

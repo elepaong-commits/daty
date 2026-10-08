@@ -5,10 +5,23 @@ export type PlaceStatus = 'WISH' | 'VISITED'
 export type RecordType = 'PLAN' | 'RECORD'
 export type TipType = 'EAT' | 'SEE' | 'DO'
 
+export interface Member {
+  id: number
+  nickname: string
+  profileImageUrl: string | null
+}
+
 export interface Couple {
   id: number
+  coupleCode: string // invite code the partner enters to join
   anniversaryDate: string // YYYY-MM-DD
-  users: { id: number; nickname: string; profileImageUrl: string | null }[]
+  users: Member[]
+}
+
+/** GET /api/auth/me: the logged-in user and their couple (null until connected). */
+export interface Me {
+  user: Member & { email: string }
+  couple: Couple | null
 }
 
 export interface Place {
