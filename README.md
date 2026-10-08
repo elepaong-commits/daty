@@ -18,6 +18,8 @@ npm run dev
 # backend (http://127.0.0.1:4000)
 cd backend
 npm install
-cp .env.example .env   # DATABASE_URL 등 값 채우기
+cp .env.example .env       # 기본값이 로컬 개발 DB를 가리킴
+npm run db:up              # 개발용 PostgreSQL (Docker, localhost:5433)
+npm run db:migrate:deploy  # 마이그레이션 적용
 npm run dev
 ```
