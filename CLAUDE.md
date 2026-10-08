@@ -16,7 +16,7 @@
 ## 인프라
 
 - **Frontend 배포:** Vercel(또는 Netlify). 프로젝트 Root Directory는 `frontend`.
-- **Backend 배포:** Oracle Cloud Always Free ARM 인스턴스 (Ubuntu). 서버에서 `git pull`로 배포.
+- **Backend 배포:** Oracle Cloud Always Free AMD 인스턴스 (x86_64, **메모리 1GB**, Ubuntu 22.04). 서버에서 `git pull`로 배포. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
 - **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
 - **이미지 저장:** Cloudflare R2.
 
