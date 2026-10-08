@@ -10,7 +10,14 @@
 ## 로컬 실행
 
 ```bash
+# frontend (http://localhost:5173)
 cd frontend
 npm install
+npm run dev
+
+# backend (http://127.0.0.1:4000)
+cd backend
+npm install
+cp .env.example .env   # DATABASE_URL 등 값 채우기
 npm run dev
 ```
