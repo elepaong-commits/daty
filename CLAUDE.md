@@ -5,6 +5,11 @@
 ## 저장소 구조 (모노레포)
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
+  - React Router(탭 3개: `/`, `/calendar`, `/albums`), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
+  - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand`, `text-muted`, `font-display` 등)
+  - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
+  - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
+  - 디자인 원본: Figma `7Qc5QDKQEeFWbnAeSbhEA7` (화면 프레임 지도 `1:797`, 캘린더 `1:538`, 앨범 `1:329`, 일정 등록 `1:2`)
 - `backend/` — Express 5 + Prisma 7 (PostgreSQL) + TypeScript (ESM, `NodeNext`). 개발 실행은 `tsx`, 환경 변수 검증과 요청 검증은 `zod`
   - `src/server.ts` 진입점, `src/app.ts` 앱 구성, `src/routes/` 라우터, `src/middlewares/` 공통 미들웨어, `src/config/env.ts` 환경 변수
   - Prisma Client는 `prisma-client` 생성기로 `src/generated/prisma`에 생성되며 커밋하지 않는다 (`npm install` 시 자동 생성). `@prisma/adapter-pg` 드라이버 어댑터 사용

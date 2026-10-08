@@ -1,0 +1,39 @@
+import { useEffect, type ReactNode } from 'react'
+
+interface Props {
+  title: string
+  onClose: () => void
+  children: ReactNode
+}
+
+/** Modal sheet that slides up over the current screen (design: "Schedule modal overlay"). */
+export function BottomSheet({ title, onClose, children }: Props) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-ink/42" onClick={onClose} />
+      <div className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]">
+        <div className="flex justify-center pb-2">
+          <div className="h-1.5 w-10 rounded-full bg-handle" />
+        </div>
+        <div className="flex items-center justify-between pb-4">
+          <h2 className="font-display text-[20px] leading-normal">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-8 items-center justify-center rounded-full bg-sand-soft text-[14px]"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="scrollbar-none -mx-5 overflow-y-auto px-5">{children}</div>
+      </div>
+    </div>
+  )
+}
