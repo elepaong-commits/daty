@@ -21,5 +21,6 @@ npm install
 cp .env.example .env       # 기본값이 로컬 개발 DB를 가리킴
 npm run db:up              # 개발용 PostgreSQL (Docker, localhost:5433)
 npm run db:migrate:deploy  # 마이그레이션 적용
+npx prisma db seed         # 디자인 시안과 같은 샘플 데이터
 npm run dev
 ```
