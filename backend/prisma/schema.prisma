@@ -1,0 +1,133 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PlaceCategory {
+  FOOD
+  CAFE
+  EXHIBIT
+  TOUR
+  BAR
+  ACTIVITY
+}
+
+enum PlaceStatus {
+  WISH
+  VISITED
+}
+
+enum RecordType {
+  PLAN
+  RECORD
+}
+
+enum TipType {
+  EAT
+  SEE
+  DO
+}
+model Couple {
+  id              Int          @id @default(autoincrement())
+  coupleCode      String       @unique @map("couple_code")
+  anniversaryDate DateTime     @map("anniversary_date") @db.Date
+  createdAt       DateTime     @default(now()) @map("created_at")
+  users           User[]
+  records         DateRecord[]
+  places          Place[]
+  albums          Album[]
+
+  @@map("couples")
+}
+
+model User {
+  id              Int          @id @default(autoincrement())
+  coupleId        Int?         @map("couple_id")
+  email           String       @unique
+  passwordHash    String       @map("password_hash")
+  nickname        String
+  profileImageUrl String?      @map("profile_image_url")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  couple          Couple?      @relation(fields: [coupleId], references: [id])
+  writtenRecords  DateRecord[]
+
+  @@map("users")
+}
+
+model Place {                       // 지도 핀
+  id            Int           @id @default(autoincrement())
+  coupleId      Int           @map("couple_id")
+  name          String
+  category      PlaceCategory
+  status        PlaceStatus   @default(WISH)
+  address       String?
+  latitude      Decimal?      @db.Decimal(9, 6)
+  longitude     Decimal?      @db.Decimal(9, 6)
+  googleMapsUrl String?       @map("google_maps_url")
+  googlePlaceId String?       @map("google_place_id")
+  tipType       TipType?      @map("tip_type")
+  tipText       String?       @map("tip_text")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  couple        Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  records       DateRecord[]
+
+  @@unique([coupleId, googlePlaceId])
+  @@index([coupleId, status, category])
+  @@map("places")
+}
+
+model DateRecord {                  // 캘린더 일정 + 기록
+  id          Int           @id @default(autoincrement())
+  coupleId    Int           @map("couple_id")
+  placeId     Int?          @map("place_id")
+  writerId    Int?          @map("writer_id")
+  albumId     Int?          @map("album_id")
+  type        RecordType    @default(PLAN)
+  title       String
+  memo        String?
+  category    PlaceCategory
+  rating      Int?          @db.SmallInt          // 1~5, CHECK는 마이그레이션 SQL로
+  scheduledAt DateTime      @map("scheduled_at") @db.Timestamptz(3)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  couple      Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  place       Place?        @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  writer      User?         @relation(fields: [writerId], references: [id], onDelete: SetNull)
+  album       Album?        @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, scheduledAt])
+  @@map("date_records")
+}
+
+model Album {                       // 앨범 탭
+  id            Int           @id @default(autoincrement())
+  coupleId      Int           @map("couple_id")
+  title         String
+  albumDate     DateTime      @map("album_date") @db.Date
+  highlightNote String?       @map("highlight_note")   // 꼭 봐야 할 포인트
+  coverPhotoId  Int?          @map("cover_photo_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  couple        Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  photos        Photo[]
+  records       DateRecord[]
+
+  @@index([coupleId, albumDate])
+  @@map("albums")
+}
+
+model Photo {                       // 기존 RecordImage 대체
+  id           Int       @id @default(autoincrement())
+  albumId      Int       @map("album_id")
+  imageUrl     String    @map("image_url")
+  displayOrder Int       @default(1) @map("display_order")
+  takenAt      DateTime? @map("taken_at")   // 사진의 EXIF 촬영 시각 → 날짜별 자동 묶기
+  createdAt    DateTime  @default(now()) @map("created_at")
+  album        Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId, displayOrder])
+  @@map("photos")
+}

@@ -5,7 +5,7 @@
 | 디렉토리 | 내용 |
 |---|---|
 | [frontend/](frontend/) | React + Vite + TypeScript + Tailwind CSS v4 |
-| backend/ | Express + TypeScript + Prisma (예정) |
+| [backend/](backend/) | Express + Prisma 7 + PostgreSQL |
 
 ## 로컬 실행
 
