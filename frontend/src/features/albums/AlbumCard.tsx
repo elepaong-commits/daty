@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import type { Album } from '../../lib/types'
@@ -10,7 +11,7 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
   const firstPlace = album.places[0]
 
   return (
-    <article className="flex min-w-0 flex-col gap-2.5 pt-1.5">
+    <Link to={`/albums/${album.id}`} className="flex min-w-0 flex-col gap-2.5 pt-1.5">
       <div className="px-1.5">
         <PhotoStack album={album} heightClass={large ? 'h-60' : 'h-[225px]'} date={formatDotted(date)} />
       </div>
@@ -37,7 +38,7 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
           </div>
         )}
       </div>
-    </article>
+    </Link>
   )
 }
 
@@ -46,7 +47,8 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   const emoji = categoryOf(category).emoji
-  const photos = album.photos.slice(0, 3)
+  // The best cut sits on top of the pile.
+  const photos = [...album.photos].sort((a, b) => Number(b.id === album.coverPhotoId) - Number(a.id === album.coverPhotoId)).slice(0, 3)
 
   const layer = (i: number) => {
     const photo = photos[i]

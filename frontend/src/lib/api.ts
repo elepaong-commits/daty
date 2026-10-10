@@ -1,4 +1,15 @@
-import type { Album, CreateAlbumInput, CreateRecordInput, DateRecord, Me, Place } from './types'
+import type {
+  Album,
+  CreateAlbumInput,
+  CreateRecordInput,
+  DateRecord,
+  Me,
+  Place,
+  PlaceDetail,
+  UpdateAlbumInput,
+  UpdatePlaceInput,
+  UpdateRecordInput,
+} from './types'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -27,8 +38,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.status === 204 ? (undefined as T) : res.json()
 }
 
-const post = <T>(path: string, body?: unknown) =>
-  request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) })
+const send =
+  (method: 'POST' | 'PATCH' | 'DELETE') =>
+  <T>(path: string, body?: unknown) =>
+    request<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) })
+const post = send('POST')
+const patch = send('PATCH')
+const del = send('DELETE')
 
 export const api = {
   me: () => request<Me>('/api/auth/me'),
@@ -39,12 +55,19 @@ export const api = {
   joinCouple: (input: { code: string }) => post<Me>('/api/couple/join', input),
 
   places: () => request<Place[]>('/api/places'),
+  place: (id: number) => request<PlaceDetail>(`/api/places/${id}`),
+  updatePlace: (id: number, input: UpdatePlaceInput) => patch<Place>(`/api/places/${id}`, input),
   records: (from: Date, to: Date) =>
     request<DateRecord[]>(
       `/api/records?${new URLSearchParams({ from: from.toISOString(), to: to.toISOString() })}`,
     ),
   createRecord: (input: CreateRecordInput) => post<DateRecord>('/api/records', input),
+  updateRecord: (id: number, input: UpdateRecordInput) => patch<DateRecord>(`/api/records/${id}`, input),
+  deleteRecord: (id: number) => del<void>(`/api/records/${id}`),
   albums: () => request<Album[]>('/api/albums'),
+  album: (id: number) => request<Album>(`/api/albums/${id}`),
+  updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
+  deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
 }
 

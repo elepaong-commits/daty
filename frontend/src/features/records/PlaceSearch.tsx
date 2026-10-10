@@ -19,6 +19,8 @@ interface Props {
   onNameChange: (name: string) => void
   picked: PickedPlace | null
   onPick: (place: PickedPlace | null) => void
+  /** When editing: the record's current place name, which needs no hint while unchanged. */
+  currentName?: string
 }
 
 const DEBOUNCE_MS = 250
@@ -44,7 +46,7 @@ function PlainInput({ name, onNameChange }: Pick<Props, 'name' | 'onNameChange'>
   )
 }
 
-function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
+function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: Props) {
   const places = useMapsLibrary('places')
   const listId = useId()
   // Results remember which query produced them, so a stale list never shows under new text.
@@ -172,15 +174,17 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         </ul>
       )}
 
-      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
-        {loadingPick
-          ? '장소 정보를 가져오는 중…'
-          : picked
-            ? `📍 ${picked.address ?? '위치 확인됨'} · 지도에 핀이 생겨요`
-            : name.trim()
-              ? '💡 목록에서 고르면 지도에 핀이 생겨요. 직접 입력하면 이름만 저장돼요'
-              : '💡 장소를 검색해서 고르면 지도에 표시돼요'}
-      </p>
+      {(picked || loadingPick || name.trim() !== currentName) && (
+        <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
+          {loadingPick
+            ? '장소 정보를 가져오는 중…'
+            : picked
+              ? `📍 ${picked.address ?? '위치 확인됨'} · 지도에 핀이 생겨요`
+              : name.trim()
+                ? '💡 목록에서 고르면 지도에 핀이 생겨요. 직접 입력하면 이름만 저장돼요'
+                : '💡 장소를 검색해서 고르면 지도에 표시돼요'}
+        </p>
+      )}
     </div>
   )
 }
