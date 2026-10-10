@@ -24,6 +24,11 @@ const createBody = z.object({
   placeId: z.number().int().positive().optional(),
   placeName: z.string().trim().min(1).max(100).optional(),
   googleMapsUrl: z.url().max(500).optional(),
+  // Filled in when the place was picked from Google search; without coordinates there is no map pin.
+  googlePlaceId: z.string().min(1).max(200).optional(),
+  address: z.string().trim().max(200).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   title: z.string().trim().min(1).max(100).optional(),
   memo: z.string().trim().max(1000).optional(),
   rating: z.number().int().min(1).max(5).optional(),
@@ -57,10 +62,20 @@ recordsRouter.post("/", async (req, res) => {
 
   const record = await prisma.$transaction(async (tx) => {
     const visited = body.type === RecordType.RECORD;
+    // Same Google place first, then same name, so repeat visits share one pin.
     let place = body.placeId
       ? await tx.place.findFirst({ where: { id: body.placeId, coupleId } })
-      : await tx.place.findFirst({ where: { coupleId, name: body.placeName } });
+      : ((body.googlePlaceId && (await tx.place.findFirst({ where: { coupleId, googlePlaceId: body.googlePlaceId } }))) ||
+        (await tx.place.findFirst({ where: { coupleId, name: body.placeName } })));
     if (body.placeId && !place) throw new HttpError(404, "Place not found");
+
+    const location = {
+      googlePlaceId: body.googlePlaceId,
+      address: body.address,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      googleMapsUrl: body.googleMapsUrl,
+    };
 
     if (!place) {
       place = await tx.place.create({
@@ -69,12 +84,23 @@ recordsRouter.post("/", async (req, res) => {
           name: body.placeName!,
           category: body.category,
           status: visited ? "VISITED" : "WISH",
-          googleMapsUrl: body.googleMapsUrl,
+          ...location,
         },
       });
-    } else if (visited && place.status !== "VISITED") {
+    } else {
       // A plan never downgrades a visited place; a record always upgrades a wished one.
-      place = await tx.place.update({ where: { id: place.id }, data: { status: "VISITED" } });
+      const promote = visited && place.status !== "VISITED";
+      // A place saved by name only gets its pin once someone picks it from search.
+      const locate = place.latitude === null && body.latitude !== undefined && body.longitude !== undefined;
+      if (promote || locate) {
+        place = await tx.place.update({
+          where: { id: place.id },
+          data: {
+            ...(promote && { status: "VISITED" }),
+            ...(locate && { ...location, googleMapsUrl: place.googleMapsUrl ?? body.googleMapsUrl }),
+          },
+        });
+      }
     }
 
     return tx.dateRecord.create({

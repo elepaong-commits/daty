@@ -9,6 +9,7 @@ import { CoupleSetupPage } from './features/auth/CoupleSetupPage'
 import { CalendarPage } from './features/calendar/CalendarPage'
 import { MapPage } from './features/map/MapPage'
 import { ApiError } from './lib/api'
+import { MapsProvider } from './lib/maps'
 import { keys, useMe } from './lib/queries'
 
 const queryClient = new QueryClient({
@@ -39,12 +40,14 @@ function Frame({ children }: { children: ReactNode }) {
 
 function AppShell() {
   return (
-    <Frame>
-      <main className="relative flex min-h-0 flex-1 flex-col">
-        <Outlet />
-      </main>
-      <BottomNav />
-    </Frame>
+    <MapsProvider>
+      <Frame>
+        <main className="relative flex min-h-0 flex-1 flex-col">
+          <Outlet />
+        </main>
+        <BottomNav />
+      </Frame>
+    </MapsProvider>
   )
 }
 

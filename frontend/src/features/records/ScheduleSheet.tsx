@@ -7,6 +7,7 @@ import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
 import { fromInputs, toDateInput } from '../../lib/dates'
 import { useCreateRecord } from '../../lib/queries'
 import type { PlaceCategory, RecordType } from '../../lib/types'
+import { PlaceSearch, type PickedPlace } from './PlaceSearch'
 
 interface Props {
   initialDate: Date
@@ -26,6 +27,7 @@ export function ScheduleSheet({ initialDate, onClose, onSaved }: Props) {
   const [time, setTime] = useState('18:00')
   const [mapUrl, setMapUrl] = useState('')
   const [placeName, setPlaceName] = useState('')
+  const [picked, setPicked] = useState<PickedPlace | null>(null)
   const [category, setCategory] = useState<PlaceCategory>('CAFE')
   const [memo, setMemo] = useState('')
   const [rating, setRating] = useState(5)
@@ -42,7 +44,11 @@ export function ScheduleSheet({ initialDate, onClose, onSaved }: Props) {
         scheduledAt: scheduledAt.toISOString(),
         category,
         placeName: placeName.trim(),
-        googleMapsUrl: mapUrl.trim() || undefined,
+        googleMapsUrl: mapUrl.trim() || picked?.googleMapsUrl,
+        googlePlaceId: picked?.googlePlaceId,
+        address: picked?.address,
+        latitude: picked?.latitude,
+        longitude: picked?.longitude,
         memo: memo.trim() || undefined,
         rating: type === 'RECORD' ? rating : undefined,
       },
@@ -99,13 +105,14 @@ export function ScheduleSheet({ initialDate, onClose, onSaved }: Props) {
         </Field>
 
         <Field label="장소 이름" className="pt-4">
-          <input
-            required
-            maxLength={100}
-            value={placeName}
-            onChange={(e) => setPlaceName(e.target.value)}
-            placeholder="예) 서울숲 억새 산책길"
-            className={inputClass}
+          <PlaceSearch
+            name={placeName}
+            onNameChange={setPlaceName}
+            picked={picked}
+            onPick={(place) => {
+              setPicked(place)
+              if (place?.category) setCategory(place.category)
+            }}
           />
         </Field>
 

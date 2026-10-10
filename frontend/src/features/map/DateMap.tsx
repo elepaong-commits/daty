@@ -1,14 +1,13 @@
-import { AdvancedMarker, APIProvider, Map, useMap } from '@vis.gl/react-google-maps'
+import { AdvancedMarker, Map, useMap } from '@vis.gl/react-google-maps'
 import { useEffect, useRef } from 'react'
 import dotVisited from '../../assets/icons/dot-visited.svg'
 import dotWish from '../../assets/icons/dot-wish.svg'
 import locateIcon from '../../assets/icons/locate.svg'
 import selectedHalo from '../../assets/icons/selected-halo.svg'
 import { categoryOf } from '../../lib/categories'
+import { MAP_ID, MAPS_API_KEY } from '../../lib/maps'
 import type { Place, PlaceStatus } from '../../lib/types'
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
-const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined
 const SEOUL = { lat: 37.5563, lng: 126.9906 }
 // Leave room for the place sheet that covers the bottom of the map.
 const FIT_PADDING = { top: 60, right: 60, bottom: 260, left: 40 }
@@ -21,7 +20,7 @@ interface Props {
 }
 
 export function DateMap(props: Props) {
-  if (!API_KEY) {
+  if (!MAPS_API_KEY) {
     return (
       <div className="flex size-full items-start justify-center bg-[#f1ebd6] pt-16 text-center text-[12px] text-muted">
         지도를 보려면 frontend/.env.local에
@@ -31,7 +30,7 @@ export function DateMap(props: Props) {
     )
   }
   return (
-    <APIProvider apiKey={API_KEY} language="ko" region="KR">
+    <>
       <Map
         mapId={MAP_ID ?? 'DEMO_MAP_ID'}
         defaultCenter={SEOUL}
@@ -45,7 +44,7 @@ export function DateMap(props: Props) {
         <Pins {...props} />
       </Map>
       <MapControls />
-    </APIProvider>
+    </>
   )
 }
 

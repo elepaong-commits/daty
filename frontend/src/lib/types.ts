@@ -79,6 +79,11 @@ export interface CreateRecordInput {
   category: PlaceCategory
   placeName: string
   googleMapsUrl?: string
+  // From Google place search; a place without coordinates gets no map pin.
+  googlePlaceId?: string
+  address?: string
+  latitude?: number
+  longitude?: number
   memo?: string
   rating?: number
 }
