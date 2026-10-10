@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from './api'
-import type { Me } from './types'
+import type { Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addMonths, startOfMonth } from './dates'
 
 export const keys = {
   me: ['me'] as const,
   places: ['places'] as const,
+  place: (id: number) => ['places', id] as const,
   records: (month: Date) => ['records', month.getFullYear(), month.getMonth()] as const,
   albums: ['albums'] as const,
+  album: (id: number) => ['albums', id] as const,
 }
 
 /** `null` means logged out; the backend answers 401 rather than an empty user. */
@@ -50,6 +52,7 @@ export function useLogout() {
 }
 
 export const usePlaces = () => useQuery({ queryKey: keys.places, queryFn: api.places })
+export const usePlace = (id: number) => useQuery({ queryKey: keys.place(id), queryFn: () => api.place(id) })
 
 export const useMonthRecords = (month: Date) =>
   useQuery({
@@ -59,6 +62,46 @@ export const useMonthRecords = (month: Date) =>
   })
 
 export const useAlbums = () => useQuery({ queryKey: keys.albums, queryFn: api.albums })
+export const useAlbum = (id: number) => useQuery({ queryKey: keys.album(id), queryFn: () => api.album(id) })
+
+/** Records, places and albums all reflect each other (visits rate places, albums list places). */
+function useInvalidateDateData() {
+  const queryClient = useQueryClient()
+  return () =>
+    Promise.all(
+      [['records'], keys.places, keys.albums].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    )
+}
+
+export function useUpdatePlace(id: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({ mutationFn: (input: UpdatePlaceInput) => api.updatePlace(id, input), onSuccess: invalidate })
+}
+
+export function useUpdateRecord(id: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({ mutationFn: (input: UpdateRecordInput) => api.updateRecord(id, input), onSuccess: invalidate })
+}
+
+export function useDeleteRecord() {
+  const invalidate = useInvalidateDateData()
+  return useMutation({ mutationFn: api.deleteRecord, onSuccess: invalidate })
+}
+
+export function useUpdateAlbum(id: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({ mutationFn: (input: UpdateAlbumInput) => api.updateAlbum(id, input), onSuccess: invalidate })
+}
+
+export function useDeletePhotos(albumId: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({
+    mutationFn: async (photoIds: number[]) => {
+      for (const photoId of photoIds) await api.deletePhoto(albumId, photoId)
+    },
+    onSuccess: invalidate,
+  })
+}
 
 export function useCreateRecord() {
   const queryClient = useQueryClient()

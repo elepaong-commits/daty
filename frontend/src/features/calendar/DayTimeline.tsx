@@ -4,7 +4,17 @@ import { categoryOf } from '../../lib/categories'
 import { daysBetween, isSameDay, toTimeInput, weekdayOf } from '../../lib/dates'
 import type { DateRecord } from '../../lib/types'
 
-export function DayTimeline({ day, today, records }: { day: Date; today: Date; records: DateRecord[] }) {
+export function DayTimeline({
+  day,
+  today,
+  records,
+  onEdit,
+}: {
+  day: Date
+  today: Date
+  records: DateRecord[]
+  onEdit: (record: DateRecord) => void
+}) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between leading-normal">
@@ -17,13 +27,13 @@ export function DayTimeline({ day, today, records }: { day: Date; today: Date; r
       {records.length === 0 ? (
         <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">아직 일정이 없어요</p>
       ) : (
-        records.map((r) => <TimelineEntry key={r.id} record={r} today={today} />)
+        records.map((r) => <TimelineEntry key={r.id} record={r} today={today} onEdit={() => onEdit(r)} />)
       )}
     </section>
   )
 }
 
-function TimelineEntry({ record, today }: { record: DateRecord; today: Date }) {
+function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: Date; onEdit: () => void }) {
   const at = new Date(record.scheduledAt)
   const isPlan = record.type === 'PLAN'
   const category = categoryOf(record.category)
@@ -42,7 +52,12 @@ function TimelineEntry({ record, today }: { record: DateRecord; today: Date }) {
         </span>
       )}
       <article
-        className={`flex min-w-0 flex-1 flex-col rounded-2xl border bg-white p-3.5 ${isPlan ? 'border-coral/30' : 'border-card-border'}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`${record.place?.name ?? record.title} 일정 수정`}
+        onClick={onEdit}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEdit())}
+        className={`flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left ${isPlan ? 'border-coral/30' : 'border-card-border'}`}
       >
         <div className="flex items-center justify-between">
           <span className="text-[11px] leading-normal font-semibold text-brand-strong">
@@ -63,6 +78,7 @@ function TimelineEntry({ record, today }: { record: DateRecord; today: Date }) {
             href={mapUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="self-start truncate pt-2 text-[11px] leading-normal font-medium text-brand"
           >
             📍 {mapUrl.replace(/^https?:\/\//, '')}

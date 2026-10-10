@@ -3,11 +3,14 @@ import type { ReactNode } from 'react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router'
 import { BottomNav } from './components/BottomNav'
 import { QueryState } from './components/Field'
+import { AlbumDetailPage } from './features/albums/AlbumDetailPage'
 import { AlbumsPage } from './features/albums/AlbumsPage'
 import { AuthPage } from './features/auth/AuthPage'
 import { CoupleSetupPage } from './features/auth/CoupleSetupPage'
 import { CalendarPage } from './features/calendar/CalendarPage'
 import { MapPage } from './features/map/MapPage'
+import { PlaceDetailPage } from './features/places/PlaceDetailPage'
+import { PlaceEditPage } from './features/places/PlaceEditPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
 import { keys, useMe } from './lib/queries'
@@ -70,7 +73,10 @@ function AuthGate() {
       <Route element={<AppShell />}>
         <Route index element={<MapPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="places/:id" element={<PlaceDetailPage />} />
+        <Route path="places/:id/edit" element={<PlaceEditPage />} />
         <Route path="albums" element={<AlbumsPage />} />
+        <Route path="albums/:id" element={<AlbumDetailPage />} />
       </Route>
     </Routes>
   )

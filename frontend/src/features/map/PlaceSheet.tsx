@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Stars } from '../../components/Stars'
 import { categoryOf, TIPS } from '../../lib/categories'
 import { formatMonthDay } from '../../lib/dates'
@@ -8,11 +9,11 @@ interface Props {
   places: Place[]
   status: PlaceStatus
   selectedId: number | null
-  onSelect: (id: number) => void
 }
 
-/** Sheet over the bottom of the map: a swipeable card row, or a full list when expanded. */
-export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
+/** Sheet over the bottom of the map: a swipeable card row, or a full list when expanded. Cards open the place. */
+export function PlaceSheet({ places, status, selectedId }: Props) {
+  const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
   const cardRefs = useRef(new Map<number, HTMLElement>())
 
@@ -57,10 +58,7 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
               }}
               place={place}
               selected={place.id === selectedId}
-              onClick={() => {
-                onSelect(place.id)
-                setExpanded(false)
-              }}
+              onClick={() => navigate(`/places/${place.id}`)}
               className={expanded ? 'w-full' : 'w-[325px] max-w-[85%] snap-start'}
             />
           ))}
