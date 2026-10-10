@@ -6,6 +6,7 @@
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
   - React Router(탭 3개: `/`, `/calendar`, `/albums`), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
+  - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다
   - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand`, `text-muted`, `font-display` 등)
   - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
@@ -49,7 +50,8 @@
 - `GET /api/couple` — 초대 코드, 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산
 - `GET|POST /api/places`, `PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id`
-  - 생성 시 `placeId` 또는 `placeName`(같은 이름이면 기존 장소 재사용, 없으면 생성)
+  - 생성 시 `placeId` 또는 `placeName`. 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성
+  - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
 - `GET|POST /api/albums`, `GET|DELETE /api/albums/:id` — 사진 업로드는 R2 연동 때 추가
 
