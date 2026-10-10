@@ -47,7 +47,11 @@ function PlainInput({ name, onNameChange }: Pick<Props, 'name' | 'onNameChange'>
 function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
   const places = useMapsLibrary('places')
   const listId = useId()
-  const [suggestions, setSuggestions] = useState<google.maps.places.PlacePrediction[]>([])
+  // Results remember which query produced them, so a stale list never shows under new text.
+  const [results, setResults] = useState<{ query: string; items: google.maps.places.PlacePrediction[] }>({
+    query: '',
+    items: [],
+  })
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const [loadingPick, setLoadingPick] = useState(false)
@@ -64,15 +68,16 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query,
           sessionToken: sessionToken.current,
-          includedRegionCodes: ['kr'],
+          // Worldwide (trips abroad count too); `region` only favors Korean results when names overlap.
+          region: 'kr',
           language: 'ko',
         })
         if (!cancelled) {
-          setSuggestions(suggestions.flatMap((s) => (s.placePrediction ? [s.placePrediction] : [])).slice(0, 5))
+          setResults({ query, items: suggestions.flatMap((s) => (s.placePrediction ? [s.placePrediction] : [])).slice(0, 5) })
           setActive(-1)
         }
       } catch {
-        if (!cancelled) setSuggestions([])
+        if (!cancelled) setResults({ query, items: [] })
       }
     }, DEBOUNCE_MS)
     return () => {
@@ -107,8 +112,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
     }
   }
 
-  // Stale results are hidden rather than cleared once a place is picked or the field is emptied.
-  const visible = picked || name.trim() === '' ? [] : suggestions
+  const visible = !picked && results.query === name.trim() ? results.items : []
   const showList = open && visible.length > 0
 
   return (
@@ -142,7 +146,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
             setOpen(false)
           }
         }}
-        placeholder="장소를 검색하세요 · 예) 서울숲"
+        placeholder="장소를 검색하세요 · 예) 서울숲, 후지산"
         className={inputClass}
       />
 
@@ -181,12 +185,17 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
   )
 }
 
-/** Neighborhood like the design's "성수동", from Korean address components. */
+/** Neighborhood like the design's "성수동" in Korea, or the city abroad. */
 function shortAddress(place: google.maps.places.Place) {
   const components = place.addressComponents ?? []
   const find = (type: string) => components.find((c) => c.types.includes(type))?.longText
-  const dong = find('sublocality_level_2')?.replace(/\d+가$/, '')
-  return dong || find('sublocality_level_1') || find('locality') || place.formattedAddress || null
+  const country = components.find((c) => c.types.includes('country'))?.shortText
+  if (country === 'KR') {
+    const dong = find('sublocality_level_2')?.replace(/\d+가$/, '')
+    return dong || find('sublocality_level_1') || find('locality') || place.formattedAddress || null
+  }
+  // Abroad, Korean-style 동 levels don't exist (Japan's sublocalities are block numbers), so use the city.
+  return find('locality') || find('administrative_area_level_2') || find('administrative_area_level_1') || find('country') || null
 }
 
 const TYPE_TO_CATEGORY: [string[], PlaceCategory][] = [
