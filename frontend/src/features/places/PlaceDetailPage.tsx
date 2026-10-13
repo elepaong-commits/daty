@@ -28,7 +28,6 @@ export function PlaceDetailPage() {
   const visited = place.status === 'VISITED'
   const category = categoryOf(place.category)
   const album = place.albums[0]
-  const heroPhoto = album?.photos.find((p) => p.id === album.coverPhotoId) ?? album?.photos[0]
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -41,7 +40,7 @@ export function PlaceDetailPage() {
 
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5">
         <div className="relative h-48 shrink-0">
-          <PhotoTile src={heroPhoto?.imageUrl} category={place.category} className="size-full rounded-xl" emojiSize={56} />
+          <PhotoTile src={album?.coverPhoto?.thumbnailUrl} category={place.category} className="size-full rounded-xl" emojiSize={56} />
           <span className={`absolute top-3 left-3 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand' : 'text-coral'}`}>
             {t.place.badge[place.status]}
           </span>
@@ -91,7 +90,7 @@ export function PlaceDetailPage() {
               {[0, 1, 2].map((i) => (
                 <PhotoTile
                   key={i}
-                  src={album.photos[i]?.imageUrl}
+                  src={album.photos[i]?.thumbnailUrl}
                   category={place.category}
                   className="h-[66px] min-w-0 flex-1 rounded-xl"
                   emojiSize={22}

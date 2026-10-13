@@ -59,9 +59,9 @@
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
   - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
-- `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — `coverPhotoId`가 "베스트 컷". 사진이나 앨범을 지우면 R2 객체도 지운다(실패해도 로그만 남김)
-  - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30장) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`
-  - `POST /api/albums/:id/photos` (`{ photos: [{ key, takenAt }] }`) — R2에 HEAD로 실제 업로드(15MB 이하 이미지)를 확인한 뒤 기록. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`만 받는다
+- `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — `coverPhotoId`가 "베스트 컷"(앨범 표지). 고르지 않으면(`null`) 응답의 `coverPhoto`는 첫 번째 사진. 사진이나 앨범을 지우면 원본·썸네일 R2 객체도 지운다(실패해도 로그만 남김)
+  - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30장) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`, 그리고 같은 모양의 `thumbnail`(`{uuid}.thumb.jpg`)
+  - `POST /api/albums/:id/photos` (`{ photos: [{ key, thumbnailKey, takenAt }] }`) — R2에 HEAD로 실제 업로드(원본 15MB, 썸네일 2MB 이하 이미지)를 확인한 뒤 기록. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`와 그 썸네일 키만 받는다. 썸네일 업로드만 실패하면 `thumbnailKey: null`로 보내고 원본을 쓴다
 
 **시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터와 개발 계정(`dev-a@daty.local` / `dev-b@daty.local`, 비밀번호 `daty1234`)을 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다. 이미 시드된 커플이 있으면 아무것도 지우지 않고 건너뛴다. 처음부터 다시 만들려면 `npx prisma db seed -- --reset`(그 커플의 장소·기록·앨범·업로드한 사진 행이 지워진다).
 
@@ -77,7 +77,7 @@
 
 - R2 버킷은 **비공개**다. `Photo.storageKey`에 객체 키를 저장하고, 응답의 `imageUrl`은 백엔드가 매번 만든 서명 GET URL이다(`src/lib/storage.ts`). 서명 시각을 UTC 자정으로 고정하고 2일 유효라서 하루 동안 URL이 같아 브라우저 캐시가 된다. `imageUrl`만 있는 예전 행은 그 URL을 그대로 준다
 - 서명은 AWS SDK 대신 `aws4fetch`로 한다(서버 메모리 절약). R2 환경 변수(`R2_ACCOUNT_ID` 등 4개)가 비어 있으면 업로드는 `503 STORAGE_DISABLED`
-- 프론트는 업로드 전에 사진을 긴 변 2048px JPEG로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`)
+- 프론트는 업로드 전에 사진을 긴 변 2048px JPEG와 800px 썸네일로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`). 그리드·앨범 카드·장소 상세는 `thumbnailUrl`, 사진 뷰어는 `imageUrl`을 쓴다. 썸네일이 없는 예전 사진은 `thumbnailUrl`이 원본 URL이다
 - 브라우저가 R2에 직접 PUT하므로 버킷 CORS에 프론트 origin의 `PUT`과 `Content-Type` 헤더를 허용해야 한다
 
 ## 작업 규칙

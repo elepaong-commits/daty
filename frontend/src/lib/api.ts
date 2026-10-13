@@ -78,12 +78,12 @@ export const api = {
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
   photoUploads: (albumId: number, files: { contentType: string }[]) =>
     post<{ uploads: PhotoUpload[] }>(`/api/albums/${albumId}/photos/uploads`, { files }),
-  addPhotos: (albumId: number, photos: { key: string; takenAt: string | null }[]) =>
+  addPhotos: (albumId: number, photos: { key: string; thumbnailKey: string | null; takenAt: string | null }[]) =>
     post<Album>(`/api/albums/${albumId}/photos`, { photos }),
 }
 
 /** PUT an image straight to R2 with a presigned URL: no API base and no cookies. */
-export async function uploadToStorage(upload: PhotoUpload, body: Blob) {
+export async function uploadToStorage(upload: Omit<PhotoUpload, 'thumbnail'>, body: Blob) {
   const res = await fetch(upload.uploadUrl, { method: 'PUT', headers: upload.headers, body })
   if (!res.ok) throw new ApiError(res.status, `R2 upload failed: ${res.status}`)
 }

@@ -50,11 +50,12 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   const emoji = categoryOf(category).emoji
-  // The best cut sits on top of the pile.
-  const photos = [...album.photos].sort((a, b) => Number(b.id === album.coverPhotoId) - Number(a.id === album.coverPhotoId)).slice(0, 3)
+  // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
+  const { coverPhoto } = album
+  const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
 
   const layer = (i: number) => (
-    <StackLayer src={photos[i]?.imageUrl} gradient={gradients[i % gradients.length]!} emoji={i === 0 ? emoji : ''} />
+    <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} emoji={i === 0 ? emoji : ''} />
   )
 
   return (

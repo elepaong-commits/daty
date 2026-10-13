@@ -37,9 +37,11 @@ export function AlbumDetailPage() {
     })
   }
 
-  function makeBestCut() {
-    const [photoId] = selected
-    updateAlbum.mutate({ coverPhotoId: photoId }, { onSuccess: toggleSelecting })
+  const [selectedId] = selected
+  const selectedIsCover = selected.size === 1 && selectedId === album?.coverPhotoId
+
+  function toggleBestCut() {
+    updateAlbum.mutate({ coverPhotoId: selectedIsCover ? null : selectedId }, { onSuccess: toggleSelecting })
   }
 
   function addPhotos(e: ChangeEvent<HTMLInputElement>) {
@@ -150,7 +152,7 @@ export function AlbumDetailPage() {
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
-                  <GridPhoto src={photo.imageUrl} />
+                  <GridPhoto src={photo.thumbnailUrl} />
                   {photo.id === album.coverPhotoId && (
                     <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
                       {t.albums.bestCut}
@@ -175,14 +177,15 @@ export function AlbumDetailPage() {
       {selecting && (
         <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3">
           {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError, t)}</p>}
+          {album.coverPhotoId === null && <p className="text-[11px] text-muted">{t.albums.bestCutHint}</p>}
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={makeBestCut}
+              onClick={toggleBestCut}
               disabled={selected.size !== 1 || updateAlbum.isPending}
               className="h-11 flex-1 rounded-2xl bg-amber-soft text-[14px] font-semibold text-amber-strong disabled:opacity-40"
             >
-              {t.albums.makeBestCut}
+              {selectedIsCover ? t.albums.unsetBestCut : t.albums.makeBestCut}
             </button>
             <button
               type="button"
@@ -199,7 +202,14 @@ export function AlbumDetailPage() {
 
       {editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}
       {viewing !== null && (
-        <PhotoViewer photos={album.photos} startIndex={viewing} coverPhotoId={album.coverPhotoId} onClose={() => setViewing(null)} />
+        <PhotoViewer
+          photos={album.photos}
+          startIndex={viewing}
+          coverPhotoId={album.coverPhotoId}
+          onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
+          coverPending={updateAlbum.isPending}
+          onClose={() => setViewing(null)}
+        />
       )}
     </div>
   )

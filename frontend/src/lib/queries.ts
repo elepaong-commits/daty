@@ -151,7 +151,7 @@ async function settleWithLimit<T, R>(items: T[], limit: number, fn: (item: T, in
 }
 
 /**
- * Shrinks each picked file, PUTs it straight to R2, then records the keys on the album.
+ * Shrinks each picked file, PUTs it and its thumbnail straight to R2, then records the keys on the album.
  * Files that fail (e.g. a format the browser can't open) are skipped and counted in `failed`.
  */
 export function useUploadPhotos(albumId: number) {
@@ -169,9 +169,16 @@ export function useUploadPhotos(albumId: number) {
         const results = await settleWithLimit(batch, UPLOAD_CONCURRENCY, async (file, i) => {
           const upload = uploads[i]!
           const image = await prepareImage(file)
-          await uploadToStorage(upload, image.blob)
+          // A failed thumbnail only costs some bandwidth later (the full image is shown), so it doesn't fail the photo.
+          const [, thumbnailKey] = await Promise.all([
+            uploadToStorage(upload, image.blob),
+            uploadToStorage(upload.thumbnail, image.thumbnail).then(
+              () => upload.thumbnail.key,
+              () => null,
+            ),
+          ])
           setProgress({ done: ++done, total: files.length })
-          return { key: upload.key, takenAt: image.takenAt }
+          return { key: upload.key, thumbnailKey, takenAt: image.takenAt }
         })
         const photos = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
         failed += batch.length - photos.length

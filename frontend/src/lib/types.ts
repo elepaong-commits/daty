@@ -77,6 +77,7 @@ export interface DateRecord {
 export interface Photo {
   id: number
   imageUrl: string | null // signed R2 URL, valid for at least a day; null if storage is not configured
+  thumbnailUrl: string | null // ≤800px copy for grids and cards; the full image for photos uploaded before thumbnails
   displayOrder: number
   takenAt: string | null
 }
@@ -131,7 +132,8 @@ export interface PlaceDetail extends Place {
     albumDate: string
     coverPhotoId: number | null
     photoCount: number
-    photos: Photo[]
+    coverPhoto: Photo | null // the best cut, or the first photo when none is picked
+    photos: Photo[] // first three
   }[]
 }
 
@@ -163,6 +165,7 @@ export interface PhotoUpload {
   key: string
   uploadUrl: string
   headers: Record<string, string>
+  thumbnail: Omit<PhotoUpload, 'thumbnail'>
 }
 
 export interface UpdateAlbumInput {
