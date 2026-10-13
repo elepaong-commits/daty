@@ -83,5 +83,6 @@
 ## 작업 규칙
 
 - `main`에 직접 커밋하지 않는다. 브랜치를 만들어 작업하고 PR로 병합한다.
-- 커밋 전에 해당 패키지에서 `npm run build`가 통과해야 한다. `frontend/`는 `npm run lint`도 통과해야 한다.
+- 커밋 전에 해당 패키지에서 `npm run build`가 통과해야 한다. `frontend/`는 `npm run lint`, `backend/`는 `npm test`도 통과해야 한다.
+- 백엔드 테스트(`backend/test/`, Node 내장 테스트 러너 + tsx)는 로컬 개발 DB 컨테이너의 별도 DB `daty_test`를 쓴다(없으면 만들고 마이그레이션한 뒤 매번 비운다. 이름이 `_test`로 끝나지 않으면 거부). `.env`는 읽지 않는다. 커플 데이터 라우트를 새로 만들면 `couple-scope.test.ts`에 다른 커플의 id로 접근하는 경우를 추가한다
 - 비밀 값(R2 키, DB URL, `SESSION_SECRET` 등)은 `.env`에 두고 커밋하지 않는다. 필요한 키 목록은 `.env.example`로 남긴다.
