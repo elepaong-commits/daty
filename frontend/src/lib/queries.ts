@@ -75,6 +75,31 @@ function useInvalidateDateData() {
     )
 }
 
+export function useCreatePlace() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.createPlace,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.places }),
+  })
+}
+
+/** Memos only show on places (detail and map cards), so the places cache is all that changes. */
+export function useAddPlaceNote(placeId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (content: string) => api.addPlaceNote(placeId, content),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.places }),
+  })
+}
+
+export function useDeletePlaceNote(placeId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (noteId: number) => api.deletePlaceNote(placeId, noteId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.places }),
+  })
+}
+
 export function useUpdatePlace(id: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({ mutationFn: (input: UpdatePlaceInput) => api.updatePlace(id, input), onSuccess: invalidate })

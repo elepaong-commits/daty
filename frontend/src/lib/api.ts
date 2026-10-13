@@ -2,12 +2,14 @@ import type { Messages } from './messages'
 import type {
   Album,
   CreateAlbumInput,
+  CreatePlaceInput,
   CreateRecordInput,
   DateRecord,
   Me,
   Place,
   PhotoUpload,
   PlaceDetail,
+  PlaceNote,
   UpdateAlbumInput,
   UpdatePlaceInput,
   UpdateRecordInput,
@@ -58,7 +60,10 @@ export const api = {
 
   places: () => request<Place[]>('/api/places'),
   place: (id: number) => request<PlaceDetail>(`/api/places/${id}`),
+  createPlace: (input: CreatePlaceInput) => post<Place>('/api/places', input),
   updatePlace: (id: number, input: UpdatePlaceInput) => patch<Place>(`/api/places/${id}`, input),
+  addPlaceNote: (placeId: number, content: string) => post<PlaceNote>(`/api/places/${placeId}/notes`, { content }),
+  deletePlaceNote: (placeId: number, noteId: number) => del<void>(`/api/places/${placeId}/notes/${noteId}`),
   records: (from: Date, to: Date) =>
     request<DateRecord[]>(
       `/api/records?${new URLSearchParams({ from: from.toISOString(), to: to.toISOString() })}`,

@@ -33,6 +33,7 @@
 
 - 커플 단위 앱: `Couple`에 `User` 두 명이 `coupleCode`로 묶이고, 모든 데이터는 `coupleId`로 소유된다.
 - `Place`: 지도 핀. Google Maps 기반(`googlePlaceId`). 상태는 `WISH`(가고 싶은 곳) / `VISITED`.
+- `PlaceNote`: 장소 메모(여러 개, 작성자 포함). 본문에 `{{EAT}}` `{{SEE}}` `{{DO}}` 태그 토큰이 들어가고, 프론트(`src/lib/memo.ts`)가 입력창에서는 보는 사람 언어의 문구로 풀고 저장할 때 다시 토큰으로 바꾼다. `DateRecord.memo`도 같은 토큰을 쓴다.
 - `DateRecord`: 캘린더 항목. `PLAN`(일정) / `RECORD`(기록). 장소 하나와 연결되고, 앨범에 묶일 수 있다.
 - `Album` / `Photo`: 앨범 탭. 하루 데이트의 여러 기록과 사진을 하나의 앨범으로 묶는다.
 
@@ -50,17 +51,19 @@
 - `POST /api/couple` (기념일 → 6자리 초대 코드 발급), `POST /api/couple/join` (코드로 합류, 최대 2명)
 - `GET /api/couple` — 초대 코드, 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산
 - `GET|POST /api/places`, `GET|PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
-  - `GET /:id`는 최근 방문(`latestVisit`)과 방문 기록이 묶인 앨범(사진 3장)을 함께 준다
+  - 목록 응답의 `latestNote`는 가장 최근 메모. `POST`는 `note`로 첫 메모를 함께 만들 수 있고, 같은 `googlePlaceId`가 이미 있으면 `409 PLACE_EXISTS`
+  - `GET /:id`는 최근 방문(`latestVisit`), 메모(`notes`, 최신순), 방문 기록이 묶인 앨범(사진 3장)을 함께 준다
+  - `POST /api/places/:id/notes` (`{ content }`), `DELETE /api/places/:id/notes/:noteId`
   - `PATCH /:id`의 `visit: { scheduledAt, rating }`은 그 장소의 최근 방문 기록을 고치고, 방문 기록이 없으면 새로 만든다 (장소 자체에는 날짜·평점 컬럼이 없다)
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id` — 생성과 수정 모두 `resolvePlace`로 장소를 찾거나 만든다. 수정 시 장소 이름이 바뀌거나 검색으로 고르면 다른 장소로 옮긴다
-  - 생성 시 `placeId` 또는 `placeName`. 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성
+  - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
   - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
 - `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — `coverPhotoId`가 "베스트 컷". 사진이나 앨범을 지우면 R2 객체도 지운다(실패해도 로그만 남김)
   - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30장) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`
   - `POST /api/albums/:id/photos` (`{ photos: [{ key, takenAt }] }`) — R2에 HEAD로 실제 업로드(15MB 이하 이미지)를 확인한 뒤 기록. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`만 받는다
 
-**시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터와 개발 계정(`dev-a@daty.local` / `dev-b@daty.local`, 비밀번호 `daty1234`)을 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다.
+**시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터와 개발 계정(`dev-a@daty.local` / `dev-b@daty.local`, 비밀번호 `daty1234`)을 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다. 이미 시드된 커플이 있으면 아무것도 지우지 않고 건너뛴다. 처음부터 다시 만들려면 `npx prisma db seed -- --reset`(그 커플의 장소·기록·앨범·업로드한 사진 행이 지워진다).
 
 ## 이미지 업로드 패턴
 

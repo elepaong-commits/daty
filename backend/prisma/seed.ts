@@ -1,7 +1,7 @@
 // Sample data matching the design mockups. Development databases only.
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.js";
-import type { PlaceCategory, TipType } from "../src/generated/prisma/client.js";
+import type { PlaceCategory } from "../src/generated/prisma/client.js";
 import { hashPassword } from "../src/lib/password.js";
 
 const url = process.env.DATABASE_URL;
@@ -22,21 +22,22 @@ type SeedPlace = {
   address: string;
   lat: number;
   lng: number;
-  tip?: [TipType, string];
+  // Place memo; `{{EAT}}`-style tokens render as tags in the viewer's language.
+  note?: string;
 };
 
 const visited: SeedPlace[] = [
-  { name: "카페 소금빵공방", category: "CAFE", address: "성수동", lat: 37.5446, lng: 127.0557, tip: ["EAT", "소금빵 + 아인슈페너 조합"] },
-  { name: "성수 연무장길", category: "TOUR", address: "성수동", lat: 37.543, lng: 127.056, tip: ["SEE", "골목마다 팝업스토어 구경"] },
+  { name: "카페 소금빵공방", category: "CAFE", address: "성수동", lat: 37.5446, lng: 127.0557, note: "{{EAT}} 소금빵 + 아인슈페너 조합" },
+  { name: "성수 연무장길", category: "TOUR", address: "성수동", lat: 37.543, lng: 127.056, note: "{{SEE}} 골목마다 팝업스토어 구경" },
   { name: "성수 편집숍 산책", category: "ACTIVITY", address: "성수동", lat: 37.5447, lng: 127.059 },
-  { name: "북악 팔각정", category: "TOUR", address: "부암동", lat: 37.6035, lng: 126.9817, tip: ["SEE", "해 질 녘 야경이 최고"] },
-  { name: "빛의 정원展", category: "EXHIBIT", address: "DDP", lat: 37.5665, lng: 127.0092, tip: ["SEE", "미디어아트 마지막 방은 꼭 끝까지"] },
-  { name: "루치아 파스타", category: "FOOD", address: "연남동", lat: 37.5637, lng: 126.9246, tip: ["EAT", "트러플 크림 파스타"] },
+  { name: "북악 팔각정", category: "TOUR", address: "부암동", lat: 37.6035, lng: 126.9817, note: "{{SEE}} 해 질 녘 야경이 최고" },
+  { name: "빛의 정원展", category: "EXHIBIT", address: "DDP", lat: 37.5665, lng: 127.0092, note: "{{SEE}} 미디어아트 마지막 방은 꼭 끝까지" },
+  { name: "루치아 파스타", category: "FOOD", address: "연남동", lat: 37.5637, lng: 126.9246, note: "{{EAT}} 트러플 크림 파스타" },
 ];
 
 const wished: SeedPlace[] = [
-  { name: "망원 디저트바 몽", category: "CAFE", address: "망원동", lat: 37.556, lng: 126.903 },
-  { name: "북촌 한옥 산책", category: "TOUR", address: "북촌", lat: 37.5826, lng: 126.983 },
+  { name: "망원 디저트바 몽", category: "CAFE", address: "망원동", lat: 37.556, lng: 126.903, note: "{{EAT}} 몽블랑은 하루 20개 한정" },
+  { name: "북촌 한옥 산책", category: "TOUR", address: "북촌", lat: 37.5826, lng: 126.983, note: "{{DO}} 한복 입고 골목 사진 찍기" },
   { name: "연남 화덕피자", category: "FOOD", address: "연남동", lat: 37.562, lng: 126.925 },
   { name: "리움미술관", category: "EXHIBIT", address: "한남동", lat: 37.5384, lng: 126.999 },
   { name: "서울숲 피크닉", category: "ACTIVITY", address: "성수동", lat: 37.5444, lng: 127.0374 },
@@ -70,7 +71,23 @@ const albums: { title: string; date: string; note: string | null; places: string
 
 const kst = (local: string) => new Date(`${local}:00+09:00`);
 
+// Rebuilding wipes the dev couple's places, records, albums and uploaded photos, so it is opt-in:
+// `npx prisma db seed -- --reset`.
+const RESET = process.argv.includes("--reset");
+
 async function main() {
+  const existing = await prisma.couple.findUnique({
+    where: { coupleCode: COUPLE_CODE },
+    select: { id: true, _count: { select: { users: true } } },
+  });
+  if (existing && existing._count.users > 0 && !RESET) {
+    console.log(
+      `Couple ${COUPLE_CODE} (id=${existing.id}) is already seeded; leaving its data alone.\n` +
+        "To rebuild it from scratch (deletes its places, records, albums and photos): npx prisma db seed -- --reset",
+    );
+    return;
+  }
+
   // Keep the couple row and rebuild everything under it, so re-seeding is repeatable.
   const anniversaryDate = new Date("2025-08-23");
   const { id: coupleId } = await prisma.couple.upsert({
@@ -110,8 +127,7 @@ async function main() {
           address: p.address,
           latitude: p.lat,
           longitude: p.lng,
-          tipType: p.tip?.[0],
-          tipText: p.tip?.[1],
+          ...(p.note && { notes: { create: { coupleId: couple.id, writerId: writerIds[0], content: p.note } } }),
         },
       });
       placeIds.set(p.name, { id: place.id, category: p.category });

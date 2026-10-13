@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
-import { categoryOf, TIP_CLASSES } from '../../lib/categories'
+import { categoryOf } from '../../lib/categories'
 import { formatMonthDay } from '../../lib/dates'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
@@ -86,7 +87,6 @@ function PlaceCard({
 }) {
   const category = categoryOf(place.category)
   const t = useT()
-  const tip = place.tipType ? { label: t.tips[place.tipType], className: TIP_CLASSES[place.tipType] } : null
 
   return (
     <button
@@ -118,12 +118,7 @@ function PlaceCard({
           <span className="text-[12px] text-muted">{'·\u3000'}{t.map.visitedOn(formatMonthDay(new Date(place.lastVisitedAt)))}</span>
         )}
       </div>
-      {tip && place.tipText && (
-        <div className="flex w-full items-center gap-2">
-          <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] leading-normal font-bold ${tip.className}`}>{tip.label}</span>
-          <span className="min-w-0 flex-1 truncate text-[12.5px] leading-normal">{place.tipText}</span>
-        </div>
-      )}
+      {place.latestNote && <MemoText content={place.latestNote} className="w-full truncate text-[12.5px] leading-[1.75]" />}
     </button>
   )
 }

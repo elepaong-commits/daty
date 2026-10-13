@@ -20,8 +20,6 @@ interface Props {
   onNameChange: (name: string) => void
   picked: PickedPlace | null
   onPick: (place: PickedPlace | null) => void
-  /** When editing: the record's current place name, which needs no hint while unchanged. */
-  currentName?: string
 }
 
 const DEBOUNCE_MS = 250
@@ -48,7 +46,7 @@ function PlainInput({ name, onNameChange }: Pick<Props, 'name' | 'onNameChange'>
   )
 }
 
-function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: Props) {
+function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
   const { lang, t } = useI18n()
   const places = useMapsLibrary('places')
   const listId = useId()
@@ -177,17 +175,15 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: 
         </ul>
       )}
 
-      {(picked || loadingPick || name.trim() !== currentName) && (
-        <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
-          {loadingPick
-            ? t.placeSearch.fetching
-            : picked
-              ? t.placeSearch.picked(picked.address ?? t.placeSearch.located)
-              : name.trim()
-                ? t.placeSearch.hintTyped
-                : t.placeSearch.hintEmpty}
-        </p>
-      )}
+      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
+        {loadingPick
+          ? t.placeSearch.fetching
+          : picked
+            ? t.placeSearch.picked(picked.address ?? t.placeSearch.located)
+            : name.trim()
+              ? t.placeSearch.hintTyped
+              : t.placeSearch.hintEmpty}
+      </p>
     </div>
   )
 }

@@ -1,24 +1,35 @@
 import { useMemo, useState } from 'react'
+import { useLocation } from 'react-router'
+import plusIcon from '../../assets/icons/plus.svg'
 import searchIcon from '../../assets/icons/search.svg'
 import { Chip, QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { CATEGORIES } from '../../lib/categories'
 import { daysTogether } from '../../lib/dates'
 import { useMe, usePlaces } from '../../lib/queries'
-import type { PlaceCategory, PlaceStatus } from '../../lib/types'
+import type { Place, PlaceCategory, PlaceStatus } from '../../lib/types'
+import { AddPlaceSheet } from './AddPlaceSheet'
 import { DateMap } from './DateMap'
 import { PlaceSheet } from './PlaceSheet'
 import { useT } from '../../lib/i18n'
+
+/** Router state for opening the map on one place, e.g. after editing it. */
+export interface MapFocus {
+  placeId: number
+  status: PlaceStatus
+}
 
 export function MapPage() {
   const couple = useMe().data?.couple
   const t = useT()
   const { data: places = [], isLoading, error } = usePlaces()
-  const [status, setStatus] = useState<PlaceStatus>('VISITED')
+  const focus = useLocation().state as MapFocus | null
+  const [status, setStatus] = useState<PlaceStatus>(focus?.status ?? 'VISITED')
   const [category, setCategory] = useState<PlaceCategory | null>(null)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<number | null>(focus?.placeId ?? null)
+  const [adding, setAdding] = useState(false)
 
   // Category and search narrow both the pins and the cards; status only dims the other pins.
   const filtered = useMemo(
@@ -39,24 +50,44 @@ export function MapPage() {
     setSelectedId(null)
   }
 
+  // Show the new place: its tab, no filter hiding it, its card selected.
+  function showAdded(place: Place) {
+    setAdding(false)
+    setStatus(place.status)
+    setCategory(null)
+    setQuery('')
+    setSearchOpen(false)
+    setSelectedId(place.id)
+  }
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <ScreenHeader
         eyebrow={t.map.eyebrow(couple ? daysTogether(couple.anniversaryDate) : null)}
         title={t.map.title}
         actions={
-          <button
-            type="button"
-            onClick={() => {
-              setSearchOpen((open) => !open)
-              setQuery('')
-            }}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white"
-            aria-label={t.map.search}
-            aria-expanded={searchOpen}
-          >
-            <img src={searchIcon} alt="" width={18} height={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen((open) => !open)
+                setQuery('')
+              }}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white"
+              aria-label={t.map.search}
+              aria-expanded={searchOpen}
+            >
+              <img src={searchIcon} alt="" width={18} height={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand shadow-[0_4px_10px_rgba(0,168,150,0.3)]"
+              aria-label={t.map.addWish}
+            >
+              <img src={plusIcon} alt="" width={20} height={20} />
+            </button>
+          </div>
         }
       >
         {searchOpen && (
@@ -107,6 +138,8 @@ export function MapPage() {
           <PlaceSheet places={listed} status={status} selectedId={selectedId} />
         )}
       </div>
+
+      {adding && <AddPlaceSheet onClose={() => setAdding(false)} onSaved={showAdded} />}
     </div>
   )
 }

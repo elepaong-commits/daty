@@ -7,6 +7,7 @@ import { categoryOf } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { PlaceNotes } from './PlaceNotes'
 
 export function PlaceDetailPage() {
   const id = Number(useParams().id)
@@ -26,7 +27,6 @@ export function PlaceDetailPage() {
 
   const visited = place.status === 'VISITED'
   const category = categoryOf(place.category)
-  const tip = place.tipType ? t.tips[place.tipType] : null
   const album = place.albums[0]
   const heroPhoto = album?.photos.find((p) => p.id === album.coverPhotoId) ?? album?.photos[0]
 
@@ -77,12 +77,7 @@ export function PlaceDetailPage() {
           </div>
         </div>
 
-        {place.tipText && (
-          <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
-            <span className="text-[12px] font-bold text-amber-strong">{tip ? t.place.tipMemo(tip) : t.place.memo}</span>
-            <p className="text-[13px] leading-normal text-amber-ink">{place.tipText}</p>
-          </div>
-        )}
+        <PlaceNotes placeId={place.id} notes={place.notes} />
 
         {album && (
           <section className="flex flex-col gap-2 rounded-2xl bg-white p-3">

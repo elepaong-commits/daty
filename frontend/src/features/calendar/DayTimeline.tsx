@@ -1,4 +1,5 @@
 import timelineConnector from '../../assets/icons/timeline-connector.svg'
+import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
 import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
@@ -76,7 +77,7 @@ function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: D
           )}
         </div>
         <h3 className="pt-1 font-display text-[17px] leading-[1.375]">{record.place?.name ?? record.title}</h3>
-        {record.memo && <p className="pt-1 text-[13px] leading-[1.625] text-ink/75">📝 {record.memo}</p>}
+        {record.memo && <MemoText content={`📝 ${record.memo}`} className="pt-1 text-[13px] leading-[1.75] whitespace-pre-line text-ink/75" />}
         {mapUrl && (
           <a
             href={mapUrl}

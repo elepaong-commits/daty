@@ -149,8 +149,9 @@ recordsRouter.patch("/:id", async (req, res) => {
       body.googlePlaceId !== undefined ||
       (body.placeName !== undefined && body.placeName !== current.place?.name);
     let placeId = current.placeId;
+    let title: string | undefined;
     if (relink) {
-      placeId = (await resolvePlace(tx, coupleId, { ...body, category }, visited)).id;
+      ({ id: placeId, name: title } = await resolvePlace(tx, coupleId, { ...body, category }, visited));
     } else if (current.placeId) {
       // Same place: a new map link belongs to it, and a visit promotes it.
       const promote = visited && current.place?.status !== "VISITED";
@@ -168,7 +169,7 @@ recordsRouter.patch("/:id", async (req, res) => {
         type,
         category,
         placeId,
-        ...(relink && { title: body.placeName ?? undefined }),
+        title,
         memo: body.memo,
         // Plans have no rating; a visit keeps its rating unless one is sent.
         rating: visited ? body.rating : null,

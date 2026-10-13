@@ -8,18 +8,9 @@ import { errorMessage } from '../../lib/api'
 import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
 import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
 import { usePlace, useUpdatePlace } from '../../lib/queries'
-import type { PlaceCategory, PlaceDetail, PlaceStatus, TipType } from '../../lib/types'
+import type { PlaceDetail, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
-
-// What the memo is about when the place has no tip type yet.
-const DEFAULT_TIP: Record<PlaceCategory, TipType> = {
-  FOOD: 'EAT',
-  CAFE: 'EAT',
-  BAR: 'EAT',
-  EXHIBIT: 'SEE',
-  TOUR: 'SEE',
-  ACTIVITY: 'DO',
-}
+import type { MapFocus } from '../map/MapPage'
 
 export function PlaceEditPage() {
   const id = Number(useParams().id)
@@ -52,12 +43,12 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
   const [address, setAddress] = useState(place.address ?? '')
   const [visitDate, setVisitDate] = useState(visit ? toDateInput(new Date(visit.scheduledAt)) : '')
   const [rating, setRating] = useState<number | null>(visit?.rating ?? null)
-  const [memo, setMemo] = useState(place.tipText ?? '')
-
-  const tipType = place.tipType ?? DEFAULT_TIP[category]
   const visited = status === 'VISITED'
   const canSave = name.trim() !== '' && !updatePlace.isPending
   const close = () => navigate(`/places/${place.id}`, { replace: true })
+  // Saved: back to the map, on the place's (possibly new) tab with its card selected.
+  const toMap = (saved: { id: number; status: PlaceStatus }) =>
+    navigate('/', { replace: true, state: { placeId: saved.id, status: saved.status } satisfies MapFocus })
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -72,11 +63,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
         category,
         status,
         address: address.trim() || null,
-        tipText: memo.trim() || null,
-        tipType: memo.trim() ? tipType : null,
         visit: visitChanged ? { scheduledAt: fromInputs(visitDate, time).toISOString(), rating } : undefined,
       },
-      { onSuccess: close },
+      { onSuccess: toMap },
     )
   }
 
@@ -185,18 +174,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
               </div>
             </div>
           )}
-
-          <Field label={t.place.memoField(t.place.memoLabel[tipType])}>
-            <textarea
-              rows={3}
-              maxLength={200}
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              className={`${inputClass} h-[78px] resize-none py-2.5 leading-normal`}
-            />
-          </Field>
         </div>
 
+        <p className="px-1 text-[11px] leading-normal text-muted">{t.place.notesOnDetail}</p>
         {place.albums[0] && (
           <p className="px-1 text-[11px] leading-normal text-muted">{t.place.albumKept(place.albums[0].title)}</p>
         )}
