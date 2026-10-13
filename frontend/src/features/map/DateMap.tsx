@@ -1,5 +1,6 @@
 import { AdvancedMarker, Map, useMap } from '@vis.gl/react-google-maps'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Supercluster from 'supercluster'
 import dotVisited from '../../assets/icons/dot-visited.svg'
 import dotWish from '../../assets/icons/dot-wish.svg'
 import locateIcon from '../../assets/icons/locate.svg'
@@ -9,6 +10,8 @@ import { MAP_ID, MAPS_API_KEY } from '../../lib/maps'
 import type { Place, PlaceStatus } from '../../lib/types'
 
 const SEOUL = { lat: 37.5563, lng: 126.9906 }
+const DEFAULT_ZOOM = 12
+const WORLD: [number, number, number, number] = [-180, -85, 180, 85]
 // Leave room for the place sheet that covers the bottom of the map.
 const FIT_PADDING = { top: 60, right: 60, bottom: 260, left: 40 }
 
@@ -34,7 +37,7 @@ export function DateMap(props: Props) {
       <Map
         mapId={MAP_ID ?? 'DEMO_MAP_ID'}
         defaultCenter={SEOUL}
-        defaultZoom={12}
+        defaultZoom={DEFAULT_ZOOM}
         disableDefaultUI
         clickableIcons={false}
         gestureHandling="greedy"
@@ -48,10 +51,16 @@ export function DateMap(props: Props) {
   )
 }
 
+interface PinProps {
+  place: Place
+}
+
 function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
   const map = useMap()
   const fitted = useRef(false)
-  const located = places.filter((p) => p.latitude !== null && p.longitude !== null)
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
+  const located = useMemo(() => places.filter((p) => p.latitude !== null && p.longitude !== null), [places])
+  const selected = located.find((p) => p.id === selectedId)
 
   // Frame every pin once when the data first arrives.
   useEffect(() => {
@@ -63,24 +72,90 @@ function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
   }, [map, located])
 
   useEffect(() => {
-    const target = located.find((p) => p.id === selectedId)
-    if (map && target) map.panTo({ lat: target.latitude!, lng: target.longitude! })
+    if (map && selected) map.panTo({ lat: selected.latitude!, lng: selected.longitude! })
   }, [map, selectedId]) // eslint-disable-line react-hooks/exhaustive-deps -- pan only when the selection changes
 
-  return located.map((place) => {
-    const selected = place.id === selectedId
+  // Re-cluster once the camera settles rather than on every animation frame.
+  useEffect(() => {
+    if (!map) return
+    const listener = map.addListener('idle', () => setZoom(map.getZoom() ?? DEFAULT_ZOOM))
+    return () => listener.remove()
+  }, [map])
+
+  // Only the active tab's pins merge into count bubbles as the map zooms out. Dimmed pins and the
+  // selected pin always stay on their own.
+  const [clustered, loose] = useMemo(() => {
+    const isClustered = (p: Place) => p.status === activeStatus && p.id !== selectedId
+    return [located.filter(isClustered), located.filter((p) => !isClustered(p))]
+  }, [located, activeStatus, selectedId])
+  const index = useMemo(() => {
+    const cluster = new Supercluster<PinProps>({ radius: 56, maxZoom: 17 })
+    cluster.load(
+      clustered.map((place) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [place.longitude!, place.latitude!] },
+        properties: { place },
+      })),
+    )
+    return cluster
+  }, [clustered])
+  const features = useMemo(() => index.getClusters(WORLD, zoom), [index, zoom])
+
+  function expand(clusterId: number, lat: number, lng: number) {
+    if (!map) return
+    map.panTo({ lat, lng })
+    map.setZoom(Math.min(index.getClusterExpansionZoom(clusterId), 20))
+  }
+
+  function marker(place: Place) {
+    const isSelected = place.id === selectedId
     return (
       <AdvancedMarker
         key={place.id}
         position={{ lat: place.latitude!, lng: place.longitude! }}
         title={place.name}
-        zIndex={selected ? 1000 : place.status === activeStatus ? 10 : 1}
+        zIndex={isSelected ? 1000 : place.status === activeStatus ? 10 : 1}
         onClick={() => onSelect(place.id)}
       >
-        <PlacePin place={place} dimmed={place.status !== activeStatus} selected={selected} />
+        <PlacePin place={place} dimmed={place.status !== activeStatus} selected={isSelected} />
       </AdvancedMarker>
     )
-  })
+  }
+
+  return [
+    ...loose.map(marker),
+    ...features.map((feature) => {
+      if (!('cluster' in feature.properties)) return marker((feature.properties as PinProps).place)
+      const { cluster_id: clusterId, point_count: count } = feature.properties
+      const [lng, lat] = feature.geometry.coordinates
+      return (
+        <AdvancedMarker
+          key={`cluster-${clusterId}`}
+          position={{ lat, lng }}
+          title={`${count}곳`}
+          zIndex={20}
+          onClick={() => expand(clusterId, lat, lng)}
+        >
+          <ClusterPin count={count} status={activeStatus} />
+        </AdvancedMarker>
+      )
+    }),
+  ]
+}
+
+/** Round count bubble for merged pins, coloured like the active tab's pins. */
+function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
+  const size = count < 10 ? 38 : count < 100 ? 44 : 50
+  return (
+    <div
+      className={`flex items-center justify-center rounded-full font-display text-[15px] leading-none shadow-md ${
+        status === 'VISITED' ? 'border-3 border-white bg-brand text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
+      }`}
+      style={{ width: size, height: size, transform: 'translateY(50%)' }}
+    >
+      {count}
+    </div>
+  )
 }
 
 /** Teardrop pin from the design: a square with three rounded corners, rotated so the sharp corner points down. */
