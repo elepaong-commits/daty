@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useLogout, useMe } from '../../lib/queries'
+import { useT } from '../../lib/i18n'
 
 export function AccountSheet({ onClose }: { onClose: () => void }) {
   const me = useMe().data
+  const t = useT()
   const logout = useLogout()
   const [copied, setCopied] = useState(false)
   if (!me) return null
@@ -17,7 +19,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <BottomSheet title="내 정보" onClose={onClose}>
+    <BottomSheet title={t.common.myInfo} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-2xl bg-field p-4">
           <Avatar name={user.nickname} />
@@ -29,19 +31,19 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 
         {couple && (
           <div className="rounded-2xl border border-card-border p-4">
-            <p className="text-[12px] leading-normal font-semibold text-muted">짝꿍</p>
+            <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
             {partner ? (
               <p className="pt-1 text-[15px] font-semibold">💞 {partner.nickname}</p>
             ) : (
               <>
-                <p className="pt-1 text-[13px] leading-normal">아직 짝꿍이 연결되지 않았어요. 이 코드를 알려 주세요.</p>
+                <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>
                 <button
                   type="button"
                   onClick={() => copyCode(couple.coupleCode)}
                   className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
                 >
                   <span className="text-[20px] font-bold tracking-[6px] text-brand-strong">{couple.coupleCode}</span>
-                  <span className="text-[12px] font-semibold text-brand">{copied ? '복사했어요' : '복사'}</span>
+                  <span className="text-[12px] font-semibold text-brand">{copied ? t.account.copied : t.account.copy}</span>
                 </button>
               </>
             )}
@@ -54,7 +56,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           disabled={logout.isPending}
           className="h-12 w-full rounded-2xl bg-sand-soft text-[15px] font-semibold text-ink"
         >
-          로그아웃
+          {t.account.logout}
         </button>
       </div>
     </BottomSheet>

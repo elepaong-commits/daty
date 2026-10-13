@@ -2,10 +2,12 @@ import { Link } from 'react-router'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import type { Album } from '../../lib/types'
+import { useT } from '../../lib/i18n'
 
 const LAYER_TILTS = ['-rotate-6', 'rotate-5'] as const
 
 export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'small' }) {
+  const t = useT()
   const date = parseDateOnly(album.albumDate)
   const large = size === 'large'
   const firstPlace = album.places[0]
@@ -32,7 +34,7 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
         {album.highlightNote && (
           <div className="pt-2">
             <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375]">
-              <span className="font-bold text-amber-strong">⭐ 꼭 봐야 할 포인트</span>
+              <span className="font-bold text-amber-strong">⭐ {t.common.mustSee}</span>
               <span className="text-amber-ink">{album.highlightNote}</span>
             </div>
           </div>

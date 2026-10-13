@@ -1,8 +1,9 @@
 import timelineConnector from '../../assets/icons/timeline-connector.svg'
 import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
-import { daysBetween, isSameDay, toTimeInput, weekdayOf } from '../../lib/dates'
+import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
 import type { DateRecord } from '../../lib/types'
+import { useT } from '../../lib/i18n'
 
 export function DayTimeline({
   day,
@@ -15,17 +16,19 @@ export function DayTimeline({
   records: DateRecord[]
   onEdit: (record: DateRecord) => void
 }) {
+  const t = useT()
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between leading-normal">
         <h2 className="font-display text-[20px]">
-          {day.getMonth() + 1}월 {day.getDate()}일 ({weekdayOf(day)}){isSameDay(day, today) && ' · 오늘'}
+          {t.calendar.dayHeading(t.dates.monthDay(day), t.weekdays[day.getDay()]!)}
+          {isSameDay(day, today) && ` · ${t.calendar.today}`}
         </h2>
-        <span className="text-[12px] text-muted">{records.length}개의 일정</span>
+        <span className="text-[12px] text-muted">{t.calendar.scheduleCount(records.length)}</span>
       </div>
 
       {records.length === 0 ? (
-        <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">아직 일정이 없어요</p>
+        <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
       ) : (
         records.map((r) => <TimelineEntry key={r.id} record={r} today={today} onEdit={() => onEdit(r)} />)
       )}
@@ -34,6 +37,7 @@ export function DayTimeline({
 }
 
 function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: Date; onEdit: () => void }) {
+  const t = useT()
   const at = new Date(record.scheduledAt)
   const isPlan = record.type === 'PLAN'
   const category = categoryOf(record.category)
@@ -54,18 +58,18 @@ function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: D
       <article
         role="button"
         tabIndex={0}
-        aria-label={`${record.place?.name ?? record.title} 일정 수정`}
+        aria-label={t.calendar.editSchedule(record.place?.name ?? record.title)}
         onClick={onEdit}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEdit())}
         className={`flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left ${isPlan ? 'border-coral/30' : 'border-card-border'}`}
       >
         <div className="flex items-center justify-between">
           <span className="text-[11px] leading-normal font-semibold text-brand-strong">
-            {category.emoji} {category.label}
+            {category.emoji} {t.categories[category.value]}
           </span>
           {isPlan ? (
             <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[11px] leading-normal font-bold text-coral">
-              {dDay === 0 ? '예정 · D-DAY' : dDay > 0 ? `예정 · D-${dDay}` : '지난 예정'}
+              {t.calendar.dDay(dDay)}
             </span>
           ) : (
             record.rating !== null && <Stars value={record.rating} />

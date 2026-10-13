@@ -5,9 +5,12 @@ import { Field, inputClass } from '../../components/Field'
 import { categoryOf } from '../../lib/categories'
 import { parseDateOnly, toDateInput, toTimeInput } from '../../lib/dates'
 import { useCreateAlbum, useMonthRecords } from '../../lib/queries'
+import { errorMessage } from '../../lib/api'
+import { useT } from '../../lib/i18n'
 
 export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
   const createAlbum = useCreateAlbum()
+  const t = useT()
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(toDateInput(new Date()))
@@ -47,12 +50,12 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <BottomSheet title="새 앨범" onClose={onClose}>
+    <BottomSheet title={t.albums.newAlbum} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="앨범 이름">
-          <input required maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예) 성수동 카페 데이트" className={inputClass} />
+        <Field label={t.albums.name}>
+          <input required maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.albums.namePlaceholder} className={inputClass} />
         </Field>
-        <Field label="날짜">
+        <Field label={t.common.date}>
           <input
             required
             type="date"
@@ -66,9 +69,9 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
         </Field>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[12px] leading-normal font-semibold text-muted">이날 다녀온 곳</span>
+          <span className="text-[12px] leading-normal font-semibold text-muted">{t.albums.dayRecords}</span>
           {dayRecords.length === 0 ? (
-            <p className="text-[12px] text-muted">이 날짜에 아직 앨범에 묶이지 않은 기록이 없어요</p>
+            <p className="text-[12px] text-muted">{t.albums.noDayRecords}</p>
           ) : (
             dayRecords.map((r) => (
               <label key={r.id} className="flex items-center gap-2 rounded-xl border border-field-border bg-field px-3 py-2.5 text-[14px]">
@@ -80,20 +83,20 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        <Field label="꼭 봐야 할 포인트">
-          <input maxLength={300} value={highlight} onChange={(e) => setHighlight(e.target.value)} placeholder="예) 2층 창가에서 찍은 노을 사진" className={inputClass} />
+        <Field label={t.common.mustSee}>
+          <input maxLength={300} value={highlight} onChange={(e) => setHighlight(e.target.value)} placeholder={t.albums.highlightPlaceholder} className={inputClass} />
         </Field>
 
-        <p className="rounded-xl bg-sand-soft px-3 py-2 text-[12px] text-muted">📷 앨범을 만들면 바로 사진을 올릴 수 있어요</p>
+        <p className="rounded-xl bg-sand-soft px-3 py-2 text-[12px] text-muted">{t.albums.uploadHint}</p>
 
-        {createAlbum.error && <p className="text-[12px] text-coral-strong">저장하지 못했어요: {createAlbum.error.message}</p>}
+        {createAlbum.error && <p className="text-[12px] text-coral-strong">{t.common.saveFailed}: {errorMessage(createAlbum.error, t)}</p>}
 
         <button
           type="submit"
           disabled={!canSave}
           className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
         >
-          {createAlbum.isPending ? '저장 중…' : '앨범 만들기'}
+          {createAlbum.isPending ? t.common.saving : t.albums.create}
         </button>
       </form>
     </BottomSheet>

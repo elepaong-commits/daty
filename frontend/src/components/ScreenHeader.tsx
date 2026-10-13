@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import globeIcon from '../assets/icons/globe.svg'
 import { AccountSheet, Avatar } from '../features/auth/AccountSheet'
+import { LANGS, useI18n, useT } from '../lib/i18n'
 import { useMe } from '../lib/queries'
 
 interface Props {
@@ -30,12 +31,13 @@ export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
 }
 
 function AccountButton() {
+  const t = useT()
   const nickname = useMe().data?.user.nickname
   const [open, setOpen] = useState(false)
   if (!nickname) return null
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label="내 정보">
+      <button type="button" onClick={() => setOpen(true)} aria-label={t.common.myInfo}>
         <Avatar name={nickname} size="sm" />
       </button>
       {open && <AccountSheet onClose={() => setOpen(false)} />}
@@ -43,17 +45,25 @@ function AccountButton() {
   )
 }
 
-// Japanese is planned but not translated yet, so only Korean is selectable for now.
-function LanguageToggle() {
+export function LanguageToggle() {
+  const { lang, setLang, t } = useI18n()
   return (
-    <div className="flex h-7 items-center gap-0.5 rounded-full bg-white py-0.5 pr-0.5 pl-2" role="group" aria-label="언어">
+    <div className="flex h-7 items-center gap-0.5 rounded-full bg-white py-0.5 pr-0.5 pl-2" role="group" aria-label={t.common.language}>
       <img src={globeIcon} alt="" width={13} height={13} />
-      <span className="flex h-6 w-7 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white" aria-current="true">
-        한
-      </span>
-      <span className="flex h-6 w-7 items-center justify-center text-[11px] font-bold text-muted" title="일본어는 준비 중이에요" aria-disabled="true">
-        日
-      </span>
+      {LANGS.map(({ value, short }) => (
+        <button
+          key={value}
+          type="button"
+          lang={value}
+          onClick={() => setLang(value)}
+          aria-pressed={lang === value}
+          className={`flex h-6 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
+            lang === value ? 'bg-brand text-white' : 'text-muted'
+          }`}
+        >
+          {short}
+        </button>
+      ))}
     </div>
   )
 }

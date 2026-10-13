@@ -12,6 +12,7 @@ import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
 import { useCreateRecord, useDeleteRecord, useUpdateRecord } from '../../lib/queries'
 import type { DateRecord, PlaceCategory, RecordType } from '../../lib/types'
 import { PlaceSearch, type PickedPlace } from './PlaceSearch'
+import { useT } from '../../lib/i18n'
 
 interface Props {
   /** Editing an existing record; without it the sheet creates a new one on `initialDate`. */
@@ -21,12 +22,13 @@ interface Props {
   onSaved?: (scheduledAt: Date) => void
 }
 
-const TYPE_OPTIONS: { value: RecordType; label: string; activeClass: string }[] = [
-  { value: 'PLAN', label: '📌 예정된 데이트', activeClass: 'text-coral' },
-  { value: 'RECORD', label: '📸 다녀온 기록', activeClass: 'text-brand' },
+const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: string }[] = [
+  { value: 'PLAN', key: 'plan', activeClass: 'text-coral' },
+  { value: 'RECORD', key: 'record', activeClass: 'text-brand' },
 ]
 
 export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSaved }: Props) {
+  const t = useT()
   const editing = record !== undefined
   const createRecord = useCreateRecord()
   const updateRecord = useUpdateRecord(record?.id ?? 0)
@@ -100,13 +102,13 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   }
 
   function remove() {
-    if (record && window.confirm('이 일정을 삭제할까요?')) deleteRecord.mutate(record.id, { onSuccess: onClose })
+    if (record && window.confirm(t.schedule.confirmDelete)) deleteRecord.mutate(record.id, { onSuccess: onClose })
   }
 
   return (
-    <BottomSheet title={editing ? '데이트 일정 수정' : '데이트 일정 등록'} onClose={onClose}>
+    <BottomSheet title={editing ? t.schedule.titleEdit : t.schedule.titleNew} onClose={onClose}>
       <form onSubmit={submit}>
-        <div className="flex h-11 gap-2 rounded-2xl bg-segment p-1" role="radiogroup" aria-label="일정 종류">
+        <div className="flex h-11 gap-2 rounded-2xl bg-segment p-1" role="radiogroup" aria-label={t.schedule.kind}>
           {TYPE_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -118,21 +120,21 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                 type === option.value ? `bg-white ${option.activeClass}` : 'text-ink'
               }`}
             >
-              {option.label}
+              {t.schedule[option.key]}
             </button>
           ))}
         </div>
 
         <div className="flex gap-3 py-4">
-          <Field label="날짜" className="flex-1">
+          <Field label={t.common.date} className="flex-1">
             <PickerInput type="date" value={date} onChange={setDate} icon={editing ? calendarDaysIcon : calendarIcon} />
           </Field>
-          <Field label="시간" className="flex-1">
+          <Field label={t.common.time} className="flex-1">
             <PickerInput type="time" value={time} onChange={setTime} icon={editing ? clockOutlineIcon : clockIcon} />
           </Field>
         </div>
 
-        <Field label="구글 지도 링크">
+        <Field label={t.schedule.mapLink}>
           <div className={`${inputClass} flex items-center gap-2.5 focus-within:border-brand`}>
             {!editing && <span className="text-[16px]">📍</span>}
             <input
@@ -145,7 +147,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             />
             {editing &&
               (mapUrl.trim() ? (
-                <a href={mapUrl.trim()} target="_blank" rel="noreferrer" aria-label="지도에서 열기">
+                <a href={mapUrl.trim()} target="_blank" rel="noreferrer" aria-label={t.schedule.openInMap}>
                   <img src={mapPinIcon} alt="" width={16} height={16} />
                 </a>
               ) : (
@@ -153,9 +155,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               ))}
           </div>
         </Field>
-        {editing && <p className="pt-1.5 text-[11px] text-brand">💡 구글 지도 링크로 장소를 함께 확인해요.</p>}
+        {editing && <p className="pt-1.5 text-[11px] text-brand">{t.schedule.mapLinkHint}</p>}
 
-        <Field label="장소 이름" className="pt-4">
+        <Field label={t.common.placeName} className="pt-4">
           <PlaceSearch
             name={placeName}
             onNameChange={setPlaceName}
@@ -169,13 +171,13 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         </Field>
 
         <div className="flex flex-col gap-1.5 pt-4">
-          <span className="text-[12px] leading-normal font-semibold text-muted">장소 구분</span>
+          <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.placeCategory}</span>
           <div className="flex flex-wrap gap-2">
             {FORM_CATEGORY_ORDER.map((value) => {
               const c = categoryOf(value)
               return (
                 <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                  {c.emoji} {c.label}
+                  {c.emoji} {t.categories[value]}
                 </Chip>
               )
             })}
@@ -184,15 +186,15 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
 
         {type === 'RECORD' && (
           <div className="flex flex-col gap-1.5 pt-4">
-            <span className="text-[12px] leading-normal font-semibold text-muted">별점</span>
-            <div className="flex gap-1" role="radiogroup" aria-label="별점">
+            <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.rating}</span>
+            <div className="flex gap-1" role="radiogroup" aria-label={t.common.rating}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
                   type="button"
                   role="radio"
                   aria-checked={rating === n}
-                  aria-label={`${n}점`}
+                  aria-label={t.common.points(n)}
                   onClick={() => setRating(n)}
                   className={`text-[26px] leading-none ${n <= rating ? 'text-amber' : 'text-chip-border'}`}
                 >
@@ -203,35 +205,35 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
           </div>
         )}
 
-        <Field label="메모 · 꼭 해야 할 것" className="pt-4">
+        <Field label={t.schedule.memo} className="pt-4">
           <textarea
             rows={3}
             maxLength={1000}
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            placeholder="예) 이건 꼭 먹어야 해! 시그니처 몽블랑"
+            placeholder={t.schedule.memoPlaceholder}
             className={`${inputClass} h-[85px] resize-none py-2.5 leading-normal`}
           />
         </Field>
 
-        {error && <p className="pt-3 text-[12px] text-coral-strong">저장하지 못했어요: {errorMessage(error)}</p>}
+        {error && <p className="pt-3 text-[12px] text-coral-strong">{t.common.saveFailed}: {errorMessage(error, t)}</p>}
 
         {editing ? (
           <>
             <div className="flex gap-3 pt-5">
               <button type="button" onClick={onClose} className="h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted">
-                취소
+                {t.common.cancel}
               </button>
               <button
                 type="submit"
                 disabled={!canSave}
                 className="h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50"
               >
-                {updateRecord.isPending ? '저장 중…' : '변경사항 저장'}
+                {updateRecord.isPending ? t.common.saving : t.common.saveChanges}
               </button>
             </div>
             <button type="button" onClick={remove} disabled={busy} className="mx-auto mt-4 block text-[12px] text-muted underline">
-              이 일정 삭제
+              {t.schedule.delete}
             </button>
           </>
         ) : (
@@ -241,7 +243,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               disabled={!canSave}
               className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
             >
-              {createRecord.isPending ? '저장 중…' : '일정 저장'}
+              {createRecord.isPending ? t.common.saving : t.schedule.save}
             </button>
           </div>
         )}

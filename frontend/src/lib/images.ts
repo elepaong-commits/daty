@@ -1,3 +1,5 @@
+import { ImageError } from './api'
+
 // Phone originals run 5–10MB; albums only need screen-sized images, so photos are shrunk before upload.
 const MAX_EDGE = 2048
 const JPEG_QUALITY = 0.85
@@ -14,7 +16,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   const [bitmap, takenAt] = await Promise.all([
     // Rotated per EXIF orientation by default.
     createImageBitmap(file).catch(() => {
-      throw new Error(`${file.name}: 열 수 없는 사진 형식이에요`)
+      throw new ImageError(file.name, 'IMAGE_UNREADABLE')
     }),
     readTakenAt(file),
   ])
@@ -28,7 +30,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   bitmap.close()
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
-  if (!blob) throw new Error(`${file.name}: 사진을 변환하지 못했어요`)
+  if (!blob) throw new ImageError(file.name, 'IMAGE_ENCODE_FAILED')
   return { blob, contentType: 'image/jpeg', takenAt }
 }
 

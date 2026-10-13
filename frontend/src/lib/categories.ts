@@ -1,13 +1,13 @@
 import type { PlaceCategory, TipType } from './types'
 
-// Order matches the filter chips on the map screen.
-export const CATEGORIES: { value: PlaceCategory; emoji: string; label: string }[] = [
-  { value: 'FOOD', emoji: '🍽️', label: '식당' },
-  { value: 'CAFE', emoji: '☕', label: '카페' },
-  { value: 'EXHIBIT', emoji: '🎨', label: '전시회' },
-  { value: 'TOUR', emoji: '🏞️', label: '관광지' },
-  { value: 'BAR', emoji: '🍷', label: '술집' },
-  { value: 'ACTIVITY', emoji: '🚲', label: '액티비티' },
+// Order matches the filter chips on the map screen. Labels live in `t.categories`.
+export const CATEGORIES: { value: PlaceCategory; emoji: string }[] = [
+  { value: 'FOOD', emoji: '🍽️' },
+  { value: 'CAFE', emoji: '☕' },
+  { value: 'EXHIBIT', emoji: '🎨' },
+  { value: 'TOUR', emoji: '🏞️' },
+  { value: 'BAR', emoji: '🍷' },
+  { value: 'ACTIVITY', emoji: '🚲' },
 ]
 
 // The schedule form lists tourist spots first.
@@ -20,10 +20,11 @@ const byValue = Object.fromEntries(CATEGORIES.map((c) => [c.value, c])) as Recor
 
 export const categoryOf = (value: PlaceCategory) => byValue[value]
 
-export const TIPS: Record<TipType, { label: string; className: string }> = {
-  EAT: { label: '🔥 이건 꼭 먹어야 해!', className: 'bg-coral-soft text-coral-strong' },
-  SEE: { label: '👀 꼭 봐야 돼', className: 'bg-amber-soft text-amber-strong' },
-  DO: { label: '✨ 꼭 해 봐', className: 'bg-brand-soft text-brand-strong' },
+// Labels live in `t.tips`.
+export const TIP_CLASSES: Record<TipType, string> = {
+  EAT: 'bg-coral-soft text-coral-strong',
+  SEE: 'bg-amber-soft text-amber-strong',
+  DO: 'bg-brand-soft text-brand-strong',
 }
 
 // Placeholder photo stacks until real photos are uploaded (gradients from the design).
