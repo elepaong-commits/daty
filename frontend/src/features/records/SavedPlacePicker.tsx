@@ -5,12 +5,12 @@ import type { Place } from '../../lib/types'
 
 interface Props {
   places: Place[]
-  selectedId: number | null
+  selectedIds: number[]
   onSelect: (place: Place) => void
 }
 
-/** Pick one of the couple's saved places; places they want to go come first. */
-export function SavedPlacePicker({ places, selectedId, onSelect }: Props) {
+/** Pick from the couple's saved places; places they want to go come first. */
+export function SavedPlacePicker({ places, selectedIds, onSelect }: Props) {
   const t = useT()
   const [query, setQuery] = useState('')
   const listed = useMemo(() => {
@@ -35,7 +35,7 @@ export function SavedPlacePicker({ places, selectedId, onSelect }: Props) {
       <ul className="scrollbar-none flex max-h-[188px] flex-col gap-1.5 overflow-y-auto" role="listbox" aria-label={t.schedule.place}>
         {listed.length === 0 && <li className="py-3 text-center text-[12px] text-muted">{t.schedule.noMatch}</li>}
         {listed.map((place) => {
-          const selected = place.id === selectedId
+          const selected = selectedIds.includes(place.id)
           const category = categoryOf(place.category)
           return (
             <li key={place.id} role="option" aria-selected={selected}>
