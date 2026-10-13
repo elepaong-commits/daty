@@ -1,17 +1,21 @@
 import { Router } from "express";
 import { z } from "zod";
-import { PlaceCategory, PlaceStatus, TipType } from "../generated/prisma/client.js";
+import { PlaceCategory, PlaceStatus, Prisma } from "../generated/prisma/client.js";
 import type { Place } from "../generated/prisma/client.js";
 import { idParam, toDateOnly } from "../lib/http.js";
+import { HttpError } from "../middlewares/error-handler.js";
 import { prisma } from "../lib/prisma.js";
 import { serializePhoto } from "../lib/storage.js";
 
 export const placesRouter = Router();
 
-type PlaceWithVisits = Place & { records: { rating: number | null; scheduledAt: Date }[] };
+type PlaceWithVisits = Place & {
+  records: { rating: number | null; scheduledAt: Date }[];
+  notes: { content: string }[];
+};
 
-/** Decimal → number, plus visit stats derived from the couple's RECORD entries. */
-export function serializePlace({ records, latitude, longitude, ...place }: PlaceWithVisits) {
+/** Decimal → number, plus visit stats derived from the couple's RECORD entries and the newest memo. */
+export function serializePlace({ records, notes, latitude, longitude, ...place }: PlaceWithVisits) {
   const ratings = records.map((r) => r.rating).filter((r): r is number => r !== null);
   const lastVisitedAt = records.reduce<Date | null>(
     (latest, r) => (latest === null || r.scheduledAt > latest ? r.scheduledAt : latest),
@@ -24,12 +28,24 @@ export function serializePlace({ records, latitude, longitude, ...place }: Place
     visitCount: records.length,
     rating: ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : null,
     lastVisitedAt,
+    latestNote: notes[0]?.content ?? null,
   };
 }
 
 export const visitsInclude = {
   records: { where: { type: "RECORD" }, select: { rating: true, scheduledAt: true } },
+  notes: { orderBy: { createdAt: "desc" }, take: 1, select: { content: true } },
 } as const;
+
+const noteSelect = {
+  id: true,
+  content: true,
+  createdAt: true,
+  writer: { select: { id: true, nickname: true } },
+} as const;
+
+// Tags are stored inline as `{{EAT}}`-style tokens so each viewer sees them in their own language.
+const noteContent = z.string().trim().min(1).max(500);
 
 const listQuery = z.object({
   status: z.enum(PlaceStatus).optional(),
@@ -45,8 +61,6 @@ const placeBody = z.object({
   longitude: z.number().min(-180).max(180).nullish(),
   googleMapsUrl: z.url().max(500).nullish(),
   googlePlaceId: z.string().max(200).nullish(),
-  tipType: z.enum(TipType).nullish(),
-  tipText: z.string().trim().max(200).nullish(),
 });
 
 placesRouter.get("/", async (req, res) => {
@@ -59,22 +73,38 @@ placesRouter.get("/", async (req, res) => {
   res.json(places.map(serializePlace));
 });
 
+const createBody = placeBody.extend({ note: noteContent.optional() });
+
 placesRouter.post("/", async (req, res) => {
-  const data = placeBody.parse(req.body);
-  const place = await prisma.place.create({
-    data: { ...data, coupleId: req.coupleId },
-    include: visitsInclude,
-  });
-  res.status(201).json(serializePlace(place));
+  const { note, ...data } = createBody.parse(req.body);
+  const { coupleId, userId } = req;
+  try {
+    const place = await prisma.place.create({
+      data: {
+        ...data,
+        coupleId,
+        ...(note && { notes: { create: { coupleId, writerId: userId, content: note } } }),
+      },
+      include: visitsInclude,
+    });
+    res.status(201).json(serializePlace(place));
+  } catch (err) {
+    // The same Google place is already on the couple's map.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new HttpError(409, "Place already exists", "PLACE_EXISTS");
+    }
+    throw err;
+  }
 });
 
-// Detail screen: the place, its latest visit, and the albums its visits were saved in.
+// Detail screen: the place, its latest visit, its memos, and the albums its visits were saved in.
 placesRouter.get("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
   const place = await prisma.place.findFirstOrThrow({
     where: { id, coupleId: req.coupleId },
     include: {
       ...visitsInclude,
+      notes: { orderBy: { createdAt: "desc" }, select: noteSelect },
       records: {
         where: { type: "RECORD" },
         orderBy: { scheduledAt: "desc" },
@@ -100,6 +130,7 @@ placesRouter.get("/:id", async (req, res) => {
   const latest = place.records[0];
   res.json({
     ...serializePlace(place),
+    notes: place.notes,
     latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
     albums: await Promise.all(
       albums.map(async ({ _count, albumDate, photos, ...album }) => ({
@@ -145,5 +176,23 @@ placesRouter.patch("/:id", async (req, res) => {
 placesRouter.delete("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
   await prisma.place.delete({ where: { id, coupleId: req.coupleId } });
+  res.status(204).end();
+});
+
+placesRouter.post("/:id/notes", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const { content } = z.object({ content: noteContent }).parse(req.body);
+  const { coupleId, userId } = req;
+  await prisma.place.findFirstOrThrow({ where: { id, coupleId }, select: { id: true } });
+  const note = await prisma.placeNote.create({
+    data: { coupleId, placeId: id, writerId: userId, content },
+    select: noteSelect,
+  });
+  res.status(201).json(note);
+});
+
+placesRouter.delete("/:id/notes/:noteId", async (req, res) => {
+  const { id, noteId } = idParam.extend({ noteId: z.coerce.number().int().positive() }).parse(req.params);
+  await prisma.placeNote.delete({ where: { id: noteId, placeId: id, coupleId: req.coupleId } });
   res.status(204).end();
 });

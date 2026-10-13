@@ -2,10 +2,13 @@ import { Link } from 'react-router'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import type { Album } from '../../lib/types'
+import { useT } from '../../lib/i18n'
+import { useImageFailed } from '../../lib/useImageFailed'
 
 const LAYER_TILTS = ['-rotate-6', 'rotate-5'] as const
 
 export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'small' }) {
+  const t = useT()
   const date = parseDateOnly(album.albumDate)
   const large = size === 'large'
   const firstPlace = album.places[0]
@@ -32,7 +35,7 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
         {album.highlightNote && (
           <div className="pt-2">
             <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375]">
-              <span className="font-bold text-amber-strong">⭐ 꼭 봐야 할 포인트</span>
+              <span className="font-bold text-amber-strong">⭐ {t.common.mustSee}</span>
               <span className="text-amber-ink">{album.highlightNote}</span>
             </div>
           </div>
@@ -50,17 +53,9 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   // The best cut sits on top of the pile.
   const photos = [...album.photos].sort((a, b) => Number(b.id === album.coverPhotoId) - Number(a.id === album.coverPhotoId)).slice(0, 3)
 
-  const layer = (i: number) => {
-    const photo = photos[i]
-    const [from, to] = gradients[i % gradients.length]!
-    return photo?.imageUrl ? (
-      <img src={photo.imageUrl} alt="" className="size-full object-cover" />
-    ) : (
-      <div className="flex size-full items-center justify-center" style={{ background: `linear-gradient(${from}, ${to})` }}>
-        <span className="text-[40px] leading-none [text-shadow:0_4px_6px_rgba(0,0,0,0.18)]">{i === 0 ? emoji : ''}</span>
-      </div>
-    )
-  }
+  const layer = (i: number) => (
+    <StackLayer src={photos[i]?.imageUrl} gradient={gradients[i % gradients.length]!} emoji={i === 0 ? emoji : ''} />
+  )
 
   return (
     <div className={`relative w-full ${heightClass}`}>
@@ -81,6 +76,17 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
           📷 {album.photoCount}
         </span>
       </div>
+    </div>
+  )
+}
+
+/** One print in the pile; a photo whose file is gone falls back to the gradient. */
+function StackLayer({ src, gradient: [from, to], emoji }: { src: string | null | undefined; gradient: [string, string]; emoji: string }) {
+  const { failed, onError } = useImageFailed(src)
+  if (src && !failed) return <img src={src} alt="" onError={onError} className="size-full object-cover" />
+  return (
+    <div className="flex size-full items-center justify-center" style={{ background: `linear-gradient(${from}, ${to})` }}>
+      <span className="text-[40px] leading-none [text-shadow:0_4px_6px_rgba(0,0,0,0.18)]">{emoji}</span>
     </div>
   )
 }

@@ -5,10 +5,13 @@ import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
+import { useT } from '../../lib/i18n'
+import { useImageFailed } from '../../lib/useImageFailed'
 
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
+  const t = useT()
   const updateAlbum = useUpdateAlbum(id)
   const deletePhotos = useDeletePhotos(id)
   const uploadPhotos = useUploadPhotos(id)
@@ -42,18 +45,18 @@ export function AlbumDetailPage() {
   }
 
   function removeSelected() {
-    if (!window.confirm(`사진 ${selected.size}장을 삭제할까요?`)) return
+    if (!window.confirm(t.albums.confirmDelete(selected.size))) return
     deletePhotos.mutate([...selected], { onSuccess: toggleSelecting })
   }
 
   const header = (
     <SubHeader
-      eyebrow="추억 갤러리 · 앨범 상세"
-      title="우리의 데이트 앨범"
+      eyebrow={t.albums.detailEyebrow}
+      title={t.albums.detailTitle}
       fallback="/albums"
       action={
         album && album.photoCount > 0 ? (
-          <HeaderAction onClick={toggleSelecting}>{selecting ? '완료' : '선택'}</HeaderAction>
+          <HeaderAction onClick={toggleSelecting}>{selecting ? t.albums.done : t.albums.select}</HeaderAction>
         ) : undefined
       }
     />
@@ -81,7 +84,7 @@ export function AlbumDetailPage() {
             {formatSlashDay(date)} · {album.title}
           </h2>
           <p className="text-[12px] leading-normal text-muted">
-            {formatDotted(date)} · 사진 {album.photoCount}장
+            {formatDotted(date)} · {t.common.photos(album.photoCount)}
           </p>
           {firstPlace && (
             <div className="flex gap-1.5 text-[11px] font-semibold">
@@ -93,13 +96,13 @@ export function AlbumDetailPage() {
 
         {album.highlightNote && (
           <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
-            <span className="text-[12px] font-bold text-amber-strong">⭐ 꼭 봐야 할 포인트</span>
+            <span className="text-[12px] font-bold text-amber-strong">⭐ {t.common.mustSee}</span>
             <p className="text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
           </div>
         )}
 
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-[18px]">그날의 순간들</h3>
+          <h3 className="font-display text-[18px]">{t.albums.moments}</h3>
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -107,22 +110,22 @@ export function AlbumDetailPage() {
             className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
           >
             {uploadPhotos.progress
-              ? `올리는 중 ${uploadPhotos.progress.done}/${uploadPhotos.progress.total}`
-              : '+ 사진 추가'}
+              ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total)
+              : t.albums.addPhotos}
           </button>
           <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
         </div>
 
-        {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error)}</p>}
+        {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error, t)}</p>}
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
-          <p className="text-[12px] text-coral-strong">사진 {uploadPhotos.data.failed}장은 올리지 못했어요</p>
+          <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}
 
         {album.photos.length === 0 ? (
           <p className="rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
-            아직 사진이 없어요
+            {t.albums.empty}
             <br />
-            <span className="text-[11px]">+ 사진 추가로 그날의 사진을 올려 보세요</span>
+            <span className="text-[11px]">{t.albums.emptyHint}</span>
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
@@ -137,10 +140,10 @@ export function AlbumDetailPage() {
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
-                  {photo.imageUrl && <img src={photo.imageUrl} alt="" loading="lazy" className="size-full object-cover" />}
+                  <GridPhoto src={photo.imageUrl} />
                   {photo.id === album.coverPhotoId && (
                     <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
-                      ★ 베스트 컷
+                      {t.albums.bestCut}
                     </span>
                   )}
                   {selecting && (
@@ -161,7 +164,7 @@ export function AlbumDetailPage() {
 
       {selecting && (
         <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3">
-          {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError)}</p>}
+          {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError, t)}</p>}
           <div className="flex gap-3">
             <button
               type="button"
@@ -169,7 +172,7 @@ export function AlbumDetailPage() {
               disabled={selected.size !== 1 || updateAlbum.isPending}
               className="h-11 flex-1 rounded-2xl bg-amber-soft text-[14px] font-semibold text-amber-strong disabled:opacity-40"
             >
-              ★ 베스트 컷으로
+              {t.albums.makeBestCut}
             </button>
             <button
               type="button"
@@ -177,11 +180,25 @@ export function AlbumDetailPage() {
               disabled={selected.size === 0 || deletePhotos.isPending}
               className="h-11 flex-1 rounded-2xl bg-coral-soft text-[14px] font-semibold text-coral-strong disabled:opacity-40"
             >
-              삭제{selected.size > 0 && ` (${selected.size})`}
+              {t.albums.delete}
+              {selected.size > 0 && ` (${selected.size})`}
             </button>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+/** Grid image; a photo whose file is gone says so, so it can still be selected and deleted. */
+function GridPhoto({ src }: { src: string | null }) {
+  const t = useT()
+  const { failed, onError } = useImageFailed(src)
+  if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
+  return (
+    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
+      <span className="text-[18px]">⚠️</span>
+      {t.albums.missingPhoto}
+    </span>
   )
 }

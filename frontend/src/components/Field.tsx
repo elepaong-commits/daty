@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { errorMessage } from '../lib/api'
+import { useT } from '../lib/i18n'
 
 export const inputClass =
   'h-11 w-full rounded-xl border border-field-border bg-field px-3 text-[14px] text-ink placeholder:text-placeholder outline-none focus:border-brand'
@@ -38,7 +40,8 @@ export function Chip({
 }
 
 export function QueryState({ isLoading, error }: { isLoading: boolean; error: Error | null }) {
-  if (isLoading) return <p className="py-10 text-center text-[13px] text-muted">불러오는 중…</p>
-  if (error) return <p className="py-10 text-center text-[13px] text-coral-strong">불러오지 못했어요: {error.message}</p>
+  const t = useT()
+  if (isLoading) return <p className="py-10 text-center text-[13px] text-muted">{t.common.loading}</p>
+  if (error) return <p className="py-10 text-center text-[13px] text-coral-strong">{t.common.loadFailed}: {errorMessage(error, t)}</p>
   return null
 }

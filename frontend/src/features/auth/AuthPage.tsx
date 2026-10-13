@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
+import { LanguageToggle } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
 import { useLogin, useSignup } from '../../lib/queries'
+import { useT } from '../../lib/i18n'
 
 type Mode = 'login' | 'signup'
 
 export function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
+  const t = useT()
   const login = useLogin()
   const signup = useSignup()
   const [email, setEmail] = useState('')
@@ -32,8 +35,11 @@ export function AuthPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
+      <div className="flex justify-end">
+        <LanguageToggle />
+      </div>
       <div className="pb-8 text-center">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">우리 둘의 데이트 기록</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
 
@@ -47,26 +53,26 @@ export function AuthPage() {
             onClick={() => switchMode(value)}
             className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
           >
-            {value === 'login' ? '로그인' : '회원가입'}
+            {value === 'login' ? t.auth.login : t.auth.signup}
           </button>
         ))}
       </div>
 
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
         {mode === 'signup' && (
-          <Field label="닉네임">
+          <Field label={t.auth.nickname}>
             <input
               required
               maxLength={20}
               autoComplete="nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="예) 토끼"
+              placeholder={t.auth.nicknamePlaceholder}
               className={inputClass}
             />
           </Field>
         )}
-        <Field label="이메일">
+        <Field label={t.auth.email}>
           <input
             required
             type="email"
@@ -77,7 +83,7 @@ export function AuthPage() {
             className={inputClass}
           />
         </Field>
-        <Field label={mode === 'signup' ? '비밀번호 (8자 이상)' : '비밀번호'}>
+        <Field label={mode === 'signup' ? t.auth.newPassword : t.auth.password}>
           <input
             required
             type="password"
@@ -90,14 +96,14 @@ export function AuthPage() {
           />
         </Field>
 
-        {active.error && <p className="text-[12px] text-coral-strong">{errorMessage(active.error)}</p>}
+        {active.error && <p className="text-[12px] text-coral-strong">{errorMessage(active.error, t)}</p>}
 
         <button
           type="submit"
           disabled={!canSubmit || active.isPending}
           className="mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
         >
-          {active.isPending ? '잠시만요…' : mode === 'login' ? '로그인' : '가입하기'}
+          {active.isPending ? t.common.wait : mode === 'login' ? t.auth.login : t.auth.signupSubmit}
         </button>
       </form>
     </div>

@@ -3,6 +3,7 @@
 export type PlaceCategory = 'FOOD' | 'CAFE' | 'EXHIBIT' | 'TOUR' | 'BAR' | 'ACTIVITY'
 export type PlaceStatus = 'WISH' | 'VISITED'
 export type RecordType = 'PLAN' | 'RECORD'
+/** Tags a memo can carry, stored inline as `{{EAT}}` tokens (see `lib/memo.ts`). */
 export type TipType = 'EAT' | 'SEE' | 'DO'
 
 export interface Member {
@@ -33,11 +34,30 @@ export interface Place {
   latitude: number | null
   longitude: number | null
   googleMapsUrl: string | null
-  tipType: TipType | null
-  tipText: string | null
+  googlePlaceId: string | null
   visitCount: number
   rating: number | null
   lastVisitedAt: string | null
+  latestNote: string | null // newest memo, with tag tokens
+}
+
+export interface PlaceNote {
+  id: number
+  content: string // may contain `{{EAT}}`-style tag tokens
+  createdAt: string
+  writer: { id: number; nickname: string } | null
+}
+
+export interface CreatePlaceInput {
+  name: string
+  category: PlaceCategory
+  status: PlaceStatus
+  googleMapsUrl?: string
+  googlePlaceId?: string
+  address?: string
+  latitude?: number
+  longitude?: number
+  note?: string // first memo
 }
 
 export interface DateRecord {
@@ -78,7 +98,9 @@ export interface CreateRecordInput {
   type: RecordType
   scheduledAt: string
   category: PlaceCategory
-  placeName: string
+  // A saved place by id, or a name that is matched or created.
+  placeId?: number
+  placeName?: string
   googleMapsUrl?: string
   // From Google place search; a place without coordinates gets no map pin.
   googlePlaceId?: string
@@ -98,6 +120,7 @@ export interface CreateAlbumInput {
 
 /** GET /api/places/:id */
 export interface PlaceDetail extends Place {
+  notes: PlaceNote[] // newest first
   latestVisit: { recordId: number; scheduledAt: string; rating: number | null } | null
   albums: {
     id: number
@@ -114,8 +137,6 @@ export interface UpdatePlaceInput {
   category?: PlaceCategory
   status?: PlaceStatus
   address?: string | null
-  tipType?: TipType | null
-  tipText?: string | null
   visit?: { scheduledAt: string; rating: number | null }
 }
 
@@ -125,6 +146,7 @@ export interface UpdateRecordInput {
   category?: PlaceCategory
   memo?: string | null
   rating?: number | null
+  placeId?: number
   placeName?: string
   googleMapsUrl?: string
   googlePlaceId?: string

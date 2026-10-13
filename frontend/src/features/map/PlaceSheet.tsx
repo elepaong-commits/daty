@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
-import { categoryOf, TIPS } from '../../lib/categories'
+import { categoryOf } from '../../lib/categories'
 import { formatMonthDay } from '../../lib/dates'
 import type { Place, PlaceStatus } from '../../lib/types'
+import { useT } from '../../lib/i18n'
 
 interface Props {
   places: Place[]
@@ -14,6 +16,7 @@ interface Props {
 /** Sheet over the bottom of the map: a swipeable card row, or a full list when expanded. Cards open the place. */
 export function PlaceSheet({ places, status, selectedId }: Props) {
   const navigate = useNavigate()
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
   const cardRefs = useRef(new Map<number, HTMLElement>())
 
@@ -26,22 +29,23 @@ export function PlaceSheet({ places, status, selectedId }: Props) {
     <section
       className={`absolute inset-x-0 bottom-0 flex flex-col rounded-t-[26px] bg-white shadow-sheet ${expanded ? 'top-0' : 'h-[238px]'}`}
     >
-      <button type="button" onClick={() => setExpanded((e) => !e)} className="flex justify-center pt-2.5 pb-1" aria-label={expanded ? '목록 접기' : '목록 펼치기'}>
+      <button type="button" onClick={() => setExpanded((e) => !e)} className="flex justify-center pt-2.5 pb-1" aria-label={expanded ? t.map.collapseList : t.map.expandList}>
         <span className="h-1.5 w-10 rounded-full bg-handle" />
       </button>
       <div className="flex items-center justify-between px-5 pb-2.5">
         <h2 className="font-display text-[18px] leading-normal">
-          {status === 'VISITED' ? '갔던 ' : '가고 싶은 '}
-          <span className="text-brand">{places.length}</span>곳
+          {t.map.sheetHeading[status][0]}
+          <span className="text-brand">{places.length}</span>
+          {t.map.sheetHeading[status][1]}
         </h2>
         <button type="button" onClick={() => setExpanded((e) => !e)} className="text-[12px] font-semibold text-brand">
-          {expanded ? '지도 보기' : '전체 보기'}
+          {expanded ? t.map.viewMap : t.map.viewAll}
         </button>
       </div>
 
       {places.length === 0 ? (
         <p className="px-5 py-6 text-center text-[13px] text-muted">
-          {status === 'VISITED' ? '아직 다녀온 곳이 없어요' : '가고 싶은 곳을 일정으로 추가해 보세요'}
+          {t.map.empty[status]}
         </p>
       ) : (
         <div
@@ -82,7 +86,7 @@ function PlaceCard({
   ref: (el: HTMLButtonElement | null) => void
 }) {
   const category = categoryOf(place.category)
-  const tip = place.tipType ? TIPS[place.tipType] : null
+  const t = useT()
 
   return (
     <button
@@ -96,7 +100,7 @@ function PlaceCard({
     >
       <div className="flex w-full items-start justify-between">
         <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-          {category.emoji} {category.label}
+          {category.emoji} {t.categories[category.value]}
         </span>
         {place.address && <span className="text-[11px] leading-normal text-muted">📍 {place.address}</span>}
       </div>
@@ -108,18 +112,13 @@ function PlaceCard({
             <span className="text-[13px] font-bold">{place.rating.toFixed(1)}</span>
           </>
         ) : (
-          <span className="text-[12px] text-muted">{place.status === 'WISH' ? '아직 안 가 봤어요' : '별점 없음'}</span>
+          <span className="text-[12px] text-muted">{place.status === 'WISH' ? t.common.notVisitedYet : t.map.noRating}</span>
         )}
         {place.lastVisitedAt && (
-          <span className="text-[12px] text-muted">{'·\u3000'}{formatMonthDay(new Date(place.lastVisitedAt))} 방문</span>
+          <span className="text-[12px] text-muted">{'·\u3000'}{t.map.visitedOn(formatMonthDay(new Date(place.lastVisitedAt)))}</span>
         )}
       </div>
-      {tip && place.tipText && (
-        <div className="flex w-full items-center gap-2">
-          <span className={`shrink-0 rounded-lg px-2 py-1 text-[11px] leading-normal font-bold ${tip.className}`}>{tip.label}</span>
-          <span className="min-w-0 flex-1 truncate text-[12.5px] leading-normal">{place.tipText}</span>
-        </div>
-      )}
+      {place.latestNote && <MemoText content={place.latestNote} className="w-full truncate text-[12.5px] leading-[1.75]" />}
     </button>
   )
 }

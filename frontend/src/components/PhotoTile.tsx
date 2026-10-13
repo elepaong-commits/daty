@@ -1,7 +1,8 @@
 import { categoryOf, PHOTO_GRADIENTS } from '../lib/categories'
 import type { PlaceCategory } from '../lib/types'
+import { useImageFailed } from '../lib/useImageFailed'
 
-/** A photo, or the category's gradient + emoji while no photo has been uploaded yet. */
+/** A photo, or the category's gradient + emoji while there is none (or its file is gone). */
 export function PhotoTile({
   src,
   category,
@@ -13,7 +14,8 @@ export function PhotoTile({
   className?: string
   emojiSize?: number
 }) {
-  if (src) return <img src={src} alt="" loading="lazy" className={`object-cover ${className}`} />
+  const { failed, onError } = useImageFailed(src)
+  if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className={`object-cover ${className}`} />
   const [from, to] = PHOTO_GRADIENTS[category][0]!
   return (
     <div className={`flex items-center justify-center ${className}`} style={{ background: `linear-gradient(${from}, ${to})` }}>

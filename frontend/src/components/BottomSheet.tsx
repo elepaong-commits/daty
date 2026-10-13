@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { useT } from '../lib/i18n'
 
 interface Props {
   title: string
@@ -8,6 +9,7 @@ interface Props {
 
 /** Modal sheet that slides up over the current screen (design: "Schedule modal overlay"). */
 export function BottomSheet({ title, onClose, children }: Props) {
+  const t = useT()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -27,7 +29,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
             type="button"
             onClick={onClose}
             className="flex size-8 items-center justify-center rounded-full bg-sand-soft text-[14px]"
-            aria-label="닫기"
+            aria-label={t.common.close}
           >
             ✕
           </button>

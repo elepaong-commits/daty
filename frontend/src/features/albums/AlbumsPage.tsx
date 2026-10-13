@@ -5,8 +5,10 @@ import { ScreenHeader } from '../../components/ScreenHeader'
 import { useAlbums } from '../../lib/queries'
 import { AlbumCard } from './AlbumCard'
 import { CreateAlbumSheet } from './CreateAlbumSheet'
+import { useT } from '../../lib/i18n'
 
 export function AlbumsPage() {
+  const t = useT()
   const { data: albums = [], isLoading, error } = useAlbums()
   const [sheetOpen, setSheetOpen] = useState(false)
   const photoTotal = albums.reduce((sum, a) => sum + a.photoCount, 0)
@@ -16,20 +18,20 @@ export function AlbumsPage() {
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
         <ScreenHeader
-          eyebrow="추억 갤러리"
-          title="데이트 앨범"
+          eyebrow={t.albums.eyebrow}
+          title={t.albums.title}
           actions={
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
               className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white"
             >
-              <img src={plusIcon} alt="" width={16} height={16} />새 앨범
+              <img src={plusIcon} alt="" width={16} height={16} />{t.albums.newAlbum}
             </button>
           }
         >
           <p className="text-[12px] leading-normal text-muted">
-            📷 사진 여러 장을 한 번에 선택하면 날짜·장소별로 묶어 드려요 · 앨범 {albums.length}개 · 사진 {photoTotal}장
+            {t.albums.summary(albums.length, photoTotal)}
           </p>
         </ScreenHeader>
 
@@ -47,10 +49,11 @@ export function AlbumsPage() {
                 className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4"
               >
                 <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white">+</span>
-                <span className="text-[14px] font-bold text-brand-strong">새 앨범 만들기</span>
+                <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>
                 <span className="text-center text-[11px] leading-[1.375] text-muted">
-                  사진 여러 장을
-                  <br />한 번에 선택하세요
+                  {t.albums.createCardHint[0]}
+                  <br />
+                  {t.albums.createCardHint[1]}
                 </span>
               </button>
             </div>

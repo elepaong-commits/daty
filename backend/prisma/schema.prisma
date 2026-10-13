@@ -27,11 +27,6 @@ enum RecordType {
   RECORD
 }
 
-enum TipType {
-  EAT
-  SEE
-  DO
-}
 model Couple {
   id              Int          @id @default(autoincrement())
   coupleCode      String       @unique @map("couple_code")
@@ -41,6 +36,7 @@ model Couple {
   records         DateRecord[]
   places          Place[]
   albums          Album[]
+  placeNotes      PlaceNote[]
 
   @@map("couples")
 }
@@ -55,6 +51,7 @@ model User {
   createdAt       DateTime     @default(now()) @map("created_at")
   couple          Couple?      @relation(fields: [coupleId], references: [id])
   writtenRecords  DateRecord[]
+  placeNotes      PlaceNote[]
 
   @@map("users")
 }
@@ -70,16 +67,31 @@ model Place {                       // 지도 핀
   longitude     Decimal?      @db.Decimal(9, 6)
   googleMapsUrl String?       @map("google_maps_url")
   googlePlaceId String?       @map("google_place_id")
-  tipType       TipType?      @map("tip_type")
-  tipText       String?       @map("tip_text")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   couple        Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
   records       DateRecord[]
+  notes         PlaceNote[]
 
   @@unique([coupleId, googlePlaceId])
   @@index([coupleId, status, category])
   @@map("places")
+}
+
+// 장소 메모. 본문에 {{EAT}} 같은 태그 토큰이 들어가고, 화면에서 보는 사람의 언어로 표시된다
+model PlaceNote {
+  id        Int      @id @default(autoincrement())
+  coupleId  Int      @map("couple_id")
+  placeId   Int      @map("place_id")
+  writerId  Int?     @map("writer_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  writer    User?    @relation(fields: [writerId], references: [id], onDelete: SetNull)
+
+  @@index([placeId, createdAt])
+  @@map("place_notes")
 }
 
 model DateRecord {                  // 캘린더 일정 + 기록

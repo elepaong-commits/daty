@@ -1,12 +1,15 @@
+import type { Messages } from './messages'
 import type {
   Album,
   CreateAlbumInput,
+  CreatePlaceInput,
   CreateRecordInput,
   DateRecord,
   Me,
   Place,
   PhotoUpload,
   PlaceDetail,
+  PlaceNote,
   UpdateAlbumInput,
   UpdatePlaceInput,
   UpdateRecordInput,
@@ -57,7 +60,10 @@ export const api = {
 
   places: () => request<Place[]>('/api/places'),
   place: (id: number) => request<PlaceDetail>(`/api/places/${id}`),
+  createPlace: (input: CreatePlaceInput) => post<Place>('/api/places', input),
   updatePlace: (id: number, input: UpdatePlaceInput) => patch<Place>(`/api/places/${id}`, input),
+  addPlaceNote: (placeId: number, content: string) => post<PlaceNote>(`/api/places/${placeId}/notes`, { content }),
+  deletePlaceNote: (placeId: number, noteId: number) => del<void>(`/api/places/${placeId}/notes/${noteId}`),
   records: (from: Date, to: Date) =>
     request<DateRecord[]>(
       `/api/records?${new URLSearchParams({ from: from.toISOString(), to: to.toISOString() })}`,
@@ -82,17 +88,18 @@ export async function uploadToStorage(upload: PhotoUpload, body: Blob) {
   if (!res.ok) throw new ApiError(res.status, `R2 upload failed: ${res.status}`)
 }
 
-const MESSAGES: Record<string, string> = {
-  INVALID_CREDENTIALS: '이메일 또는 비밀번호가 맞지 않아요',
-  EMAIL_TAKEN: '이미 가입된 이메일이에요',
-  RATE_LIMITED: '시도가 너무 많아요. 잠시 후 다시 해 주세요',
-  INVALID_CODE: '초대 코드를 다시 확인해 주세요',
-  COUPLE_FULL: '이미 두 사람이 연결된 코드예요',
-  ALREADY_IN_COUPLE: '이미 커플로 연결되어 있어요',
-  STORAGE_DISABLED: '사진 저장소가 아직 설정되지 않았어요',
-  INVALID_UPLOAD: '사진을 올리지 못했어요. 다시 시도해 주세요',
+/** A photo that could not be prepared for upload; `code` picks the message. */
+export class ImageError extends Error {
+  readonly code: 'IMAGE_UNREADABLE' | 'IMAGE_ENCODE_FAILED'
+
+  constructor(fileName: string, code: ImageError['code']) {
+    super(fileName)
+    this.code = code
+  }
 }
 
-/** Korean message for an API failure, falling back to the raw error. */
-export const errorMessage = (error: Error) =>
-  (error instanceof ApiError && error.code && MESSAGES[error.code]) || error.message
+/** Localized message for a failure, falling back to the raw error. */
+export function errorMessage(error: Error, t: Messages) {
+  if (error instanceof ImageError) return `${error.message}: ${t.errors[error.code]}`
+  return (error instanceof ApiError && error.code && t.errors[error.code]) || error.message
+}
