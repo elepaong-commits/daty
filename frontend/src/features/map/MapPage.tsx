@@ -8,9 +8,11 @@ import { useMe, usePlaces } from '../../lib/queries'
 import type { PlaceCategory, PlaceStatus } from '../../lib/types'
 import { DateMap } from './DateMap'
 import { PlaceSheet } from './PlaceSheet'
+import { useT } from '../../lib/i18n'
 
 export function MapPage() {
   const couple = useMe().data?.couple
+  const t = useT()
   const { data: places = [], isLoading, error } = usePlaces()
   const [status, setStatus] = useState<PlaceStatus>('VISITED')
   const [category, setCategory] = useState<PlaceCategory | null>(null)
@@ -40,8 +42,8 @@ export function MapPage() {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <ScreenHeader
-        eyebrow={couple ? `D+${daysTogether(couple.anniversaryDate)} · 함께 걸은 곳들` : '함께 걸은 곳들'}
-        title="우리의 데이트 지도"
+        eyebrow={t.map.eyebrow(couple ? daysTogether(couple.anniversaryDate) : null)}
+        title={t.map.title}
         actions={
           <button
             type="button"
@@ -50,7 +52,7 @@ export function MapPage() {
               setQuery('')
             }}
             className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white"
-            aria-label="장소 검색"
+            aria-label={t.map.search}
             aria-expanded={searchOpen}
           >
             <img src={searchIcon} alt="" width={18} height={18} />
@@ -63,7 +65,7 @@ export function MapPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="장소 이름으로 찾기"
+            placeholder={t.map.searchPlaceholder}
             className="mt-3 h-10 w-full rounded-xl border border-sand bg-white px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand"
           />
         )}
@@ -79,18 +81,18 @@ export function MapPage() {
             onClick={() => changeStatus(value)}
             className={`flex-1 rounded-xl text-[14px] leading-normal font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
           >
-            {value === 'VISITED' ? `✓ 갔던 곳 ${counts.VISITED}` : `♡ 가고 싶었던 곳 ${counts.WISH}`}
+            {t.map.tab[value](counts[value])}
           </button>
         ))}
       </div>
 
       <div className="scrollbar-none flex shrink-0 gap-2 overflow-x-auto px-5 py-3">
         <Chip selected={category === null} onClick={() => setCategory(null)} borderClass="border-sand">
-          전체
+          {t.map.all}
         </Chip>
         {CATEGORIES.map((c) => (
           <Chip key={c.value} selected={category === c.value} onClick={() => setCategory(c.value)} borderClass="border-sand">
-            {c.emoji} {c.label}
+            {c.emoji} {t.categories[c.value]}
           </Chip>
         ))}
       </div>

@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { inputClass } from '../../components/Field'
 import { MAPS_API_KEY } from '../../lib/maps'
 import type { PlaceCategory } from '../../lib/types'
+import { useI18n, useT } from '../../lib/i18n'
 
 export interface PickedPlace {
   googlePlaceId: string
@@ -34,19 +35,21 @@ export function PlaceSearch(props: Props) {
 }
 
 function PlainInput({ name, onNameChange }: Pick<Props, 'name' | 'onNameChange'>) {
+  const t = useT()
   return (
     <input
       required
       maxLength={100}
       value={name}
       onChange={(e) => onNameChange(e.target.value)}
-      placeholder="예) 서울숲 억새 산책길"
+      placeholder={t.placeSearch.plainPlaceholder}
       className={inputClass}
     />
   )
 }
 
 function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: Props) {
+  const { lang, t } = useI18n()
   const places = useMapsLibrary('places')
   const listId = useId()
   // Results remember which query produced them, so a stale list never shows under new text.
@@ -72,7 +75,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: 
           sessionToken: sessionToken.current,
           // Worldwide (trips abroad count too); `region` only favors Korean results when names overlap.
           region: 'kr',
-          language: 'ko',
+          language: lang,
         })
         if (!cancelled) {
           setResults({ query, items: suggestions.flatMap((s) => (s.placePrediction ? [s.placePrediction] : [])).slice(0, 5) })
@@ -86,7 +89,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: 
       cancelled = true
       clearTimeout(timer)
     }
-  }, [places, name, picked])
+  }, [places, name, picked, lang])
 
   async function pick(prediction: google.maps.places.PlacePrediction) {
     setOpen(false)
@@ -148,7 +151,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: 
             setOpen(false)
           }
         }}
-        placeholder="장소를 검색하세요 · 예) 서울숲, 후지산"
+        placeholder={t.placeSearch.placeholder}
         className={inputClass}
       />
 
@@ -177,12 +180,12 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick, currentName }: 
       {(picked || loadingPick || name.trim() !== currentName) && (
         <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
           {loadingPick
-            ? '장소 정보를 가져오는 중…'
+            ? t.placeSearch.fetching
             : picked
-              ? `📍 ${picked.address ?? '위치 확인됨'} · 지도에 핀이 생겨요`
+              ? t.placeSearch.picked(picked.address ?? t.placeSearch.located)
               : name.trim()
-                ? '💡 목록에서 고르면 지도에 핀이 생겨요. 직접 입력하면 이름만 저장돼요'
-                : '💡 장소를 검색해서 고르면 지도에 표시돼요'}
+                ? t.placeSearch.hintTyped
+                : t.placeSearch.hintEmpty}
         </p>
       )}
     </div>

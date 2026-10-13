@@ -36,6 +36,12 @@
   --shadow-cta: 0 8px 18px rgba(0, 168, 150, 0.44);
 }
 
+/* Jua and Plex Sans KR have no kana, and shared kanji should use Japanese glyph shapes. */
+:root:lang(ja) {
+  --font-sans: "IBM Plex Sans JP", system-ui, sans-serif;
+  --font-display: "M PLUS Rounded 1c", "IBM Plex Sans JP", sans-serif;
+}
+
 @layer base {
   html,
   body,

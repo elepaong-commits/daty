@@ -8,6 +8,7 @@ import selectedHalo from '../../assets/icons/selected-halo.svg'
 import { categoryOf } from '../../lib/categories'
 import { MAP_ID, MAPS_API_KEY } from '../../lib/maps'
 import type { Place, PlaceStatus } from '../../lib/types'
+import { useT } from '../../lib/i18n'
 
 const SEOUL = { lat: 37.5563, lng: 126.9906 }
 const DEFAULT_ZOOM = 12
@@ -23,12 +24,13 @@ interface Props {
 }
 
 export function DateMap(props: Props) {
+  const t = useT()
   if (!MAPS_API_KEY) {
     return (
       <div className="flex size-full items-start justify-center bg-[#f1ebd6] pt-16 text-center text-[12px] text-muted">
-        지도를 보려면 frontend/.env.local에
+        {t.map.noApiKey[0]}
         <br />
-        VITE_GOOGLE_MAPS_API_KEY를 넣어 주세요
+        {t.map.noApiKey[1]}
       </div>
     )
   }
@@ -56,6 +58,7 @@ interface PinProps {
 }
 
 function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
+  const t = useT()
   const map = useMap()
   const fitted = useRef(false)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
@@ -132,7 +135,7 @@ function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
         <AdvancedMarker
           key={`cluster-${clusterId}`}
           position={{ lat, lng }}
-          title={`${count}곳`}
+          title={t.map.cluster(count)}
           zIndex={20}
           onClick={() => expand(clusterId, lat, lng)}
         >
@@ -181,6 +184,7 @@ function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; 
 }
 
 function MapControls() {
+  const t = useT()
   const map = useMap()
   const zoom = (delta: number) => map?.setZoom((map.getZoom() ?? 12) + delta)
   const locate = () =>
@@ -190,17 +194,17 @@ function MapControls() {
     <>
       <div className="absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px] leading-normal font-semibold">
         <span className="flex items-center gap-1">
-          <img src={dotVisited} alt="" width={10} height={10} /> 갔던 곳
+          <img src={dotVisited} alt="" width={10} height={10} /> {t.status.VISITED}
         </span>
         <span className="flex items-center gap-1">
-          <img src={dotWish} alt="" width={10} height={10} /> 가고 싶은 곳
+          <img src={dotWish} alt="" width={10} height={10} /> {t.status.WISH}
         </span>
       </div>
       <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white text-[18px] leading-normal font-semibold">
-        <button type="button" onClick={() => zoom(1)} className="size-9" aria-label="확대">
+        <button type="button" onClick={() => zoom(1)} className="size-9" aria-label={t.map.zoomIn}>
           +
         </button>
-        <button type="button" onClick={() => zoom(-1)} className="size-9" aria-label="축소">
+        <button type="button" onClick={() => zoom(-1)} className="size-9" aria-label={t.map.zoomOut}>
           −
         </button>
       </div>
@@ -208,7 +212,7 @@ function MapControls() {
         type="button"
         onClick={locate}
         className="absolute right-3 bottom-[250px] flex size-10 items-center justify-center rounded-full bg-white"
-        aria-label="현재 위치로 이동"
+        aria-label={t.map.locate}
       >
         <img src={locateIcon} alt="" width={18} height={18} />
       </button>

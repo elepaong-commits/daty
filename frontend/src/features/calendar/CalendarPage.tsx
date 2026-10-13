@@ -10,11 +10,12 @@ import { useMonthRecords } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import { ScheduleSheet } from '../records/ScheduleSheet'
 import { DayTimeline } from './DayTimeline'
+import { useT } from '../../lib/i18n'
 
-const WEEKDAY_HEADERS = ['일', '월', '화', '수', '목', '금', '토']
 const MAX_BARS = 2
 
 export function CalendarPage() {
+  const t = useT()
   const today = startOfDay(new Date())
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
@@ -44,17 +45,17 @@ export function CalendarPage() {
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto pb-28">
         <ScreenHeader
-          eyebrow="우리 둘의 캘린더"
-          title={`${month.getFullYear()}년 ${month.getMonth() + 1}월`}
+          eyebrow={t.calendar.eyebrow}
+          title={t.dates.yearMonth(month)}
           actions={
             <div className="flex items-center gap-1.5">
               <button type="button" onClick={() => goToMonth(today)} className="h-9 rounded-full bg-white px-3 text-[12px] font-semibold">
-                오늘
+                {t.calendar.today}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label="이전 달">
+              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label={t.calendar.prevMonth}>
                 <img src={chevronLeft} alt="" width={16} height={16} />
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label="다음 달">
+              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label={t.calendar.nextMonth}>
                 <img src={chevronRight} alt="" width={16} height={16} />
               </button>
             </div>
@@ -64,18 +65,18 @@ export function CalendarPage() {
         <section className="mx-4 rounded-3xl bg-white p-3 shadow-card">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
-              <img src={markerRecord} alt="" width={8} height={8} /> 데이트 기록
+              <img src={markerRecord} alt="" width={8} height={8} /> {t.calendar.legendRecord}
             </span>
             <span className="flex items-center gap-1.5 font-semibold">
-              <img src={markerPlan} alt="" width={8} height={8} /> 예정된 데이트
+              <img src={markerPlan} alt="" width={8} height={8} /> {t.calendar.legendPlan}
             </span>
             <span className="flex-1 text-right font-medium text-muted">
-              기록 {recordCount} · 예정 {planCount}
+              {t.calendar.summary(recordCount, planCount)}
             </span>
           </div>
 
           <div className="grid grid-cols-7 pb-1 text-center text-[11px] leading-normal font-semibold">
-            {WEEKDAY_HEADERS.map((d, i) => (
+            {t.weekdays.map((d, i) => (
               <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand' : ''}>
                 {d}
               </span>
@@ -116,7 +117,7 @@ export function CalendarPage() {
         className="absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta"
       >
         <span className="text-[24px] leading-none">+</span>
-        <span className="text-[16px] font-semibold">일정 추가</span>
+        <span className="text-[16px] font-semibold">{t.calendar.addSchedule}</span>
       </button>
 
       {editing && (
@@ -160,6 +161,7 @@ function DayCell({
   records: DateRecord[]
   onSelect: () => void
 }) {
+  const t = useT()
   const weekday = day.getDay()
   const numberColor = !inMonth
     ? 'text-[rgba(203,213,224,0.6)]'
@@ -179,7 +181,7 @@ function DayCell({
       onClick={onSelect}
       disabled={!inMonth}
       aria-pressed={isSelected}
-      aria-label={`${day.getMonth() + 1}월 ${day.getDate()}일${records.length ? `, 일정 ${records.length}개` : ''}`}
+      aria-label={t.calendar.dayLabel(t.dates.monthDay(day), records.length)}
       className={`flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 ${isSelected ? 'bg-brand-soft' : ''}`}
     >
       <span

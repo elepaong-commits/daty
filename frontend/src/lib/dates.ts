@@ -1,6 +1,5 @@
 // All calendar math happens in the viewer's local time zone.
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 const DAY_MS = 24 * 60 * 60 * 1000
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -32,7 +31,6 @@ export const fromInputs = (date: string, time: string) => {
   return d
 }
 
-export const weekdayOf = (d: Date) => WEEKDAYS[d.getDay()]!
 export const formatMonthDay = (d: Date) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`
 export const formatSlashDay = (d: Date) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
 export const formatDotted = (d: Date) => `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`

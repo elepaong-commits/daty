@@ -2,6 +2,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import type { ReactNode } from 'react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router'
 import { BottomNav } from './components/BottomNav'
+import { I18nProvider } from './components/I18nProvider'
 import { QueryState } from './components/Field'
 import { AlbumDetailPage } from './features/albums/AlbumDetailPage'
 import { AlbumsPage } from './features/albums/AlbumsPage'
@@ -84,10 +85,12 @@ function AuthGate() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthGate />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthGate />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </I18nProvider>
   )
 }
