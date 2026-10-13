@@ -8,6 +8,7 @@ import type {
   Me,
   Place,
   PhotoUpload,
+  ResetCode,
   PlaceDetail,
   PlaceNote,
   UpdateAlbumInput,
@@ -55,6 +56,10 @@ export const api = {
   login: (input: { email: string; password: string }) => post<Me>('/api/auth/login', input),
   signup: (input: { email: string; password: string; nickname: string }) => post<Me>('/api/auth/signup', input),
   logout: () => post<void>('/api/auth/logout'),
+  changePassword: (input: { currentPassword: string; newPassword: string }) => post<void>('/api/auth/password', input),
+  resetPassword: (input: { email: string; code: string; newPassword: string }) =>
+    post<Me>('/api/auth/reset-password', input),
+  issueResetCode: () => post<ResetCode>('/api/couple/reset-code'),
   createCouple: (input: { anniversaryDate: string }) => post<Me>('/api/couple', input),
   joinCouple: (input: { code: string }) => post<Me>('/api/couple/join', input),
 

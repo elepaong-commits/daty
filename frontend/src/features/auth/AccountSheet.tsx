@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { ChangePassword, PartnerResetCode } from './PasswordSettings'
 
 export function AccountSheet({ onClose }: { onClose: () => void }) {
   const me = useMe().data
@@ -49,6 +50,9 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
             )}
           </div>
         )}
+
+        <ChangePassword />
+        {partner && <PartnerResetCode partnerName={partner.nickname} />}
 
         <button
           type="button"
