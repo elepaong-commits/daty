@@ -6,6 +6,7 @@ import { errorMessage } from '../../lib/api'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { useImageFailed } from '../../lib/useImageFailed'
 
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
@@ -139,7 +140,7 @@ export function AlbumDetailPage() {
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
-                  {photo.imageUrl && <img src={photo.imageUrl} alt="" loading="lazy" className="size-full object-cover" />}
+                  <GridPhoto src={photo.imageUrl} />
                   {photo.id === album.coverPhotoId && (
                     <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
                       {t.albums.bestCut}
@@ -186,5 +187,18 @@ export function AlbumDetailPage() {
         </div>
       )}
     </div>
+  )
+}
+
+/** Grid image; a photo whose file is gone says so, so it can still be selected and deleted. */
+function GridPhoto({ src }: { src: string | null }) {
+  const t = useT()
+  const { failed, onError } = useImageFailed(src)
+  if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
+  return (
+    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
+      <span className="text-[18px]">⚠️</span>
+      {t.albums.missingPhoto}
+    </span>
   )
 }
