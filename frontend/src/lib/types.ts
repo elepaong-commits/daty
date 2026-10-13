@@ -177,3 +177,10 @@ export interface UpdateAlbumInput {
   placeIds?: number[]
   visitAt?: string
 }
+
+/** POST /api/couple/reset-code: a one-time code for the partner who forgot their password. */
+export interface ResetCode {
+  code: string
+  expiresAt: string
+  user: { nickname: string }
+}

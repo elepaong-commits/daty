@@ -4,6 +4,7 @@ import { LanguageToggle } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
 import { useLogin, useSignup } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { ResetPasswordForm } from './ResetPasswordForm'
 
 type Mode = 'login' | 'signup'
 
@@ -15,6 +16,7 @@ export function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
+  const [resetting, setResetting] = useState(false)
 
   const active = mode === 'login' ? login : signup
   const canSubmit =
@@ -43,69 +45,80 @@ export function AuthPage() {
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
 
-      <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
-        {(['login', 'signup'] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={mode === value}
-            onClick={() => switchMode(value)}
-            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
-          >
-            {value === 'login' ? t.auth.login : t.auth.signup}
-          </button>
-        ))}
-      </div>
+      {resetting ? (
+        <ResetPasswordForm initialEmail={email} onBack={() => setResetting(false)} />
+      ) : (
+        <>
+          <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
+            {(['login', 'signup'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={mode === value}
+                onClick={() => switchMode(value)}
+                className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
+              >
+                {value === 'login' ? t.auth.login : t.auth.signup}
+              </button>
+            ))}
+          </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
-        {mode === 'signup' && (
-          <Field label={t.auth.nickname}>
-            <input
-              required
-              maxLength={20}
-              autoComplete="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder={t.auth.nicknamePlaceholder}
-              className={inputClass}
-            />
-          </Field>
-        )}
-        <Field label={t.auth.email}>
-          <input
-            required
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className={inputClass}
-          />
-        </Field>
-        <Field label={mode === 'signup' ? t.auth.newPassword : t.auth.password}>
-          <input
-            required
-            type="password"
-            minLength={mode === 'signup' ? 8 : undefined}
-            maxLength={72}
-            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+          <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+            {mode === 'signup' && (
+              <Field label={t.auth.nickname}>
+                <input
+                  required
+                  maxLength={20}
+                  autoComplete="nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder={t.auth.nicknamePlaceholder}
+                  className={inputClass}
+                />
+              </Field>
+            )}
+            <Field label={t.auth.email}>
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className={inputClass}
+              />
+            </Field>
+            <Field label={mode === 'signup' ? t.auth.newPassword : t.auth.password}>
+              <input
+                required
+                type="password"
+                minLength={mode === 'signup' ? 8 : undefined}
+                maxLength={72}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
 
-        {active.error && <p className="text-[12px] text-coral-strong">{errorMessage(active.error, t)}</p>}
+            {active.error && <p className="text-[12px] text-coral-strong">{errorMessage(active.error, t)}</p>}
 
-        <button
-          type="submit"
-          disabled={!canSubmit || active.isPending}
-          className="mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
-        >
-          {active.isPending ? t.common.wait : mode === 'login' ? t.auth.login : t.auth.signupSubmit}
-        </button>
-      </form>
+            <button
+              type="submit"
+              disabled={!canSubmit || active.isPending}
+              className="mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+            >
+              {active.isPending ? t.common.wait : mode === 'login' ? t.auth.login : t.auth.signupSubmit}
+            </button>
+            {mode === 'login' && (
+              <button type="button" onClick={() => setResetting(true)} className="text-[13px] font-semibold text-muted">
+                {t.auth.forgot}
+              </button>
+            )}
+          </form>
+        </>
+      )}
     </div>
   )
 }

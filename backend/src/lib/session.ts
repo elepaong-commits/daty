@@ -28,14 +28,22 @@ export function endSession(res: Response) {
   res.clearCookie(SESSION_COOKIE, cookieOptions);
 }
 
-/** Returns the user id, or null when the token is missing, tampered with or expired. */
+/** Returns who the session is for and when it was issued (ms), or null when missing, tampered with or expired. */
 export async function readSession(token: string | undefined) {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] });
     const userId = Number(payload.sub);
-    return Number.isInteger(userId) && userId > 0 ? userId : null;
+    if (!Number.isInteger(userId) || userId <= 0 || payload.iat === undefined) return null;
+    return { userId, issuedAt: payload.iat * 1000 };
   } catch {
     return null;
   }
 }
+
+/**
+ * Whether a session from `issuedAt` predates the user's last password change. `iat` has whole-second
+ * precision, so the change is rounded down too: the fresh session handed out with the change stays valid.
+ */
+export const sessionRevoked = (issuedAt: number, passwordChangedAt: Date | null) =>
+  passwordChangedAt !== null && issuedAt < Math.floor(passwordChangedAt.getTime() / 1000) * 1000;

@@ -1,7 +1,7 @@
-import { randomInt } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { Prisma } from "../generated/prisma/client.js";
+import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { requireCouple } from "../middlewares/auth.js";
@@ -12,9 +12,7 @@ import { loadMe } from "./auth.routes.js";
 export const coupleRouter = Router();
 
 const MAX_MEMBERS = 2;
-// No 0/O or 1/I/L so the code is easy to read out loud.
-const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const generateCode = () => Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
+const generateCode = () => randomCode(6);
 
 const createBody = z.object({ anniversaryDate: z.iso.date() });
 const joinBody = z.object({ code: z.string().trim().toUpperCase().length(6) });
@@ -77,4 +75,24 @@ coupleRouter.post("/join", async (req, res) => {
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   );
   res.json(await loadMe(req.userId));
+});
+
+// Password reset without email: the partner, logged in on their phone, issues a one-time code for the
+// one who forgot and passes it on; it is redeemed at POST /api/auth/reset-password.
+const RESET_CODE_TTL_MS = 10 * 60 * 1000;
+
+coupleRouter.post("/reset-code", requireCouple, async (req, res) => {
+  const partner = await prisma.user.findFirst({
+    where: { coupleId: req.coupleId, id: { not: req.userId } },
+    select: { id: true, nickname: true },
+  });
+  if (!partner) throw new HttpError(409, "No partner to reset", "NO_PARTNER");
+  const code = randomCode(8);
+  const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS);
+  // Only the newest code works.
+  await prisma.$transaction([
+    prisma.passwordResetCode.deleteMany({ where: { userId: partner.id } }),
+    prisma.passwordResetCode.create({ data: { userId: partner.id, issuedById: req.userId, codeHash: hashCode(code), expiresAt } }),
+  ]);
+  res.status(201).json({ code, expiresAt, user: { nickname: partner.nickname } });
 });

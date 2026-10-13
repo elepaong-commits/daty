@@ -39,6 +39,9 @@ export const useLogin = () => useMeMutation(api.login)
 export const useSignup = () => useMeMutation(api.signup)
 export const useCreateCouple = () => useMeMutation(api.createCouple)
 export const useJoinCouple = () => useMeMutation(api.joinCouple)
+export const useResetPassword = () => useMeMutation(api.resetPassword)
+export const useChangePassword = () => useMutation({ mutationFn: api.changePassword })
+export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })
 
 export function useLogout() {
   const queryClient = useQueryClient()
