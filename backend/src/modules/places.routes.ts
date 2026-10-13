@@ -127,18 +127,25 @@ placesRouter.get("/:id", async (req, res) => {
     },
   });
   const albums = [...new Map(place.records.flatMap((r) => (r.album ? [[r.album.id, r.album]] : []))).values()];
+  // A picked best cut may sit beyond the first three photos; with none picked the first photo stands in.
+  const coverIds = albums.flatMap((a) => (a.coverPhotoId && !a.photos.some((p) => p.id === a.coverPhotoId) ? [a.coverPhotoId] : []));
+  const covers = coverIds.length > 0 ? await prisma.photo.findMany({ where: { id: { in: coverIds } } }) : [];
   const latest = place.records[0];
   res.json({
     ...serializePlace(place),
     notes: place.notes,
     latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
     albums: await Promise.all(
-      albums.map(async ({ _count, albumDate, photos, ...album }) => ({
-        ...album,
-        albumDate: toDateOnly(albumDate),
-        photoCount: _count.photos,
-        photos: await Promise.all(photos.map(serializePhoto)),
-      })),
+      albums.map(async ({ _count, albumDate, photos, ...album }) => {
+        const cover = [...photos, ...covers].find((p) => p.id === album.coverPhotoId) ?? photos[0];
+        return {
+          ...album,
+          albumDate: toDateOnly(albumDate),
+          photoCount: _count.photos,
+          coverPhoto: cover ? await serializePhoto(cover) : null,
+          photos: await Promise.all(photos.map(serializePhoto)),
+        };
+      }),
     ),
   });
 });

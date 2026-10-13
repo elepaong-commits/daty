@@ -5,7 +5,7 @@ import type { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import { deleteObjects, presignUpload, serializePhoto, statObject } from "../lib/storage.js";
+import { deleteObjects, photoObjectKeys, presignUpload, serializePhoto, statObject } from "../lib/storage.js";
 
 export const albumsRouter = Router();
 
@@ -157,14 +157,18 @@ albumsRouter.patch("/:id", async (req, res) => {
 });
 
 // Photo upload (CLAUDE.md "이미지 업로드 패턴"): the browser asks for presigned URLs, PUTs each image
-// straight to R2, then reports the keys back here to be recorded.
+// (and a small JPEG thumbnail of it) straight to R2, then reports the keys back here to be recorded.
 
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
+const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024;
 const PHOTOS_PER_REQUEST = 30;
 const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
 
 const albumPhotoKey = (coupleId: number, albumId: number) =>
   new RegExp(`^couples/${coupleId}/albums/${albumId}/[0-9a-f-]{36}\\.(jpg|png|webp)$`);
+
+/** The thumbnail sits next to its photo: `{uuid}.jpg` → `{uuid}.thumb.jpg`. */
+const thumbnailKeyFor = (key: string) => key.replace(/\.\w+$/, ".thumb.jpg");
 
 const uploadBody = z.object({
   files: z
@@ -181,7 +185,13 @@ albumsRouter.post("/:id/photos/uploads", async (req, res) => {
   const uploads = await Promise.all(
     files.map(async ({ contentType }) => {
       const key = `couples/${coupleId}/albums/${id}/${randomUUID()}.${extensions[contentType]}`;
-      return { key, uploadUrl: await presignUpload(key), headers: { "Content-Type": contentType } };
+      const thumbnailKey = thumbnailKeyFor(key);
+      return {
+        key,
+        uploadUrl: await presignUpload(key),
+        headers: { "Content-Type": contentType },
+        thumbnail: { key: thumbnailKey, uploadUrl: await presignUpload(thumbnailKey), headers: { "Content-Type": "image/jpeg" } },
+      };
     }),
   );
   res.json({ uploads });
@@ -189,7 +199,14 @@ albumsRouter.post("/:id/photos/uploads", async (req, res) => {
 
 const addPhotosBody = z.object({
   photos: z
-    .array(z.object({ key: z.string().max(200), takenAt: z.iso.datetime({ offset: true }).nullish() }))
+    .array(
+      z.object({
+        key: z.string().max(200),
+        // Optional: if only the thumbnail upload failed, the photo is still kept and shown full size.
+        thumbnailKey: z.string().max(200).nullish(),
+        takenAt: z.iso.datetime({ offset: true }).nullish(),
+      }),
+    )
     .min(1)
     .max(PHOTOS_PER_REQUEST),
 });
@@ -199,14 +216,19 @@ albumsRouter.post("/:id/photos", async (req, res) => {
   const { photos } = addPhotosBody.parse(req.body);
   const { coupleId } = req;
   const keyPattern = albumPhotoKey(coupleId, id);
-  if (!photos.every((p) => keyPattern.test(p.key))) throw new HttpError(400, "Unknown photo key", "INVALID_UPLOAD");
+  const knownKeys = photos.every((p) => keyPattern.test(p.key) && (!p.thumbnailKey || p.thumbnailKey === thumbnailKeyFor(p.key)));
+  if (!knownKeys) throw new HttpError(400, "Unknown photo key", "INVALID_UPLOAD");
   await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
 
   // The presigned PUT can't cap size or type, so check what actually landed before recording it.
-  const stats = await Promise.all(photos.map((p) => statObject(p.key)));
-  const valid = stats.every((s) => s && s.size <= MAX_PHOTO_BYTES && s.contentType.startsWith("image/"));
+  const objects = photos.flatMap((p) => [
+    { key: p.key, maxBytes: MAX_PHOTO_BYTES },
+    ...(p.thumbnailKey ? [{ key: p.thumbnailKey, maxBytes: MAX_THUMBNAIL_BYTES }] : []),
+  ]);
+  const stats = await Promise.all(objects.map((o) => statObject(o.key)));
+  const valid = stats.every((s, i) => s && s.size <= objects[i]!.maxBytes && s.contentType.startsWith("image/"));
   if (!valid) {
-    await deleteObjects(photos.filter((_, i) => stats[i]).map((p) => p.key));
+    await deleteObjects(objects.filter((_, i) => stats[i]).map((o) => o.key));
     throw new HttpError(400, "Upload missing or not an image under 15MB", "INVALID_UPLOAD");
   }
 
@@ -217,6 +239,7 @@ albumsRouter.post("/:id/photos", async (req, res) => {
       data: photos.map((p, i) => ({
         albumId: id,
         storageKey: p.key,
+        thumbnailKey: p.thumbnailKey ?? null,
         displayOrder: start + i,
         takenAt: p.takenAt ? new Date(p.takenAt) : null,
       })),
@@ -237,7 +260,7 @@ albumsRouter.delete("/:id/photos/:photoId", async (req, res) => {
     if (album.coverPhotoId === photoId) await tx.album.update({ where: { id }, data: { coverPhotoId: null } });
     return deleted;
   });
-  if (photo.storageKey) await deleteObjects([photo.storageKey]);
+  await deleteObjects(photoObjectKeys(photo));
   res.status(204).end();
 });
 
@@ -245,8 +268,8 @@ albumsRouter.delete("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
   const album = await prisma.album.delete({
     where: { id, coupleId: req.coupleId },
-    include: { photos: { select: { storageKey: true } } },
+    include: { photos: { select: { storageKey: true, thumbnailKey: true } } },
   });
-  await deleteObjects(album.photos.flatMap((p) => (p.storageKey ? [p.storageKey] : [])));
+  await deleteObjects(album.photos.flatMap(photoObjectKeys));
   res.status(204).end();
 });

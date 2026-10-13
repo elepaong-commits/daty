@@ -8,11 +8,14 @@ interface Props {
   photos: Photo[]
   startIndex: number
   coverPhotoId: number | null
+  /** Makes the photo the album's best cut, or clears it (`null`). */
+  onSetCover: (photoId: number | null) => void
+  coverPending: boolean
   onClose: () => void
 }
 
 /** Full-screen photo viewer; swipe (or arrows/keys) between the album's photos. */
-export function PhotoViewer({ photos, startIndex, coverPhotoId, onClose }: Props) {
+export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, coverPending, onClose }: Props) {
   const t = useT()
   const strip = useRef<HTMLDivElement>(null)
   const [index, setIndex] = useState(startIndex)
@@ -42,6 +45,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onClose }: Props
   }
 
   const takenAt = photo?.takenAt ? new Date(photo.takenAt) : null
+  const isCover = photo !== undefined && photo.id === coverPhotoId
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-ink text-white" role="dialog" aria-modal="true" aria-label={t.albums.viewer}>
@@ -84,14 +88,20 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onClose }: Props
         )}
       </div>
 
-      <div className="flex min-h-12 shrink-0 items-center justify-center gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
-        {photo?.id === coverPhotoId && (
-          <span className="rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">{t.albums.bestCut}</span>
-        )}
-        {takenAt && (
-          <span>
-            {formatDotted(takenAt)} {toTimeInput(takenAt)}
-          </span>
+      <div className="flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
+        <span>{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
+        {photo && (
+          <button
+            type="button"
+            onClick={() => onSetCover(isCover ? null : photo.id)}
+            disabled={coverPending}
+            aria-pressed={isCover}
+            className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold disabled:opacity-50 ${
+              isCover ? 'bg-amber-soft text-amber-strong' : 'bg-white/15 text-white'
+            }`}
+          >
+            {isCover ? t.albums.bestCut : t.albums.makeBestCut}
+          </button>
         )}
       </div>
     </div>

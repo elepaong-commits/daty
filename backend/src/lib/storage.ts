@@ -70,14 +70,19 @@ export async function deleteObjects(keys: string[]) {
   );
 }
 
-/** API shape of a photo: uploaded ones get a signed URL, older rows keep their stored URL. */
-export async function serializePhoto<T extends { storageKey: string | null; imageUrl: string | null }>({
+/** API shape of a photo: uploaded ones get signed URLs, older rows keep their stored URL. */
+export async function serializePhoto<T extends { storageKey: string | null; thumbnailKey: string | null; imageUrl: string | null }>({
   storageKey,
+  thumbnailKey,
   imageUrl,
   ...photo
 }: T) {
-  return {
-    ...photo,
-    imageUrl: storageKey ? (r2 ? await signedImageUrl(storageKey) : null) : imageUrl,
-  };
+  const sign = (key: string) => (r2 ? signedImageUrl(key) : null);
+  const full = storageKey ? await sign(storageKey) : imageUrl;
+  // Photos uploaded before thumbnails existed fall back to the full image.
+  return { ...photo, imageUrl: full, thumbnailUrl: thumbnailKey ? await sign(thumbnailKey) : full };
 }
+
+/** Every R2 object behind a photo, for deleting it. */
+export const photoObjectKeys = (photo: { storageKey: string | null; thumbnailKey: string | null }) =>
+  [photo.storageKey, photo.thumbnailKey].filter((key): key is string => key !== null);
