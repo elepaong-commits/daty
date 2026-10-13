@@ -5,6 +5,7 @@ import type {
   DateRecord,
   Me,
   Place,
+  PhotoUpload,
   PlaceDetail,
   UpdateAlbumInput,
   UpdatePlaceInput,
@@ -69,6 +70,16 @@ export const api = {
   updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
   deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
+  photoUploads: (albumId: number, files: { contentType: string }[]) =>
+    post<{ uploads: PhotoUpload[] }>(`/api/albums/${albumId}/photos/uploads`, { files }),
+  addPhotos: (albumId: number, photos: { key: string; takenAt: string | null }[]) =>
+    post<Album>(`/api/albums/${albumId}/photos`, { photos }),
+}
+
+/** PUT an image straight to R2 with a presigned URL: no API base and no cookies. */
+export async function uploadToStorage(upload: PhotoUpload, body: Blob) {
+  const res = await fetch(upload.uploadUrl, { method: 'PUT', headers: upload.headers, body })
+  if (!res.ok) throw new ApiError(res.status, `R2 upload failed: ${res.status}`)
 }
 
 const MESSAGES: Record<string, string> = {
@@ -78,6 +89,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_CODE: '초대 코드를 다시 확인해 주세요',
   COUPLE_FULL: '이미 두 사람이 연결된 코드예요',
   ALREADY_IN_COUPLE: '이미 커플로 연결되어 있어요',
+  STORAGE_DISABLED: '사진 저장소가 아직 설정되지 않았어요',
+  INVALID_UPLOAD: '사진을 올리지 못했어요. 다시 시도해 주세요',
 }
 
 /** Korean message for an API failure, falling back to the raw error. */

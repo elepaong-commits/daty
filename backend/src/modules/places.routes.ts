@@ -4,6 +4,7 @@ import { PlaceCategory, PlaceStatus, TipType } from "../generated/prisma/client.
 import type { Place } from "../generated/prisma/client.js";
 import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
+import { serializePhoto } from "../lib/storage.js";
 
 export const placesRouter = Router();
 
@@ -100,11 +101,14 @@ placesRouter.get("/:id", async (req, res) => {
   res.json({
     ...serializePlace(place),
     latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
-    albums: albums.map(({ _count, albumDate, ...album }) => ({
-      ...album,
-      albumDate: toDateOnly(albumDate),
-      photoCount: _count.photos,
-    })),
+    albums: await Promise.all(
+      albums.map(async ({ _count, albumDate, photos, ...album }) => ({
+        ...album,
+        albumDate: toDateOnly(albumDate),
+        photoCount: _count.photos,
+        photos: await Promise.all(photos.map(serializePhoto)),
+      })),
+    ),
   });
 });
 

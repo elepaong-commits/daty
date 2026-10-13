@@ -53,7 +53,7 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   const layer = (i: number) => {
     const photo = photos[i]
     const [from, to] = gradients[i % gradients.length]!
-    return photo ? (
+    return photo?.imageUrl ? (
       <img src={photo.imageUrl} alt="" className="size-full object-cover" />
     ) : (
       <div className="flex size-full items-center justify-center" style={{ background: `linear-gradient(${from}, ${to})` }}>

@@ -56,7 +56,7 @@ export interface DateRecord {
 
 export interface Photo {
   id: number
-  imageUrl: string
+  imageUrl: string | null // signed R2 URL, valid for at least a day; null if storage is not configured
   displayOrder: number
   takenAt: string | null
 }
@@ -131,6 +131,13 @@ export interface UpdateRecordInput {
   address?: string
   latitude?: number
   longitude?: number
+}
+
+/** POST /api/albums/:id/photos/uploads: where to PUT one image before registering its key. */
+export interface PhotoUpload {
+  key: string
+  uploadUrl: string
+  headers: Record<string, string>
 }
 
 export interface UpdateAlbumInput {

@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
-import { useAlbum, useDeletePhotos, useUpdateAlbum } from '../../lib/queries'
+import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
   const updateAlbum = useUpdateAlbum(id)
   const deletePhotos = useDeletePhotos(id)
+  const uploadPhotos = useUploadPhotos(id)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
 
@@ -31,6 +33,12 @@ export function AlbumDetailPage() {
   function makeBestCut() {
     const [photoId] = selected
     updateAlbum.mutate({ coverPhotoId: photoId }, { onSuccess: toggleSelecting })
+  }
+
+  function addPhotos(e: ChangeEvent<HTMLInputElement>) {
+    const files = [...(e.target.files ?? [])]
+    e.target.value = '' // let the same files be picked again after a failure
+    if (files.length > 0) uploadPhotos.mutate(files)
   }
 
   function removeSelected() {
@@ -94,19 +102,27 @@ export function AlbumDetailPage() {
           <h3 className="font-display text-[18px]">그날의 순간들</h3>
           <button
             type="button"
-            disabled
-            title="사진 올리기는 곧 추가돼요"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploadPhotos.isPending || selecting}
             className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
           >
-            + 사진 추가
+            {uploadPhotos.progress
+              ? `올리는 중 ${uploadPhotos.progress.done}/${uploadPhotos.progress.total}`
+              : '+ 사진 추가'}
           </button>
+          <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
         </div>
+
+        {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error)}</p>}
+        {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
+          <p className="text-[12px] text-coral-strong">사진 {uploadPhotos.data.failed}장은 올리지 못했어요</p>
+        )}
 
         {album.photos.length === 0 ? (
           <p className="rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
             아직 사진이 없어요
             <br />
-            <span className="text-[11px]">사진 올리기는 곧 추가돼요</span>
+            <span className="text-[11px]">+ 사진 추가로 그날의 사진을 올려 보세요</span>
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
@@ -119,9 +135,9 @@ export function AlbumDetailPage() {
                   disabled={!selecting}
                   onClick={() => toggle(photo.id)}
                   aria-pressed={selecting ? isSelected : undefined}
-                  className={`relative h-[116px] overflow-hidden rounded-xl ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
+                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
-                  <img src={photo.imageUrl} alt="" loading="lazy" className="size-full object-cover" />
+                  {photo.imageUrl && <img src={photo.imageUrl} alt="" loading="lazy" className="size-full object-cover" />}
                   {photo.id === album.coverPhotoId && (
                     <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
                       ★ 베스트 컷
