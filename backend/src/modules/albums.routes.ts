@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
+import { deleteObjects, presignUpload, serializePhoto, statObject } from "../lib/storage.js";
 
 export const albumsRouter = Router();
 
@@ -17,8 +19,9 @@ const albumInclude = {
 
 type AlbumWithRelations = Prisma.AlbumGetPayload<{ include: typeof albumInclude }>;
 
-function serializeAlbum({ photos, records, ...album }: AlbumWithRelations) {
-  const cover = photos.find((p) => p.id === album.coverPhotoId) ?? photos[0] ?? null;
+async function serializeAlbum({ photos, records, ...album }: AlbumWithRelations) {
+  const serialized = await Promise.all(photos.map(serializePhoto));
+  const cover = serialized.find((p) => p.id === album.coverPhotoId) ?? serialized[0] ?? null;
   const places = [...new Map(records.flatMap((r) => (r.place ? [[r.place.id, r.place]] : []))).values()];
   return {
     ...album,
@@ -27,7 +30,7 @@ function serializeAlbum({ photos, records, ...album }: AlbumWithRelations) {
     coverPhoto: cover,
     category: records[0]?.category ?? null,
     places,
-    photos,
+    photos: serialized,
   };
 }
 
@@ -44,7 +47,7 @@ albumsRouter.get("/", async (req, res) => {
     include: albumInclude,
     orderBy: { albumDate: "desc" },
   });
-  res.json(albums.map(serializeAlbum));
+  res.json(await Promise.all(albums.map(serializeAlbum)));
 });
 
 albumsRouter.get("/:id", async (req, res) => {
@@ -53,7 +56,7 @@ albumsRouter.get("/:id", async (req, res) => {
     where: { id, coupleId: req.coupleId },
     include: albumInclude,
   });
-  res.json(serializeAlbum(album));
+  res.json(await serializeAlbum(album));
 });
 
 albumsRouter.post("/", async (req, res) => {
@@ -72,11 +75,118 @@ albumsRouter.post("/", async (req, res) => {
       include: albumInclude,
     });
   });
-  res.status(201).json(serializeAlbum(album));
+  res.status(201).json(await serializeAlbum(album));
+});
+
+const updateBody = z.object({
+  title: z.string().trim().min(1).max(100).optional(),
+  highlightNote: z.string().trim().max(300).nullable().optional(),
+  // The "best cut" shown on the album card; must be one of this album's photos.
+  coverPhotoId: z.number().int().positive().nullable().optional(),
+});
+
+albumsRouter.patch("/:id", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const data = updateBody.parse(req.body);
+  await prisma.album.findFirstOrThrow({ where: { id, coupleId: req.coupleId } });
+  if (data.coverPhotoId) {
+    await prisma.photo.findFirstOrThrow({ where: { id: data.coverPhotoId, albumId: id } });
+  }
+  const album = await prisma.album.update({ where: { id }, data, include: albumInclude });
+  res.json(await serializeAlbum(album));
+});
+
+// Photo upload (CLAUDE.md "이미지 업로드 패턴"): the browser asks for presigned URLs, PUTs each image
+// straight to R2, then reports the keys back here to be recorded.
+
+const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
+const PHOTOS_PER_REQUEST = 30;
+const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
+
+const albumPhotoKey = (coupleId: number, albumId: number) =>
+  new RegExp(`^couples/${coupleId}/albums/${albumId}/[0-9a-f-]{36}\\.(jpg|png|webp)$`);
+
+const uploadBody = z.object({
+  files: z
+    .array(z.object({ contentType: z.enum(Object.keys(extensions) as (keyof typeof extensions)[]) }))
+    .min(1)
+    .max(PHOTOS_PER_REQUEST),
+});
+
+albumsRouter.post("/:id/photos/uploads", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const { files } = uploadBody.parse(req.body);
+  const { coupleId } = req;
+  await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
+  const uploads = await Promise.all(
+    files.map(async ({ contentType }) => {
+      const key = `couples/${coupleId}/albums/${id}/${randomUUID()}.${extensions[contentType]}`;
+      return { key, uploadUrl: await presignUpload(key), headers: { "Content-Type": contentType } };
+    }),
+  );
+  res.json({ uploads });
+});
+
+const addPhotosBody = z.object({
+  photos: z
+    .array(z.object({ key: z.string().max(200), takenAt: z.iso.datetime({ offset: true }).nullish() }))
+    .min(1)
+    .max(PHOTOS_PER_REQUEST),
+});
+
+albumsRouter.post("/:id/photos", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const { photos } = addPhotosBody.parse(req.body);
+  const { coupleId } = req;
+  const keyPattern = albumPhotoKey(coupleId, id);
+  if (!photos.every((p) => keyPattern.test(p.key))) throw new HttpError(400, "Unknown photo key", "INVALID_UPLOAD");
+  await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
+
+  // The presigned PUT can't cap size or type, so check what actually landed before recording it.
+  const stats = await Promise.all(photos.map((p) => statObject(p.key)));
+  const valid = stats.every((s) => s && s.size <= MAX_PHOTO_BYTES && s.contentType.startsWith("image/"));
+  if (!valid) {
+    await deleteObjects(photos.filter((_, i) => stats[i]).map((p) => p.key));
+    throw new HttpError(400, "Upload missing or not an image under 15MB", "INVALID_UPLOAD");
+  }
+
+  const album = await prisma.$transaction(async (tx) => {
+    const { _max } = await tx.photo.aggregate({ where: { albumId: id }, _max: { displayOrder: true } });
+    const start = (_max.displayOrder ?? 0) + 1;
+    await tx.photo.createMany({
+      data: photos.map((p, i) => ({
+        albumId: id,
+        storageKey: p.key,
+        displayOrder: start + i,
+        takenAt: p.takenAt ? new Date(p.takenAt) : null,
+      })),
+      skipDuplicates: true, // a retried confirm shouldn't fail on keys it already recorded
+    });
+    return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
+  });
+  res.status(201).json(await serializeAlbum(album));
+});
+
+const photoParams = z.object({ id: z.coerce.number().int().positive(), photoId: z.coerce.number().int().positive() });
+
+albumsRouter.delete("/:id/photos/:photoId", async (req, res) => {
+  const { id, photoId } = photoParams.parse(req.params);
+  const photo = await prisma.$transaction(async (tx) => {
+    const album = await tx.album.findFirstOrThrow({ where: { id, coupleId: req.coupleId } });
+    const deleted = await tx.photo.delete({ where: { id: photoId, albumId: id } });
+    if (album.coverPhotoId === photoId) await tx.album.update({ where: { id }, data: { coverPhotoId: null } });
+    return deleted;
+  });
+  if (photo.storageKey) await deleteObjects([photo.storageKey]);
+  res.status(204).end();
 });
 
 albumsRouter.delete("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  await prisma.album.delete({ where: { id, coupleId: req.coupleId } });
+  const album = await prisma.album.delete({
+    where: { id, coupleId: req.coupleId },
+    include: { photos: { select: { storageKey: true } } },
+  });
+  await deleteObjects(album.photos.flatMap((p) => (p.storageKey ? [p.storageKey] : [])));
   res.status(204).end();
 });

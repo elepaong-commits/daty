@@ -124,7 +124,8 @@ model Album {                       // 앨범 탭
 model Photo {                       // 기존 RecordImage 대체
   id           Int       @id @default(autoincrement())
   albumId      Int       @map("album_id")
-  imageUrl     String    @map("image_url")
+  imageUrl     String?   @map("image_url")                 // 외부 URL로 들어온 예전 사진
+  storageKey   String?   @unique @map("storage_key")       // R2 객체 키. 응답에서는 서명 URL로 바뀐다
   displayOrder Int       @default(1) @map("display_order")
   takenAt      DateTime? @map("taken_at")   // 사진의 EXIF 촬영 시각 → 날짜별 자동 묶기
   createdAt    DateTime  @default(now()) @map("created_at")

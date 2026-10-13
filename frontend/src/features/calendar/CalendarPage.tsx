@@ -19,6 +19,7 @@ export function CalendarPage() {
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [editing, setEditing] = useState<DateRecord | null>(null)
   const { data: records = [], isLoading, error } = useMonthRecords(month)
 
   const byDay = useMemo(() => {
@@ -104,7 +105,7 @@ export function CalendarPage() {
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
-            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} />
+            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} />
           )}
         </div>
       </div>
@@ -117,6 +118,18 @@ export function CalendarPage() {
         <span className="text-[24px] leading-none">+</span>
         <span className="text-[16px] font-semibold">일정 추가</span>
       </button>
+
+      {editing && (
+        <ScheduleSheet
+          key={editing.id}
+          record={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(at) => {
+            setMonth(startOfMonth(at))
+            setSelected(startOfDay(at))
+          }}
+        />
+      )}
 
       {sheetOpen && (
         <ScheduleSheet

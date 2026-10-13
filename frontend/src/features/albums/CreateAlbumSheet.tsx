@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router'
 import { BottomSheet } from '../../components/BottomSheet'
 import { Field, inputClass } from '../../components/Field'
 import { categoryOf } from '../../lib/categories'
@@ -7,6 +8,7 @@ import { useCreateAlbum, useMonthRecords } from '../../lib/queries'
 
 export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
   const createAlbum = useCreateAlbum()
+  const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(toDateInput(new Date()))
   const [highlight, setHighlight] = useState('')
@@ -39,7 +41,8 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
         highlightNote: highlight.trim() || undefined,
         recordIds: [...picked].filter((id) => dayRecords.some((r) => r.id === id)),
       },
-      { onSuccess: onClose },
+      // Photos are added on the album's own screen.
+      { onSuccess: (album) => navigate(`/albums/${album.id}`) },
     )
   }
 
@@ -81,7 +84,7 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
           <input maxLength={300} value={highlight} onChange={(e) => setHighlight(e.target.value)} placeholder="예) 2층 창가에서 찍은 노을 사진" className={inputClass} />
         </Field>
 
-        <p className="rounded-xl bg-sand-soft px-3 py-2 text-[12px] text-muted">📷 사진 올리기는 곧 추가돼요</p>
+        <p className="rounded-xl bg-sand-soft px-3 py-2 text-[12px] text-muted">📷 앨범을 만들면 바로 사진을 올릴 수 있어요</p>
 
         {createAlbum.error && <p className="text-[12px] text-coral-strong">저장하지 못했어요: {createAlbum.error.message}</p>}
 

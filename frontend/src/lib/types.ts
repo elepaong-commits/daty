@@ -56,7 +56,7 @@ export interface DateRecord {
 
 export interface Photo {
   id: number
-  imageUrl: string
+  imageUrl: string | null // signed R2 URL, valid for at least a day; null if storage is not configured
   displayOrder: number
   takenAt: string | null
 }
@@ -66,6 +66,7 @@ export interface Album {
   title: string
   albumDate: string // YYYY-MM-DD
   highlightNote: string | null
+  coverPhotoId: number | null // the "best cut"
   photoCount: number
   coverPhoto: Photo | null
   category: PlaceCategory | null
@@ -93,4 +94,54 @@ export interface CreateAlbumInput {
   albumDate: string
   highlightNote?: string
   recordIds?: number[]
+}
+
+/** GET /api/places/:id */
+export interface PlaceDetail extends Place {
+  latestVisit: { recordId: number; scheduledAt: string; rating: number | null } | null
+  albums: {
+    id: number
+    title: string
+    albumDate: string
+    coverPhotoId: number | null
+    photoCount: number
+    photos: Photo[]
+  }[]
+}
+
+export interface UpdatePlaceInput {
+  name?: string
+  category?: PlaceCategory
+  status?: PlaceStatus
+  address?: string | null
+  tipType?: TipType | null
+  tipText?: string | null
+  visit?: { scheduledAt: string; rating: number | null }
+}
+
+export interface UpdateRecordInput {
+  type?: RecordType
+  scheduledAt?: string
+  category?: PlaceCategory
+  memo?: string | null
+  rating?: number | null
+  placeName?: string
+  googleMapsUrl?: string
+  googlePlaceId?: string
+  address?: string
+  latitude?: number
+  longitude?: number
+}
+
+/** POST /api/albums/:id/photos/uploads: where to PUT one image before registering its key. */
+export interface PhotoUpload {
+  key: string
+  uploadUrl: string
+  headers: Record<string, string>
+}
+
+export interface UpdateAlbumInput {
+  title?: string
+  highlightNote?: string | null
+  coverPhotoId?: number | null
 }

@@ -2,8 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { PlaceCategory, PlaceStatus, TipType } from "../generated/prisma/client.js";
 import type { Place } from "../generated/prisma/client.js";
-import { idParam } from "../lib/http.js";
+import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
+import { serializePhoto } from "../lib/storage.js";
 
 export const placesRouter = Router();
 
@@ -67,13 +68,76 @@ placesRouter.post("/", async (req, res) => {
   res.status(201).json(serializePlace(place));
 });
 
+// Detail screen: the place, its latest visit, and the albums its visits were saved in.
+placesRouter.get("/:id", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const place = await prisma.place.findFirstOrThrow({
+    where: { id, coupleId: req.coupleId },
+    include: {
+      ...visitsInclude,
+      records: {
+        where: { type: "RECORD" },
+        orderBy: { scheduledAt: "desc" },
+        select: {
+          id: true,
+          rating: true,
+          scheduledAt: true,
+          album: {
+            select: {
+              id: true,
+              title: true,
+              albumDate: true,
+              coverPhotoId: true,
+              photos: { orderBy: { displayOrder: "asc" }, take: 3 },
+              _count: { select: { photos: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  const albums = [...new Map(place.records.flatMap((r) => (r.album ? [[r.album.id, r.album]] : []))).values()];
+  const latest = place.records[0];
+  res.json({
+    ...serializePlace(place),
+    latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
+    albums: await Promise.all(
+      albums.map(async ({ _count, albumDate, photos, ...album }) => ({
+        ...album,
+        albumDate: toDateOnly(albumDate),
+        photoCount: _count.photos,
+        photos: await Promise.all(photos.map(serializePhoto)),
+      })),
+    ),
+  });
+});
+
+const updateBody = placeBody.partial().extend({
+  // Visit date and rating live on the latest visit record; one is created if the place has none.
+  visit: z.object({ scheduledAt: z.iso.datetime({ offset: true }), rating: z.number().int().min(1).max(5).nullable() }).optional(),
+});
+
 placesRouter.patch("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const data = placeBody.partial().parse(req.body);
-  const place = await prisma.place.update({
-    where: { id, coupleId: req.coupleId },
-    data,
-    include: visitsInclude,
+  const { visit, ...data } = updateBody.parse(req.body);
+  const { coupleId } = req;
+  const place = await prisma.$transaction(async (tx) => {
+    const updated = await tx.place.update({ where: { id, coupleId }, data });
+    if (visit) {
+      const latest = await tx.dateRecord.findFirst({
+        where: { placeId: id, coupleId, type: "RECORD" },
+        orderBy: { scheduledAt: "desc" },
+      });
+      const fields = { scheduledAt: new Date(visit.scheduledAt), rating: visit.rating };
+      if (latest) {
+        await tx.dateRecord.update({ where: { id: latest.id }, data: fields });
+      } else {
+        await tx.dateRecord.create({
+          data: { coupleId, placeId: id, type: "RECORD", title: updated.name, category: updated.category, ...fields },
+        });
+      }
+    }
+    return tx.place.findUniqueOrThrow({ where: { id }, include: visitsInclude });
   });
   res.json(serializePlace(place));
 });
