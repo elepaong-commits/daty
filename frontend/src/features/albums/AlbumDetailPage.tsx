@@ -7,6 +7,8 @@ import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
+import { EditAlbumSheet } from './EditAlbumSheet'
+import { PhotoViewer } from './PhotoViewer'
 
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
@@ -18,6 +20,8 @@ export function AlbumDetailPage() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [editing, setEditing] = useState(false)
+  const [viewing, setViewing] = useState<number | null>(null) // index of the photo open in the viewer
 
   function toggleSelecting() {
     setSelecting((on) => !on)
@@ -54,11 +58,7 @@ export function AlbumDetailPage() {
       eyebrow={t.albums.detailEyebrow}
       title={t.albums.detailTitle}
       fallback="/albums"
-      action={
-        album && album.photoCount > 0 ? (
-          <HeaderAction onClick={toggleSelecting}>{selecting ? t.albums.done : t.albums.select}</HeaderAction>
-        ) : undefined
-      }
+      action={album && <HeaderAction onClick={() => setEditing(true)}>{t.common.edit}</HeaderAction>}
     />
   )
 
@@ -103,16 +103,27 @@ export function AlbumDetailPage() {
 
         <div className="flex items-center justify-between">
           <h3 className="font-display text-[18px]">{t.albums.moments}</h3>
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={uploadPhotos.isPending || selecting}
-            className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
-          >
-            {uploadPhotos.progress
-              ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total)
-              : t.albums.addPhotos}
-          </button>
+          <div className="flex gap-2">
+            {album.photos.length > 0 && (
+              <button
+                type="button"
+                onClick={toggleSelecting}
+                className="h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand"
+              >
+                {selecting ? t.albums.done : t.albums.select}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={uploadPhotos.isPending || selecting}
+              className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+            >
+              {uploadPhotos.progress
+                ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total)
+                : t.albums.addPhotos}
+            </button>
+          </div>
           <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
         </div>
 
@@ -129,14 +140,13 @@ export function AlbumDetailPage() {
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
-            {album.photos.map((photo) => {
+            {album.photos.map((photo, i) => {
               const isSelected = selected.has(photo.id)
               return (
                 <button
                   key={photo.id}
                   type="button"
-                  disabled={!selecting}
-                  onClick={() => toggle(photo.id)}
+                  onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
@@ -185,6 +195,11 @@ export function AlbumDetailPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}
+      {viewing !== null && (
+        <PhotoViewer photos={album.photos} startIndex={viewing} coverPhotoId={album.coverPhotoId} onClose={() => setViewing(null)} />
       )}
     </div>
   )

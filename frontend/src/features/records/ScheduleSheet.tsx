@@ -165,7 +165,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
           {placeSource === 'saved' ? (
             <SavedPlacePicker
               places={places}
-              selectedId={savedId}
+              selectedIds={savedId === null ? [] : [savedId]}
               onSelect={(place) => {
                 setSavedId(place.id)
                 setCategory(place.category)

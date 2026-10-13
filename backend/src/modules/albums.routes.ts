@@ -30,16 +30,53 @@ async function serializeAlbum({ photos, records, ...album }: AlbumWithRelations)
     coverPhoto: cover,
     category: records[0]?.category ?? null,
     places,
+    recordIds: records.map((r) => r.id),
     photos: serialized,
   };
 }
+
+// Saved places picked for the album become visit records on that day, which is how an album knows its places.
+const placeVisits = {
+  placeIds: z.array(z.number().int().positive()).max(20).optional(),
+  // When those visits happened (the album's day, in the client's time zone).
+  visitAt: z.iso.datetime({ offset: true }).optional(),
+};
 
 const albumBody = z.object({
   title: z.string().trim().min(1).max(100),
   albumDate: z.iso.date(),
   highlightNote: z.string().trim().max(300).nullish(),
   recordIds: z.array(z.number().int().positive()).max(50).optional(),
+  ...placeVisits,
 });
+
+/** Records a visit to each picked place not already in the album, promoting wish places to visited. */
+async function addPlaceVisits(
+  tx: Prisma.TransactionClient,
+  { coupleId, writerId, albumId }: { coupleId: number; writerId: number; albumId: number },
+  placeIds: number[],
+  visitAt: string | undefined,
+) {
+  if (placeIds.length === 0) return;
+  if (!visitAt) throw new HttpError(400, "visitAt is required with placeIds");
+  const places = await tx.place.findMany({ where: { id: { in: placeIds }, coupleId } });
+  if (places.length !== new Set(placeIds).size) throw new HttpError(404, "Place not found");
+  const linked = await tx.dateRecord.findMany({ where: { albumId, placeId: { in: placeIds } }, select: { placeId: true } });
+  const fresh = places.filter((place) => !linked.some((r) => r.placeId === place.id));
+  await tx.dateRecord.createMany({
+    data: fresh.map((place) => ({
+      coupleId,
+      writerId,
+      albumId,
+      placeId: place.id,
+      type: "RECORD" as const,
+      title: place.name,
+      category: place.category,
+      scheduledAt: new Date(visitAt),
+    })),
+  });
+  await tx.place.updateMany({ where: { id: { in: fresh.map((p) => p.id) }, status: "WISH" }, data: { status: "VISITED" } });
+}
 
 albumsRouter.get("/", async (req, res) => {
   const albums = await prisma.album.findMany({
@@ -60,39 +97,62 @@ albumsRouter.get("/:id", async (req, res) => {
 });
 
 albumsRouter.post("/", async (req, res) => {
-  const { recordIds = [], albumDate, ...data } = albumBody.parse(req.body);
+  const { recordIds = [], placeIds = [], visitAt, albumDate, ...data } = albumBody.parse(req.body);
   const { coupleId } = req;
   const album = await prisma.$transaction(async (tx) => {
     const owned = await tx.dateRecord.count({ where: { id: { in: recordIds }, coupleId } });
     if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
-    return tx.album.create({
+    const { id } = await tx.album.create({
       data: {
         ...data,
         coupleId,
         albumDate: new Date(albumDate),
         records: { connect: recordIds.map((id) => ({ id })) },
       },
-      include: albumInclude,
     });
+    await addPlaceVisits(tx, { coupleId, writerId: req.userId, albumId: id }, placeIds, visitAt);
+    return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
   });
   res.status(201).json(await serializeAlbum(album));
 });
 
 const updateBody = z.object({
   title: z.string().trim().min(1).max(100).optional(),
+  albumDate: z.iso.date().optional(),
   highlightNote: z.string().trim().max(300).nullable().optional(),
   // The "best cut" shown on the album card; must be one of this album's photos.
   coverPhotoId: z.number().int().positive().nullable().optional(),
+  // Replaces the visits bundled into the album; each must be free or already in this album.
+  recordIds: z.array(z.number().int().positive()).max(50).optional(),
+  ...placeVisits,
 });
 
 albumsRouter.patch("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const data = updateBody.parse(req.body);
-  await prisma.album.findFirstOrThrow({ where: { id, coupleId: req.coupleId } });
+  const { recordIds, placeIds = [], visitAt, albumDate, ...data } = updateBody.parse(req.body);
+  const { coupleId } = req;
+  await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
   if (data.coverPhotoId) {
     await prisma.photo.findFirstOrThrow({ where: { id: data.coverPhotoId, albumId: id } });
   }
-  const album = await prisma.album.update({ where: { id }, data, include: albumInclude });
+  const album = await prisma.$transaction(async (tx) => {
+    if (recordIds) {
+      const owned = await tx.dateRecord.count({
+        where: { id: { in: recordIds }, coupleId, OR: [{ albumId: null }, { albumId: id }] },
+      });
+      if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
+    }
+    await tx.album.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(albumDate && { albumDate: new Date(albumDate) }),
+        ...(recordIds && { records: { set: recordIds.map((recordId) => ({ id: recordId })) } }),
+      },
+    });
+    await addPlaceVisits(tx, { coupleId, writerId: req.userId, albumId: id }, placeIds, visitAt);
+    return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
+  });
   res.json(await serializeAlbum(album));
 });
 

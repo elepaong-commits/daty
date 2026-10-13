@@ -91,6 +91,7 @@ export interface Album {
   coverPhoto: Photo | null
   category: PlaceCategory | null
   places: { id: number; name: string; address: string | null }[]
+  recordIds: number[] // the visits bundled into this album
   photos: Photo[]
 }
 
@@ -116,6 +117,8 @@ export interface CreateAlbumInput {
   albumDate: string
   highlightNote?: string
   recordIds?: number[]
+  placeIds?: number[] // saved places visited that day; each becomes a visit record in the album
+  visitAt?: string // when those visits happened, required with placeIds
 }
 
 /** GET /api/places/:id */
@@ -164,6 +167,10 @@ export interface PhotoUpload {
 
 export interface UpdateAlbumInput {
   title?: string
+  albumDate?: string
   highlightNote?: string | null
   coverPhotoId?: number | null
+  recordIds?: number[]
+  placeIds?: number[]
+  visitAt?: string
 }
