@@ -1,4 +1,5 @@
 import { Check, Heart } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
@@ -161,7 +162,9 @@ export function MapPage() {
   const map = (
     <DateMap places={filtered} activeStatus={status} selectedId={highlightedId} onSelect={selectOnMap} />
   )
-  const addSheet = adding && <AddPlaceSheet onClose={() => setAdding(false)} onSaved={showAdded} />
+  const addSheet = (
+    <AnimatePresence>{adding && <AddPlaceSheet onClose={() => setAdding(false)} onSaved={showAdded} />}</AnimatePresence>
+  )
 
   if (isDesktop) {
     return (

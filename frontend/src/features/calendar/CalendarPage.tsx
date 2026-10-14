@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import chevronLeft from '../../assets/icons/chevron-left.svg'
@@ -160,48 +161,54 @@ export function CalendarPage() {
         <span className="text-[16px] font-semibold">{t.calendar.addSchedule}</span>
       </button>
 
-      {completed && (
-        <ConfirmDialog
-          title={t.calendar.askAlbumTitle}
-          message={
-            dayAlbum
-              ? t.calendar.askAlbumAddBody(completed.place?.name ?? completed.title, dayAlbum.title)
-              : t.calendar.askAlbumBody(completed.place?.name ?? completed.title)
-          }
-          confirmLabel={addToAlbum.isPending ? t.common.saving : dayAlbum ? t.calendar.askAlbumAddConfirm : t.calendar.askAlbumConfirm}
-          error={addToAlbum.error && `${t.common.saveFailed}: ${errorMessage(addToAlbum.error, t)}`}
-          busy={addToAlbum.isPending}
-          cancelLabel={t.calendar.askAlbumLater}
-          onConfirm={() => openAlbumFor(completed)}
-          onCancel={() => {
-            setCompleted(null)
-            addToAlbum.reset()
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {completed && (
+          <ConfirmDialog
+            title={t.calendar.askAlbumTitle}
+            message={
+              dayAlbum
+                ? t.calendar.askAlbumAddBody(completed.place?.name ?? completed.title, dayAlbum.title)
+                : t.calendar.askAlbumBody(completed.place?.name ?? completed.title)
+            }
+            confirmLabel={addToAlbum.isPending ? t.common.saving : dayAlbum ? t.calendar.askAlbumAddConfirm : t.calendar.askAlbumConfirm}
+            error={addToAlbum.error && `${t.common.saveFailed}: ${errorMessage(addToAlbum.error, t)}`}
+            busy={addToAlbum.isPending}
+            cancelLabel={t.calendar.askAlbumLater}
+            onConfirm={() => openAlbumFor(completed)}
+            onCancel={() => {
+              setCompleted(null)
+              addToAlbum.reset()
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {editing && (
-        <ScheduleSheet
-          key={editing.id}
-          record={editing}
-          onClose={() => setEditing(null)}
-          onSaved={(at) => {
-            setMonth(startOfMonth(at))
-            setSelected(startOfDay(at))
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {editing && (
+          <ScheduleSheet
+            key={editing.id}
+            record={editing}
+            onClose={() => setEditing(null)}
+            onSaved={(at) => {
+              setMonth(startOfMonth(at))
+              setSelected(startOfDay(at))
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {sheetOpen && (
-        <ScheduleSheet
-          initialDate={selected}
-          onClose={() => setSheetOpen(false)}
-          onSaved={(at) => {
-            setMonth(startOfMonth(at))
-            setSelected(startOfDay(at))
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {sheetOpen && (
+          <ScheduleSheet
+            initialDate={selected}
+            onClose={() => setSheetOpen(false)}
+            onSaved={(at) => {
+              setMonth(startOfMonth(at))
+              setSelected(startOfDay(at))
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

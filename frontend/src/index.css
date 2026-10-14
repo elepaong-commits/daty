@@ -34,6 +34,15 @@
   --shadow-photo: 0 5px 12px rgba(45, 55, 72, 0.25);
   --shadow-sheet: 0 -5px 20px rgba(45, 55, 72, 0.19);
   --shadow-cta: 0 8px 18px rgba(0, 168, 150, 0.44);
+
+  /* List items rising in as they first appear; `backwards` so it never overrides their own transforms afterwards. */
+  --animate-rise-in: rise-in 0.32s cubic-bezier(0, 0, 0.2, 1) backwards;
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
 }
 
 /* Jua and Plex Sans KR have no kana, and shared kanji should use Japanese glyph shapes. */

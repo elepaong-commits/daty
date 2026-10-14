@@ -1,8 +1,10 @@
+import { m } from 'motion/react'
 import { NavLink } from 'react-router'
 import { useT } from '../lib/i18n'
+import { enterSpring } from '../lib/motion'
 import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 
-/** Phone tab bar; the desktop layout uses `Sidebar` instead. */
+/** Phone tab bar; the desktop layout uses `Sidebar` instead. The highlight slides over to the tab that opens. */
 export function BottomNav() {
   const isUnder = useIsUnder()
   const t = useT()
@@ -16,13 +18,18 @@ export function BottomNav() {
             return (
             <>
               <span
-                className={`flex h-8 items-center justify-center rounded-full ${
-                  isActive ? 'w-[70.4px] bg-brand-soft text-brand' : 'w-16 text-faint'
+                className={`relative flex h-8 w-[70.4px] items-center justify-center transition-colors duration-200 ${
+                  isActive ? 'text-brand' : 'text-faint'
                 }`}
               >
-                <Icon size={20} strokeWidth={1.75} />
+                {isActive && (
+                  <m.span layoutId="bottom-nav-highlight" transition={enterSpring} className="absolute inset-0 rounded-full bg-brand-soft" />
+                )}
+                <Icon size={20} strokeWidth={1.75} className="relative" />
               </span>
-              <span className={`text-[11px] leading-normal font-semibold ${isActive ? 'text-brand' : 'text-faint'}`}>
+              <span
+                className={`text-[11px] leading-normal font-semibold transition-colors duration-200 ${isActive ? 'text-brand' : 'text-faint'}`}
+              >
                 {t.nav[key]}
               </span>
             </>

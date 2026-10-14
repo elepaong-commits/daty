@@ -1,7 +1,9 @@
 import { TriangleAlert, X } from 'lucide-react'
+import { useAnimate, usePresence, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatDotted, toTimeInput } from '../../lib/dates'
 import { useT } from '../../lib/i18n'
+import { enterSpring, exitTween, settleTween } from '../../lib/motion'
 import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -15,18 +17,64 @@ interface Props {
   onClose: () => void
 }
 
-/** Full-screen viewer; swipe (or arrows/keys) between the album's photos and videos. */
+/**
+ * Full-screen viewer; swipe (or arrows/keys) between the album's photos and videos. A photo zooms out of its
+ * grid tile (`data-photo-id`) on open and back into the tile of the one being shown on close; render it inside
+ * `AnimatePresence` for the closing half.
+ */
 export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, coverPending, onClose }: Props) {
   const t = useT()
   const strip = useRef<HTMLDivElement>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const flyer = useRef<HTMLDivElement>(null)
+  const [scope, animate] = useAnimate<HTMLDivElement>()
+  const [isPresent, safeToRemove] = usePresence()
+  const reduceMotion = useReducedMotion()
   const [index, setIndex] = useState(startIndex)
   const photo = photos[Math.min(index, photos.length - 1)]
 
-  // Open on the tapped photo without animating through the ones before it.
+  // Open on the tapped photo without animating through the ones before it, zooming it out of its tile.
   useLayoutEffect(() => {
     const el = strip.current
     if (el) el.scrollLeft = startIndex * el.clientWidth
-  }, [startIndex])
+
+    animate('[data-viewer-fade]', { opacity: [0, 1] }, { duration: 0.2 })
+    const tile = reduceMotion ? null : tileFor(photos[startIndex])
+    if (!tile || !el || !stage.current || !flyer.current) {
+      animate(stage.current!, { opacity: [0, 1], scale: [0.96, 1] }, enterSpring)
+      return
+    }
+    const target = containRect(el.getBoundingClientRect(), tile.aspect)
+    stage.current.style.opacity = '0'
+    tile.img.style.visibility = 'hidden'
+    flyer.current.style.display = 'block'
+    animate(flyer.current, { ...between(tile.img.getBoundingClientRect(), target), borderRadius: [TILE_RADIUS, 0] }, enterSpring).then(() => {
+      stage.current?.style.removeProperty('opacity')
+      tile.img.style.removeProperty('visibility')
+      if (flyer.current) flyer.current.style.display = 'none'
+    })
+  }, [startIndex]) // eslint-disable-line react-hooks/exhaustive-deps -- runs once, when the viewer opens
+
+  // Closing: shrink the photo on screen back into its tile, or just fade when that tile isn't showing.
+  useEffect(() => {
+    if (isPresent) return
+    const fade = animate('[data-viewer-fade]', { opacity: 0 }, exitTween)
+    const tile = reduceMotion ? null : tileFor(photo)
+    const el = strip.current
+    if (!tile || !el || !stage.current || !flyer.current) {
+      Promise.all([fade, animate(stage.current!, { opacity: 0, scale: 0.96 }, exitTween)]).then(safeToRemove)
+      return
+    }
+    const from = containRect(el.getBoundingClientRect(), tile.aspect)
+    stage.current.style.opacity = '0'
+    tile.img.style.visibility = 'hidden'
+    flyer.current.style.display = 'block'
+    const shrink = animate(flyer.current, { ...between(from, tile.img.getBoundingClientRect()), borderRadius: [0, TILE_RADIUS] }, settleTween)
+    Promise.all([fade, shrink]).then(() => {
+      tile.img.style.removeProperty('visibility')
+      safeToRemove()
+    })
+  }, [isPresent]) // eslint-disable-line react-hooks/exhaustive-deps -- runs once, when the viewer closes
 
   const go = (next: number) => scrollToPhoto(strip.current, next, photos.length)
 
@@ -49,8 +97,15 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
   const isCover = photo !== undefined && photo.id === coverPhotoId
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col bg-ink text-white lg:fixed" role="dialog" aria-modal="true" aria-label={t.albums.viewer}>
-      <div className="flex shrink-0 items-center justify-between px-4 pt-3.5 pb-2">
+    <div
+      ref={scope}
+      className={`absolute inset-0 z-50 flex flex-col text-white lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.albums.viewer}
+    >
+      <div data-viewer-fade className="absolute inset-0 bg-ink" />
+      <div data-viewer-fade className="relative flex shrink-0 items-center justify-between px-4 pt-3.5 pb-2">
         <span className="text-[13px] font-semibold tabular-nums">
           {index + 1} / {photos.length}
         </span>
@@ -64,7 +119,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div ref={stage} className="relative min-h-0 flex-1">
         <div
           ref={strip}
           onScroll={onScroll}
@@ -76,7 +131,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
                 <ViewerVideo src={p.imageUrl} poster={p.thumbnailUrl} active={i === index} />
               ) : (
                 // Neighbours load right away so swiping doesn't show a blank frame.
-                <ViewerPhoto src={p.imageUrl} eager={Math.abs(i - index) <= 1} />
+                <ViewerPhoto src={p.imageUrl} thumb={p.thumbnailUrl} eager={Math.abs(i - index) <= 1} />
               )}
             </div>
           ))}
@@ -93,7 +148,12 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         )}
       </div>
 
-      <div className="flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
+      {/* The shown photo's thumbnail, flown between its grid tile and the viewer while opening and closing. */}
+      <div ref={flyer} className="pointer-events-none fixed hidden overflow-hidden">
+        {photo?.thumbnailUrl && <img src={photo.thumbnailUrl} alt="" className="size-full object-cover" />}
+      </div>
+
+      <div data-viewer-fade className="relative flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
         <span>{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
         {photo && (
           <button
@@ -111,6 +171,32 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
       </div>
     </div>
   )
+}
+
+// Grid tiles are `rounded-xl`.
+const TILE_RADIUS = 12
+
+/** A photo's grid image and its aspect ratio, when that tile is on screen with its thumbnail loaded. */
+function tileFor(photo: Photo | undefined) {
+  if (photo?.mediaType !== 'PHOTO' || !photo.thumbnailUrl) return null
+  const img = document.querySelector<HTMLImageElement>(`[data-photo-id="${photo.id}"] img`)
+  if (!img?.naturalWidth) return null
+  const rect = img.getBoundingClientRect()
+  if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.width === 0) return null
+  return { img, aspect: img.naturalWidth / img.naturalHeight }
+}
+
+type Box = Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>
+
+/** Where an image of this aspect ratio sits when fitted (`object-contain`) inside the area. */
+function containRect(area: DOMRect, aspect: number): Box {
+  const width = Math.min(area.width, area.height * aspect)
+  const height = width / aspect
+  return { left: area.left + (area.width - width) / 2, top: area.top + (area.height - height) / 2, width, height }
+}
+
+function between(from: Box, to: Box) {
+  return { left: [from.left, to.left], top: [from.top, to.top], width: [from.width, to.width], height: [from.height, to.height] }
 }
 
 function scrollToPhoto(strip: HTMLDivElement | null, index: number, count: number) {
@@ -164,11 +250,17 @@ function ViewerVideo({ src, poster, active }: { src: string | null; poster: stri
   )
 }
 
-function ViewerPhoto({ src, eager }: { src: string | null; eager: boolean }) {
+/** The full image over its thumbnail, which is already cached from the grid and shows while the full one loads. */
+function ViewerPhoto({ src, thumb, eager }: { src: string | null; thumb: string | null; eager: boolean }) {
   const t = useT()
   const { failed, onError } = useImageFailed(src)
   if (src && !failed) {
-    return <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} onError={onError} draggable={false} className="max-h-full max-w-full object-contain select-none" />
+    return (
+      <div className="relative size-full select-none">
+        {thumb && thumb !== src && <img src={thumb} alt="" draggable={false} className="absolute inset-0 size-full object-contain" />}
+        <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} onError={onError} draggable={false} className="absolute inset-0 size-full object-contain" />
+      </div>
+    )
   }
   return (
     <span className="flex flex-col items-center gap-1 text-[12px] text-white/70">

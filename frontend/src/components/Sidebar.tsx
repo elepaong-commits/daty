@@ -1,10 +1,12 @@
 import { Heart, Plus, Settings } from 'lucide-react'
+import { AnimatePresence, m } from 'motion/react'
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import { AccountSheet } from '../features/auth/AccountSheet'
 import { ScheduleSheet } from '../features/records/ScheduleSheet'
 import { daysTogether, formatDotted, parseDateOnly, toDateInput } from '../lib/dates'
 import { useT } from '../lib/i18n'
+import { enterSpring } from '../lib/motion'
 import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 import { useMe } from '../lib/queries'
 import { LanguageToggle } from './ScreenHeader'
@@ -53,10 +55,14 @@ export function Sidebar() {
               key={to}
               to={to}
               aria-current={active ? 'page' : undefined}
-              className={`flex h-[46px] items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold ${
-                active ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-sand-soft hover:text-ink'
+              className={`relative isolate flex h-[46px] items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold transition-colors duration-200 ${
+                active ? 'text-brand' : 'text-muted hover:bg-sand-soft hover:text-ink'
               }`}
             >
+              {/* Slides over to the tab that opens. */}
+              {active && (
+                <m.span layoutId="sidebar-highlight" transition={enterSpring} className="absolute inset-0 -z-10 rounded-[14px] bg-brand-soft" />
+              )}
               <Icon size={20} strokeWidth={1.75} />
               {t.nav[key]}
             </NavLink>
@@ -98,7 +104,7 @@ export function Sidebar() {
           onSaved={(at) => navigate('/calendar', { state: { focusDate: toDateInput(at) } })}
         />
       )}
-      {account && <AccountSheet onClose={() => setAccount(false)} />}
+      <AnimatePresence>{account && <AccountSheet onClose={() => setAccount(false)} />}</AnimatePresence>
     </aside>
   )
 }

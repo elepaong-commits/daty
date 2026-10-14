@@ -1,10 +1,12 @@
 import { ArrowDown, ArrowUp, Check, MapPin, Play, Star, TriangleAlert, Video } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
 import { formatDotted, formatDuration, formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import type { MediaType, Photo } from '../../lib/types'
@@ -278,9 +280,11 @@ export function AlbumDetailPage() {
                 <button
                   key={photo.id}
                   type="button"
+                  data-photo-id={photo.id}
                   onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
-                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft lg:aspect-square lg:h-auto lg:hover:opacity-90 ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
+                  style={riseDelay(i)}
+                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft lg:aspect-square lg:h-auto lg:hover:opacity-90 ${RISE_IN} ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
@@ -337,17 +341,19 @@ export function AlbumDetailPage() {
         </div>
       )}
 
-      {editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}
-      {viewing !== null && (
-        <PhotoViewer
-          photos={shown}
-          startIndex={viewing}
-          coverPhotoId={album.coverPhotoId}
-          onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
-          coverPending={updateAlbum.isPending}
-          onClose={() => setViewing(null)}
-        />
-      )}
+      <AnimatePresence>{editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {viewing !== null && (
+          <PhotoViewer
+            photos={shown}
+            startIndex={viewing}
+            coverPhotoId={album.coverPhotoId}
+            onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
+            coverPending={updateAlbum.isPending}
+            onClose={() => setViewing(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

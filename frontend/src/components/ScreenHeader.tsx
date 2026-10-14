@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import globeIcon from '../assets/icons/globe.svg'
 import { AccountSheet, Avatar } from '../features/auth/AccountSheet'
@@ -42,7 +43,7 @@ function AccountButton() {
       <button type="button" onClick={() => setOpen(true)} aria-label={t.common.myInfo}>
         <Avatar name={nickname} size="sm" />
       </button>
-      {open && <AccountSheet onClose={() => setOpen(false)} />}
+      <AnimatePresence>{open && <AccountSheet onClose={() => setOpen(false)} />}</AnimatePresence>
     </>
   )
 }
