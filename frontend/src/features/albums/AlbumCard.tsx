@@ -11,7 +11,10 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
   const t = useT()
   const date = parseDateOnly(album.albumDate)
   const large = size === 'large'
-  const firstPlace = album.places[0]
+  // Small cards have room for one place; the rest show as a count.
+  const shownPlaces = large ? album.places : album.places.slice(0, 1)
+  const morePlaces = album.places.length - shownPlaces.length
+  const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
 
   return (
     <Link to={`/albums/${album.id}`} className="flex min-w-0 flex-col gap-2.5 pt-1.5">
@@ -22,13 +25,18 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
         <h3 className={`font-display leading-[1.375] ${large ? 'text-[20px]' : 'text-[16px]'}`}>
           {formatSlashDay(date)} · {album.title}
         </h3>
-        {firstPlace && (
+        {shownPlaces.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
-            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-              📍 {firstPlace.name}
-            </span>
-            {large && firstPlace.address && (
-              <span className="rounded-md bg-sand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold">{firstPlace.address}</span>
+            {shownPlaces.map((place) => (
+              <span key={place.id} className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
+                📍 {place.name}
+              </span>
+            ))}
+            {morePlaces > 0 && (
+              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">+{morePlaces}</span>
+            )}
+            {large && onlyPlace?.address && (
+              <span className="rounded-md bg-sand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold">{onlyPlace.address}</span>
             )}
           </div>
         )}

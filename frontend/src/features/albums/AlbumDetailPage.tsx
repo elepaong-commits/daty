@@ -85,7 +85,7 @@ export function AlbumDetailPage() {
   }
   const shown = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
   const date = parseDateOnly(album.albumDate)
-  const firstPlace = album.places[0]
+  const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
   const actionError = updateAlbum.error ?? deletePhotos.error
 
   return (
@@ -99,10 +99,15 @@ export function AlbumDetailPage() {
           <p className="text-[12px] leading-normal text-muted">
             {formatDotted(date)} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
           </p>
-          {firstPlace && (
-            <div className="flex gap-1.5 text-[11px] font-semibold">
-              <span className="rounded-md bg-brand-soft px-2 py-[3px] text-brand-strong">📍 {firstPlace.name}</span>
-              {firstPlace.address && <span className="rounded-md bg-sand-soft px-2 py-[3px]">{firstPlace.address}</span>}
+          {album.places.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+              {album.places.map((place) => (
+                <span key={place.id} className="rounded-md bg-brand-soft px-2 py-[3px] text-brand-strong">
+                  📍 {place.name}
+                </span>
+              ))}
+              {/* One place: show where it is. Several: the names are enough. */}
+              {onlyPlace?.address && <span className="rounded-md bg-sand-soft px-2 py-[3px]">{onlyPlace.address}</span>}
             </div>
           )}
         </div>
