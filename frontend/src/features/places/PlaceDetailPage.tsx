@@ -9,6 +9,7 @@ import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
 import type { Place } from '../../lib/types'
 import { useT } from '../../lib/i18n'
+import { PlaceHero } from './PlaceHero'
 import { PlaceNotes } from './PlaceNotes'
 
 export function PlaceDetailPage() {
@@ -42,7 +43,12 @@ export function PlaceDetailPage() {
 
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5">
         <div className="relative h-48 shrink-0">
-          <PhotoTile src={album?.coverPhoto?.thumbnailUrl} category={place.category} className="size-full rounded-xl" iconSize={56} />
+          <PlaceHero
+            googlePlaceId={place.googlePlaceId}
+            fallbackSrc={album?.coverPhoto?.thumbnailUrl}
+            category={place.category}
+            className="size-full rounded-xl"
+          />
           <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand' : 'text-coral'}`}>
             {visited ? <Check size={12} strokeWidth={1.75} /> : <Heart size={12} strokeWidth={1.75} />} {t.place.badge[place.status]}
           </span>

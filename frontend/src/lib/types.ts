@@ -116,7 +116,8 @@ export interface CreateRecordInput {
   address?: string
   latitude?: number
   longitude?: number
-  memo?: string
+  memo?: string // about this date
+  placeNote?: string // added to the place's own memos
   rating?: number
 }
 
@@ -157,6 +158,7 @@ export interface UpdateRecordInput {
   scheduledAt?: string
   category?: PlaceCategory
   memo?: string | null
+  placeNote?: string // a new memo for the record's place
   rating?: number | null
   placeId?: number
   placeName?: string

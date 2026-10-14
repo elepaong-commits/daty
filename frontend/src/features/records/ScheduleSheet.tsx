@@ -6,7 +6,7 @@ import clockOutlineIcon from '../../assets/icons/clock-outline.svg'
 import clockIcon from '../../assets/icons/clock.svg'
 import { BottomSheet } from '../../components/BottomSheet'
 import { Chip, Field, inputClass } from '../../components/Field'
-import { MemoInput } from '../../components/Memo'
+import { MemoInput, MemoText } from '../../components/Memo'
 import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
 import { errorMessage } from '../../lib/api'
 import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
@@ -53,7 +53,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   const [placeName, setPlaceName] = useState(record && !record.placeId ? record.title : '')
   const [picked, setPicked] = useState<PickedPlace | null>(null)
   const [category, setCategory] = useState<PlaceCategory>(record?.category ?? 'CAFE')
+  // The date's own memo; the place memo is a new note added to the place, so it always starts empty.
   const [memo, setMemo] = useState(() => decodeMemo(record?.memo, t))
+  const [placeMemo, setPlaceMemo] = useState('')
   const [rating, setRating] = useState(record?.rating ?? 5)
 
   const placeSource = source ?? (places.length > 0 ? 'saved' : 'new')
@@ -62,6 +64,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   const hasPlace = placeSource === 'saved' ? savedId !== null : placeName.trim() !== ''
   const canSave = hasPlace && date !== '' && time !== '' && !busy
   const error = mutation.error ?? deleteRecord.error
+  const latestPlaceNote = placeSource === 'saved' ? places.find((p) => p.id === savedId)?.latestNote : null
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -82,6 +85,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
       longitude: picked?.longitude,
     }
     const content = encodeMemo(memo)
+    const placeNote = encodeMemo(placeMemo) || undefined
 
     if (editing) {
       updateRecord.mutate(
@@ -90,6 +94,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
           scheduledAt: scheduledAt.toISOString(),
           category,
           memo: content || null,
+          placeNote,
           rating: type === 'RECORD' ? rating : null,
           // Only move the record to another place when the place actually changed.
           ...(placeSource === 'new' ? newPlace : savedId !== record.placeId && { placeId: savedId! }),
@@ -105,6 +110,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         category,
         ...(placeSource === 'saved' ? { placeId: savedId! } : newPlace),
         memo: content || undefined,
+        placeNote,
         rating: type === 'RECORD' ? rating : undefined,
       },
       done,
@@ -205,6 +211,23 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             </div>
           </div>
         )}
+
+        <div className="pt-4">
+          {latestPlaceNote && (
+            <div className="mb-2 flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
+              <span className="text-[11px] leading-normal font-semibold text-amber-ink/70">{t.schedule.latestPlaceMemo}</span>
+              <MemoText content={latestPlaceNote} className="text-[13px] leading-[1.75] whitespace-pre-line text-amber-ink" />
+            </div>
+          )}
+          <MemoInput
+            label={t.schedule.placeMemo}
+            value={placeMemo}
+            onChange={setPlaceMemo}
+            placeholder={t.schedule.placeMemoPlaceholder}
+            maxLength={500}
+          />
+          <p className="px-1 pt-1 text-[11px] leading-normal text-muted">{t.schedule.placeMemoHint}</p>
+        </div>
 
         {type === 'RECORD' && (
           <div className="flex flex-col gap-1.5 pt-4">
