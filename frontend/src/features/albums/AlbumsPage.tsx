@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
 import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
+import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbums } from '../../lib/queries'
 import { AlbumCard } from './AlbumCard'
 import { CreateAlbumSheet, type NewAlbumDraft } from './CreateAlbumSheet'
@@ -52,17 +53,18 @@ export function AlbumsPage() {
           {!isLoading && !error && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">
               {featured && (
-                <div className="col-span-2 lg:row-span-2">
+                <div className={`col-span-2 lg:row-span-2 ${RISE_IN}`}>
                   <AlbumCard album={featured} size="large" />
                 </div>
               )}
-              {rest.map((album) => (
-                <AlbumCard key={album.id} album={album} size="small" />
+              {rest.map((album, i) => (
+                <AlbumCard key={album.id} album={album} size="small" className={RISE_IN} style={riseDelay(i + 1)} />
               ))}
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft lg:max-h-[240px]"
+                style={riseDelay(rest.length + 1)}
+                className={`flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft lg:max-h-[240px] ${RISE_IN}`}
               >
                 <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white">+</span>
                 <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>

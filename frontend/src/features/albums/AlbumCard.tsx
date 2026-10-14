@@ -1,4 +1,5 @@
 import { Camera, type LucideIcon, MapPin, Star, Video } from 'lucide-react'
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
@@ -8,7 +9,7 @@ import { useImageFailed } from '../../lib/useImageFailed'
 
 const LAYER_TILTS = ['-rotate-6', 'rotate-5'] as const
 
-export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'small' }) {
+export function AlbumCard({ album, size, className = '', style }: { album: Album; size: 'large' | 'small'; className?: string; style?: CSSProperties }) {
   const t = useT()
   const date = parseDateOnly(album.albumDate)
   const large = size === 'large'
@@ -18,7 +19,7 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
 
   return (
-    <Link to={`/albums/${album.id}`} className="group flex min-w-0 flex-col gap-2.5 pt-1.5">
+    <Link to={`/albums/${album.id}`} className={`group flex min-w-0 flex-col gap-2.5 pt-1.5 ${className}`} style={style}>
       {/* The tilted prints spread further on the big desktop card, so it gets more room around them. */}
       <div className={large ? 'px-1.5 lg:px-5 lg:py-7' : 'px-1.5'}>
         <PhotoStack album={album} heightClass={large ? 'h-60 lg:h-[440px]' : 'h-[225px] lg:h-[200px]'} date={formatDotted(date)} />

@@ -1,4 +1,5 @@
 import type { Transition } from 'motion/react'
+import type { CSSProperties } from 'react'
 
 /** Sheets and dialogs coming in: a soft spring that settles without bouncing past. */
 export const enterSpring: Transition = { type: 'spring', stiffness: 420, damping: 40, mass: 0.9 }
@@ -21,3 +22,11 @@ export const screenEnter = {
   initial: { opacity: 0, y: 6 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0, 0, 0.2, 1] } },
 } as const
+
+/** Class for list and grid items that rise in one after another when they first appear (plain CSS, see `rise-in`). */
+export const RISE_IN = 'motion-safe:animate-rise-in'
+
+/** The item's turn in that sequence; past the first few everything comes in together so long lists don't drag. */
+export function riseDelay(index: number): CSSProperties {
+  return { animationDelay: `${Math.min(index, 8) * 40}ms` }
+}

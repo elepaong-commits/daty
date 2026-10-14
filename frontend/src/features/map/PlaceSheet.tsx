@@ -4,6 +4,7 @@ import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
 import { formatMonthDay } from '../../lib/dates'
+import { RISE_IN, riseDelay } from '../../lib/motion'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 
@@ -57,9 +58,10 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
             expanded ? 'min-h-0 flex-1 flex-col overflow-y-auto' : 'snap-x snap-mandatory scroll-px-4 overflow-x-auto'
           }`}
         >
-          {places.map((place) => (
+          {places.map((place, i) => (
             <PlaceCard
               key={place.id}
+              index={i}
               ref={(el) => {
                 if (el) cardRefs.current.set(place.id, el)
                 else cardRefs.current.delete(place.id)
@@ -114,9 +116,10 @@ export function PlaceList({
         <p className="px-5 py-6 text-center text-[13px] text-muted">{t.map.empty[status]}</p>
       ) : (
         <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pt-0.5 pb-5">
-          {places.map((place) => (
+          {places.map((place, i) => (
             <PlaceCard
               key={place.id}
+              index={i}
               ref={(el) => {
                 if (el) cardRefs.current.set(place.id, el)
                 else cardRefs.current.delete(place.id)
@@ -138,12 +141,15 @@ function PlaceCard({
   selected,
   onClick,
   className,
+  index,
   ref,
 }: {
   place: Place
   selected: boolean
   onClick: () => void
   className: string
+  /** Position in the list, for the order the cards rise in. */
+  index: number
   ref: (el: HTMLButtonElement | null) => void
 }) {
   const category = categoryOf(place.category)
@@ -155,7 +161,8 @@ function PlaceCard({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex shrink-0 flex-col gap-2 rounded-2xl border-[1.5px] bg-white p-3.5 text-left ${
+      style={riseDelay(index)}
+      className={`flex shrink-0 flex-col gap-2 rounded-2xl border-[1.5px] bg-white p-3.5 text-left ${RISE_IN} ${
         selected ? 'border-brand' : 'border-card-border'
       } ${className}`}
     >

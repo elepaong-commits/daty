@@ -5,6 +5,7 @@ import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
 import { errorMessage } from '../../lib/api'
 import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
+import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useUpdateRecord } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import { useT } from '../../lib/i18n'
@@ -37,7 +38,9 @@ export function DayTimeline({
       {records.length === 0 ? (
         <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
       ) : (
-        records.map((r) => <TimelineEntry key={r.id} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />)
+        records.map((r, i) => (
+          <TimelineEntry key={r.id} index={i} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />
+        ))
       )}
     </section>
   )
@@ -45,11 +48,14 @@ export function DayTimeline({
 
 function TimelineEntry({
   record,
+  index,
   today,
   onEdit,
   onComplete,
 }: {
   record: DateRecord
+  /** Position in the day, for the order the entries rise in. */
+  index: number
   today: Date
   onEdit: () => void
   onComplete: (record: DateRecord) => void
@@ -65,7 +71,7 @@ function TimelineEntry({
   const canComplete = isPlan && dDay <= 0
 
   return (
-    <div className="flex items-start gap-1">
+    <div className={`flex items-start gap-1 ${RISE_IN}`} style={riseDelay(index)}>
       <span className="w-11 shrink-0 pt-3.5 text-right text-[12px] leading-normal font-semibold text-muted">{toTimeInput(at)}</span>
       {isPlan ? (
         <img src={timelineConnector} alt="" width={18} height={28} className="shrink-0" />
