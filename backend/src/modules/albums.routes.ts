@@ -96,12 +96,22 @@ albumsRouter.get("/:id", async (req, res) => {
   res.json(await serializeAlbum(album));
 });
 
+/** One album per day: a day's dates and photos all go into the album that already holds that day. */
+async function assertDayFree(tx: Prisma.TransactionClient, coupleId: number, albumDate: string, exceptId?: number) {
+  const taken = await tx.album.findFirst({
+    where: { coupleId, albumDate: new Date(albumDate), ...(exceptId && { id: { not: exceptId } }) },
+    select: { id: true },
+  });
+  if (taken) throw new HttpError(409, "That day already has an album", "ALBUM_EXISTS");
+}
+
 albumsRouter.post("/", async (req, res) => {
   const { recordIds = [], placeIds = [], visitAt, albumDate, ...data } = albumBody.parse(req.body);
   const { coupleId } = req;
   const album = await prisma.$transaction(async (tx) => {
     const owned = await tx.dateRecord.count({ where: { id: { in: recordIds }, coupleId } });
     if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
+    await assertDayFree(tx, coupleId, albumDate);
     const { id } = await tx.album.create({
       data: {
         ...data,
@@ -142,6 +152,7 @@ albumsRouter.patch("/:id", async (req, res) => {
       });
       if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
     }
+    if (albumDate) await assertDayFree(tx, coupleId, albumDate, id);
     await tx.album.update({
       where: { id },
       data: {

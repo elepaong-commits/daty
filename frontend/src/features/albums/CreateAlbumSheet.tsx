@@ -4,7 +4,14 @@ import { useCreateAlbum } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { AlbumForm } from './AlbumForm'
 
-export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
+/** What a finished date fills in up front: its place as the name, its day and its visit checked. */
+export interface NewAlbumDraft {
+  title: string
+  albumDate: string
+  recordId: number
+}
+
+export function CreateAlbumSheet({ draft, onClose }: { draft?: NewAlbumDraft; onClose: () => void }) {
   const createAlbum = useCreateAlbum()
   const t = useT()
   const navigate = useNavigate()
@@ -12,6 +19,7 @@ export function CreateAlbumSheet({ onClose }: { onClose: () => void }) {
   return (
     <BottomSheet title={t.albums.newAlbum} onClose={onClose}>
       <AlbumForm
+        draft={draft}
         submitLabel={t.albums.create}
         isPending={createAlbum.isPending}
         error={createAlbum.error}

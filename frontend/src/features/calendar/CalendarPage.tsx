@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import chevronLeft from '../../assets/icons/chevron-left.svg'
 import chevronRight from '../../assets/icons/chevron-right.svg'
 import markerPlan from '../../assets/icons/marker-plan.svg'
 import markerRecord from '../../assets/icons/marker-record.svg'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
+import { errorMessage } from '../../lib/api'
 import { addMonths, isSameDay, monthGrid, startOfDay, startOfMonth, toDateInput } from '../../lib/dates'
-import { useMonthRecords } from '../../lib/queries'
+import { useAddRecordToAlbum, useAlbums, useMonthRecords } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
+import type { NewAlbumDraft } from '../albums/CreateAlbumSheet'
 import { ScheduleSheet } from '../records/ScheduleSheet'
 import { DayTimeline } from './DayTimeline'
 import { useT } from '../../lib/i18n'
@@ -21,6 +25,13 @@ export function CalendarPage() {
   const [selected, setSelected] = useState(today)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<DateRecord | null>(null)
+  const [completed, setCompleted] = useState<DateRecord | null>(null)
+  const navigate = useNavigate()
+  const { data: albums = [] } = useAlbums()
+  const addToAlbum = useAddRecordToAlbum()
+  // A day keeps one album: a finished date joins the album its day already has.
+  const completedDay = completed && toDateInput(new Date(completed.scheduledAt))
+  const dayAlbum = albums.find((a) => a.albumDate === completedDay)
   const { data: records = [], isLoading, error } = useMonthRecords(month)
 
   const byDay = useMemo(() => {
@@ -35,6 +46,19 @@ export function CalendarPage() {
   const recordCount = records.filter((r) => r.type === 'RECORD').length
   const planCount = records.length - recordCount
   const weeks = monthGrid(month)
+
+  function openAlbumFor(record: DateRecord) {
+    if (dayAlbum) {
+      addToAlbum.mutate({ album: dayAlbum, recordId: record.id }, { onSuccess: () => navigate(`/albums/${dayAlbum.id}`) })
+      return
+    }
+    const draft: NewAlbumDraft = {
+      title: record.place?.name ?? record.title,
+      albumDate: toDateInput(new Date(record.scheduledAt)),
+      recordId: record.id,
+    }
+    navigate('/albums', { state: { newAlbum: draft } })
+  }
 
   function goToMonth(next: Date) {
     setMonth(startOfMonth(next))
@@ -106,7 +130,7 @@ export function CalendarPage() {
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
-            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} />
+            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} onComplete={setCompleted} />
           )}
         </div>
       </div>
@@ -119,6 +143,26 @@ export function CalendarPage() {
         <span className="text-[24px] leading-none">+</span>
         <span className="text-[16px] font-semibold">{t.calendar.addSchedule}</span>
       </button>
+
+      {completed && (
+        <ConfirmDialog
+          title={t.calendar.askAlbumTitle}
+          message={
+            dayAlbum
+              ? t.calendar.askAlbumAddBody(completed.place?.name ?? completed.title, dayAlbum.title)
+              : t.calendar.askAlbumBody(completed.place?.name ?? completed.title)
+          }
+          confirmLabel={addToAlbum.isPending ? t.common.saving : dayAlbum ? t.calendar.askAlbumAddConfirm : t.calendar.askAlbumConfirm}
+          error={addToAlbum.error && `${t.common.saveFailed}: ${errorMessage(addToAlbum.error, t)}`}
+          busy={addToAlbum.isPending}
+          cancelLabel={t.calendar.askAlbumLater}
+          onConfirm={() => openAlbumFor(completed)}
+          onCancel={() => {
+            setCompleted(null)
+            addToAlbum.reset()
+          }}
+        />
+      )}
 
       {editing && (
         <ScheduleSheet

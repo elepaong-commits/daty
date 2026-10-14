@@ -24,6 +24,9 @@ interface Props {
 
 const DEBOUNCE_MS = 250
 
+/** Countries whose places keep their own name: a place in Japan is saved in Japanese whatever the app language. */
+const LOCAL_LANGUAGE: Record<string, string> = { KR: 'ko', JP: 'ja' }
+
 /** Place name field that suggests real places from Google; picking one gives the place a map pin. */
 export function PlaceSearch(props: Props) {
   if (!MAPS_API_KEY) {
@@ -99,12 +102,13 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
       })
       sessionToken.current = null
       if (!place.location) return
-      const placeName = place.displayName ?? prediction.mainText?.text ?? name
+      const named = (await inLocalLanguage(places!, place, lang)) ?? place
+      const placeName = named.displayName ?? prediction.mainText?.text ?? name
       onNameChange(placeName)
       onPick({
         googlePlaceId: place.id,
         name: placeName,
-        address: shortAddress(place) ?? undefined,
+        address: shortAddress(named) ?? undefined,
         latitude: place.location.lat(),
         longitude: place.location.lng(),
         googleMapsUrl: place.googleMapsURI ?? undefined,
@@ -186,6 +190,23 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
       </p>
     </div>
   )
+}
+
+/**
+ * The same place looked up again in its country's language (Japanese for Japan), for its name and address.
+ * Null when it is already in that language, the country has no local language set, or the lookup fails.
+ */
+async function inLocalLanguage(places: google.maps.PlacesLibrary, place: google.maps.places.Place, lang: string) {
+  const country = place.addressComponents?.find((c) => c.types.includes('country'))?.shortText
+  const local = country && LOCAL_LANGUAGE[country]
+  if (!local || local === lang) return null
+  try {
+    const localPlace = new places.Place({ id: place.id, requestedLanguage: local })
+    await localPlace.fetchFields({ fields: ['displayName', 'formattedAddress', 'addressComponents'] })
+    return localPlace
+  } catch {
+    return null
+  }
 }
 
 /** Neighborhood like the design's "성수동" in Korea, or the city abroad. */

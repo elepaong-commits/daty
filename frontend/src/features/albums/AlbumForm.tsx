@@ -1,11 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router'
 import { Field, inputClass } from '../../components/Field'
 import { categoryOf } from '../../lib/categories'
 import { fromInputs, parseDateOnly, toDateInput, toTimeInput } from '../../lib/dates'
 import { errorMessage } from '../../lib/api'
-import { useMonthRecords, usePlaces } from '../../lib/queries'
+import { useAlbums, useMonthRecords, usePlaces } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import type { Album } from '../../lib/types'
+import type { NewAlbumDraft } from './CreateAlbumSheet'
 import { SavedPlacePicker } from '../records/SavedPlacePicker'
 
 export interface AlbumFormValues {
@@ -20,6 +22,8 @@ export interface AlbumFormValues {
 interface Props {
   /** The album being edited; a new album starts empty on today. */
   album?: Album
+  /** Starting values for a new album, e.g. from a date just marked as done. */
+  draft?: NewAlbumDraft
   submitLabel: string
   isPending: boolean
   error: Error | null
@@ -28,15 +32,18 @@ interface Props {
 }
 
 /** Album name, day, the visits it bundles and its highlight — shared by the create and edit sheets. */
-export function AlbumForm({ album, submitLabel, isPending, error, footer, onSubmit }: Props) {
+export function AlbumForm({ album, draft, submitLabel, isPending, error, footer, onSubmit }: Props) {
   const t = useT()
-  const [title, setTitle] = useState(album?.title ?? '')
-  const [date, setDate] = useState(album?.albumDate ?? toDateInput(new Date()))
+  const [title, setTitle] = useState(album?.title ?? draft?.title ?? '')
+  const [date, setDate] = useState(album?.albumDate ?? draft?.albumDate ?? toDateInput(new Date()))
   const [highlight, setHighlight] = useState(album?.highlightNote ?? '')
-  const [picked, setPicked] = useState<Set<number>>(new Set(album?.recordIds))
+  const [picked, setPicked] = useState<Set<number>>(new Set(album?.recordIds ?? (draft && [draft.recordId])))
   const [placeIds, setPlaceIds] = useState<number[]>([])
   const [choosingPlaces, setChoosingPlaces] = useState(false)
   const { data: places = [] } = usePlaces()
+  const { data: albums = [] } = useAlbums()
+  // One album per day: point at the day's album instead of starting another.
+  const dayAlbum = albums.find((a) => a.albumDate === date && a.id !== album?.id)
 
   // Offer the visits on the chosen day so the album shows where it was taken.
   const { data: monthRecords = [] } = useMonthRecords(parseDateOnly(date || toDateInput(new Date())))
@@ -52,7 +59,7 @@ export function AlbumForm({ album, submitLabel, isPending, error, footer, onSubm
   const pickable = places.filter((p) => !visitedPlaceIds.has(p.id))
   const addedPlaces = pickable.filter((p) => placeIds.includes(p.id))
 
-  const canSave = title.trim() !== '' && date !== '' && !isPending
+  const canSave = title.trim() !== '' && date !== '' && !dayAlbum && !isPending
 
   function toggle(id: number) {
     setPicked((prev) => {
@@ -97,6 +104,14 @@ export function AlbumForm({ album, submitLabel, isPending, error, footer, onSubm
           className={inputClass}
         />
       </Field>
+      {dayAlbum && (
+        <p className="-mt-2 flex flex-col gap-1 rounded-xl bg-coral-soft px-3 py-2 text-[12px] text-coral-strong">
+          {t.albums.dayTaken}
+          <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand">
+            {t.albums.openDayAlbum(dayAlbum.title)}
+          </Link>
+        </p>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <span className="text-[12px] leading-normal font-semibold text-muted">{t.albums.dayRecords}</span>

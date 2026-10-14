@@ -14,7 +14,8 @@ interface Props {
 export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
   return (
     <header className="shrink-0 px-5 pt-4 pb-3">
-      <div className="flex items-center justify-between">
+      {/* Room between the profile/language row and the title row's buttons below it. */}
+      <div className="flex items-center justify-between pb-2.5">
         <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{eyebrow}</p>
         <div className="flex items-center gap-2">
           <AccountButton />

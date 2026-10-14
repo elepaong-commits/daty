@@ -58,7 +58,7 @@
   - `PATCH /:id`의 `visit: { scheduledAt, rating }`은 그 장소의 최근 방문 기록을 고치고, 방문 기록이 없으면 새로 만든다 (장소 자체에는 날짜·평점 컬럼이 없다)
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id` — 생성과 수정 모두 `resolvePlace`로 장소를 찾거나 만든다. 수정 시 장소 이름이 바뀌거나 검색으로 고르면 다른 장소로 옮긴다
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
-  - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
+  - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 장소 이름과 주소는 앱 언어와 상관없이 그 나라 말로 저장한다(일본 장소는 일본어, `LOCAL_LANGUAGE`). 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
 - `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — `coverPhotoId`가 "베스트 컷"(앨범 표지). 고르지 않으면(`null`) 응답의 `coverPhoto`는 첫 번째 사진. 사진이나 앨범을 지우면 원본·썸네일 R2 객체도 지운다(실패해도 로그만 남김)
   - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30개. 이미지 jpeg/png/webp, 동영상 mp4/quicktime/webm) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`, 그리고 같은 모양의 `thumbnail`(`{uuid}.thumb.jpg`)

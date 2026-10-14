@@ -2,7 +2,9 @@ import timelineConnector from '../../assets/icons/timeline-connector.svg'
 import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
+import { errorMessage } from '../../lib/api'
 import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
+import { useUpdateRecord } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 
@@ -11,11 +13,14 @@ export function DayTimeline({
   today,
   records,
   onEdit,
+  onComplete,
 }: {
   day: Date
   today: Date
   records: DateRecord[]
   onEdit: (record: DateRecord) => void
+  /** A plan was marked as done (it is now a record). */
+  onComplete: (record: DateRecord) => void
 }) {
   const t = useT()
   return (
@@ -31,19 +36,32 @@ export function DayTimeline({
       {records.length === 0 ? (
         <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
       ) : (
-        records.map((r) => <TimelineEntry key={r.id} record={r} today={today} onEdit={() => onEdit(r)} />)
+        records.map((r) => <TimelineEntry key={r.id} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />)
       )}
     </section>
   )
 }
 
-function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: Date; onEdit: () => void }) {
+function TimelineEntry({
+  record,
+  today,
+  onEdit,
+  onComplete,
+}: {
+  record: DateRecord
+  today: Date
+  onEdit: () => void
+  onComplete: (record: DateRecord) => void
+}) {
   const t = useT()
+  const complete = useUpdateRecord(record.id)
   const at = new Date(record.scheduledAt)
   const isPlan = record.type === 'PLAN'
   const category = categoryOf(record.category)
   const dDay = daysBetween(today, at)
   const mapUrl = record.place?.googleMapsUrl
+  // A plan can be finished once its day has come.
+  const canComplete = isPlan && dDay <= 0
 
   return (
     <div className="flex items-start gap-1">
@@ -88,6 +106,25 @@ function TimelineEntry({ record, today, onEdit }: { record: DateRecord; today: D
           >
             📍 {mapUrl.replace(/^https?:\/\//, '')}
           </a>
+        )}
+        {canComplete && (
+          <button
+            type="button"
+            disabled={complete.isPending}
+            onClick={(e) => {
+              e.stopPropagation()
+              complete.mutate({ type: 'RECORD' }, { onSuccess: onComplete })
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            className="mt-3 h-10 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+          >
+            {complete.isPending ? t.calendar.completing : t.calendar.complete}
+          </button>
+        )}
+        {complete.error && (
+          <p className="pt-2 text-[12px] text-coral-strong">
+            {t.calendar.completeFailed}: {errorMessage(complete.error, t)}
+          </p>
         )}
       </article>
     </div>
