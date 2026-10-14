@@ -14,20 +14,40 @@ import { PhotoViewer } from './PhotoViewer'
 type MediaFilter = 'ALL' | MediaType
 const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
 
-// Upload order is `displayOrder`; taken order puts items without a capture time last, in upload order.
+// Upload order is `displayOrder`; taken order keeps items without a capture time last either way.
 type SortOrder = 'UPLOADED' | 'TAKEN'
+type SortDirection = 'ASC' | 'DESC'
 const SORTS: SortOrder[] = ['UPLOADED', 'TAKEN']
 const SORT_STORAGE_KEY = 'daty.albumSort'
+const DIRECTION_STORAGE_KEY = 'daty.albumSortDirection'
 
-const byTakenAt = (a: Photo, b: Photo) =>
-  (a.takenAt ?? '\uffff').localeCompare(b.takenAt ?? '\uffff') || a.displayOrder - b.displayOrder
+function sortItems(items: Photo[], sort: SortOrder, direction: SortDirection) {
+  const sign = direction === 'ASC' ? 1 : -1
+  return items.toSorted((a, b) => {
+    if (sort === 'TAKEN') {
+      if (!a.takenAt !== !b.takenAt) return a.takenAt ? -1 : 1
+      const byTime = a.takenAt && b.takenAt ? a.takenAt.localeCompare(b.takenAt) : 0
+      if (byTime !== 0) return sign * byTime
+    }
+    return sign * (a.displayOrder - b.displayOrder)
+  })
+}
 
-/** The viewer's last pick, remembered on this device. */
-function savedSort(): SortOrder {
+/** The viewer's last pick, remembered on this device; `fallback` when missing or unreadable. */
+function saved<T extends string>(key: string, values: readonly T[], fallback: T): T {
   try {
-    return localStorage.getItem(SORT_STORAGE_KEY) === 'TAKEN' ? 'TAKEN' : 'UPLOADED'
+    const value = localStorage.getItem(key)
+    return values.find((v) => v === value) ?? fallback
   } catch {
-    return 'UPLOADED'
+    return fallback
+  }
+}
+
+function remember(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Private mode etc.: the order just isn't remembered.
   }
 }
 
@@ -43,7 +63,8 @@ export function AlbumDetailPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [editing, setEditing] = useState(false)
   const [filter, setFilter] = useState<MediaFilter>('ALL')
-  const [sort, setSort] = useState<SortOrder>(savedSort)
+  const [sort, setSort] = useState(() => saved(SORT_STORAGE_KEY, SORTS, 'UPLOADED'))
+  const [direction, setDirection] = useState(() => saved<SortDirection>(DIRECTION_STORAGE_KEY, ['ASC', 'DESC'], 'ASC'))
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
 
   function toggleSelecting() {
@@ -75,11 +96,13 @@ export function AlbumDetailPage() {
 
   function changeSort(next: SortOrder) {
     setSort(next)
-    try {
-      localStorage.setItem(SORT_STORAGE_KEY, next)
-    } catch {
-      // Private mode etc.: the order just isn't remembered.
-    }
+    remember(SORT_STORAGE_KEY, next)
+  }
+
+  function flipDirection() {
+    const next = direction === 'ASC' ? 'DESC' : 'ASC'
+    setDirection(next)
+    remember(DIRECTION_STORAGE_KEY, next)
   }
 
   function removeSelected() {
@@ -111,8 +134,7 @@ export function AlbumDetailPage() {
     VIDEO: album.photos.filter((p) => p.mediaType === 'VIDEO').length,
   }
   const filtered = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
-  // The API already returns upload order.
-  const shown = sort === 'TAKEN' ? filtered.toSorted(byTakenAt) : filtered
+  const shown = sortItems(filtered, sort, direction)
   const date = parseDateOnly(album.albumDate)
   const firstPlace = album.places[0]
   const actionError = updateAlbum.error ?? deletePhotos.error
@@ -207,6 +229,15 @@ export function AlbumDetailPage() {
                 {t.albums.sort[value]}
               </button>
             ))}
+            <span className="mx-0.5 h-3.5 w-px bg-sand" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={flipDirection}
+              aria-label={t.albums.directionLabel(t.albums.direction[direction])}
+              className="h-7 rounded-full px-2.5 font-semibold text-muted"
+            >
+              {direction === 'ASC' ? '↑' : '↓'} {t.albums.direction[direction]}
+            </button>
           </div>
         )}
 
