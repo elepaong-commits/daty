@@ -1,16 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
 import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { useAlbums } from '../../lib/queries'
 import { AlbumCard } from './AlbumCard'
-import { CreateAlbumSheet } from './CreateAlbumSheet'
+import { CreateAlbumSheet, type NewAlbumDraft } from './CreateAlbumSheet'
 import { useT } from '../../lib/i18n'
 
 export function AlbumsPage() {
   const t = useT()
   const { data: albums = [], isLoading, error } = useAlbums()
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // A date finished on the calendar arrives with its album already filled in.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [draft, setDraft] = useState((location.state as { newAlbum?: NewAlbumDraft } | null)?.newAlbum)
+  const [sheetOpen, setSheetOpen] = useState(draft !== undefined)
+  // Use the draft once, so going back here later doesn't reopen it.
+  useEffect(() => {
+    if (location.state) navigate('.', { replace: true, state: null })
+  }, [location.state, navigate])
   const photoTotal = albums.reduce((sum, a) => sum + a.photoCount, 0)
   const [featured, ...rest] = albums
 
@@ -61,7 +70,15 @@ export function AlbumsPage() {
         </div>
       </div>
 
-      {sheetOpen && <CreateAlbumSheet onClose={() => setSheetOpen(false)} />}
+      {sheetOpen && (
+        <CreateAlbumSheet
+          draft={draft}
+          onClose={() => {
+            setSheetOpen(false)
+            setDraft(undefined)
+          }}
+        />
+      )}
     </div>
   )
 }

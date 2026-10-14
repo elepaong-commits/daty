@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, ImageError, uploadToStorage } from './api'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
-import type { Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
+import type { Album, Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addMonths, startOfMonth } from './dates'
 
 export const keys = {
@@ -126,6 +126,16 @@ export function useDeletePlace(id: number) {
 export function useUpdateRecord(id: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({ mutationFn: (input: UpdateRecordInput) => api.updateRecord(id, input), onSuccess: invalidate })
+}
+
+/** Adds a visit to an album, keeping the visits it already holds. */
+export function useAddRecordToAlbum() {
+  const invalidate = useInvalidateDateData()
+  return useMutation({
+    mutationFn: ({ album, recordId }: { album: Album; recordId: number }) =>
+      api.updateAlbum(album.id, { recordIds: [...new Set([...album.recordIds, recordId])] }),
+    onSuccess: invalidate,
+  })
 }
 
 export function useDeleteRecord() {
