@@ -2,6 +2,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import type { ReactNode } from 'react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router'
 import { BottomNav } from './components/BottomNav'
+import { Sidebar } from './components/Sidebar'
 import { I18nProvider } from './components/I18nProvider'
 import { QueryState } from './components/Field'
 import { AlbumDetailPage } from './features/albums/AlbumDetailPage'
@@ -33,10 +34,17 @@ const queryClient = new QueryClient({
   }),
 })
 
-/** Phone-sized column; on wider screens it sits centered like the design frames. */
-function Frame({ children }: { children: ReactNode }) {
+/**
+ * Phone-sized column; on wider screens it sits centered like the design frames. `wide` screens
+ * (the app itself and login) take the whole window from the desktop breakpoint up.
+ */
+function Frame({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-[428px] flex-col overflow-hidden bg-cream pt-[env(safe-area-inset-top)] sm:shadow-card">
+    <div
+      className={`mx-auto flex h-dvh w-full max-w-[428px] flex-col overflow-hidden bg-cream pt-[env(safe-area-inset-top)] sm:shadow-card ${
+        wide ? 'lg:max-w-none lg:flex-row lg:shadow-none' : ''
+      }`}
+    >
       {children}
     </div>
   )
@@ -45,8 +53,9 @@ function Frame({ children }: { children: ReactNode }) {
 function AppShell() {
   return (
     <MapsProvider>
-      <Frame>
-        <main className="relative flex min-h-0 flex-1 flex-col">
+      <Frame wide>
+        <Sidebar />
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <Outlet />
         </main>
         <BottomNav />
@@ -67,14 +76,17 @@ function AuthGate() {
       </Frame>
     )
   }
-  if (!me) return <Frame><AuthPage /></Frame>
+  if (!me) return <Frame wide><AuthPage /></Frame>
   if (!me.couple) return <Frame><CoupleSetupPage /></Frame>
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<MapPage />} />
+        {/* On desktop the place opens in the map's side column, so the map stays mounted around it. */}
+        <Route element={<MapPage />}>
+          <Route index />
+          <Route path="places/:id" element={<PlaceDetailPage />} />
+        </Route>
         <Route path="calendar" element={<CalendarPage />} />
-        <Route path="places/:id" element={<PlaceDetailPage />} />
         <Route path="places/:id/edit" element={<PlaceEditPage />} />
         <Route path="albums" element={<AlbumsPage />} />
         <Route path="albums/:id" element={<AlbumDetailPage />} />

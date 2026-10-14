@@ -35,6 +35,9 @@ const ko = {
   },
   status: { VISITED: '갔던 곳', WISH: '가고 싶은 곳' } satisfies Record<PlaceStatus, string>,
   nav: { map: '메인', calendar: '캘린더', albums: '앨범' },
+  sidebar: {
+    since: (date: string) => `${date}부터 함께`,
+  },
   weekdays: ['일', '월', '화', '수', '목', '금', '토'],
   dates: {
     monthDay: (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`,
@@ -71,6 +74,8 @@ const ko = {
   },
   auth: {
     tagline: '우리 둘의 데이트 기록',
+    heroTitle: ['둘이 걸은 곳을', '한 장의 지도에'],
+    heroBody: '지도, 캘린더, 앨범에 둘만의 데이트를 모아 두세요',
     login: '로그인',
     signup: '회원가입',
     signupSubmit: '가입하기',
@@ -322,6 +327,9 @@ const ja: Messages = {
   },
   status: { VISITED: '行った場所', WISH: '行きたい場所' },
   nav: { map: 'メイン', calendar: 'カレンダー', albums: 'アルバム' },
+  sidebar: {
+    since: (date: string) => `${date}から一緒に`,
+  },
   weekdays: ['日', '月', '火', '水', '木', '金', '土'],
   dates: {
     monthDay: (d) => `${d.getMonth() + 1}月${d.getDate()}日`,
@@ -358,6 +366,8 @@ const ja: Messages = {
   },
   auth: {
     tagline: 'ふたりのデート記録',
+    heroTitle: ['ふたりで歩いた場所を', '一枚の地図に'],
+    heroBody: '地図・カレンダー・アルバムにふたりのデートを集めよう',
     login: 'ログイン',
     signup: '新規登録',
     signupSubmit: '登録する',

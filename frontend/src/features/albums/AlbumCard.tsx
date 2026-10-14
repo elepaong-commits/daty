@@ -18,12 +18,13 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
 
   return (
-    <Link to={`/albums/${album.id}`} className="flex min-w-0 flex-col gap-2.5 pt-1.5">
-      <div className="px-1.5">
-        <PhotoStack album={album} heightClass={large ? 'h-60' : 'h-[225px]'} date={formatDotted(date)} />
+    <Link to={`/albums/${album.id}`} className="group flex min-w-0 flex-col gap-2.5 pt-1.5">
+      {/* The tilted prints spread further on the big desktop card, so it gets more room around them. */}
+      <div className={large ? 'px-1.5 lg:px-5 lg:py-7' : 'px-1.5'}>
+        <PhotoStack album={album} heightClass={large ? 'h-60 lg:h-[440px]' : 'h-[225px] lg:h-[200px]'} date={formatDotted(date)} />
       </div>
       <div className="flex flex-col px-0.5">
-        <h3 className={`font-display leading-[1.375] ${large ? 'text-[20px]' : 'text-[16px]'}`}>
+        <h3 className={`font-display leading-[1.375] ${large ? 'text-[20px] lg:text-[22px]' : 'text-[16px]'}`}>
           {formatSlashDay(date)} · {album.title}
         </h3>
         {shownPlaces.length > 0 && (
@@ -71,7 +72,7 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   )
 
   return (
-    <div className={`relative w-full ${heightClass}`}>
+    <div className={`relative w-full transition-transform duration-200 lg:group-hover:-translate-y-1 ${heightClass}`}>
       {LAYER_TILTS.map((tilt, i) => (
         <div
           key={tilt}

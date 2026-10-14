@@ -1,7 +1,9 @@
+import { Heart, MapPin } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
 import { LanguageToggle } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
+import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { useLogin, useSignup } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { ResetPasswordForm } from './ResetPasswordForm'
@@ -36,7 +38,10 @@ export function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
+    <div className="flex min-h-0 flex-1 overflow-y-auto">
+      <AuthHero />
+      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-10 lg:items-center lg:px-12">
+      <div className="w-full lg:max-w-[400px]">
       <div className="flex justify-end">
         <LanguageToggle />
       </div>
@@ -119,6 +124,55 @@ export function AuthPage() {
           </form>
         </>
       )}
+      </div>
+      </div>
     </div>
+  )
+}
+
+/** Desktop-only left half of the login screen: the app's name and a map-and-prints illustration. */
+function AuthHero() {
+  const t = useT()
+  const prints = [
+    { category: 'CAFE', className: 'top-[6%] right-[14%] rotate-[8deg]' },
+    { category: 'TOUR', className: 'top-[44%] right-[4%] -rotate-6' },
+    { category: 'EXHIBIT', className: 'top-[52%] left-[10%] -rotate-[9deg]' },
+  ] as const
+
+  return (
+    <section className="hidden w-[55%] shrink-0 flex-col bg-brand-soft px-16 py-14 lg:flex">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-brand text-white">
+          <Heart size={20} strokeWidth={1.75} fill="currentColor" />
+        </span>
+        <span className="font-display text-[36px] leading-none text-brand">daty</span>
+      </div>
+
+      <div className="relative my-8 min-h-0 flex-1" aria-hidden="true">
+        <div className="absolute inset-x-[8%] top-[18%] bottom-[18%] rounded-3xl border-[3px] border-[#cdedea] bg-cream" />
+        <div className="absolute inset-x-[8%] top-1/2 h-5 -translate-y-1/2 bg-[#bfe3dc]/80" />
+        {prints.map(({ category, className }) => {
+          const { Icon } = categoryOf(category)
+          const [from, to] = PHOTO_GRADIENTS[category][0]!
+          return (
+            <div key={category} className={`absolute h-44 w-36 rounded-[10px] bg-white p-2.5 pb-9 shadow-photo ${className}`}>
+              <div className="flex size-full items-center justify-center rounded-md" style={{ background: `linear-gradient(160deg, ${from}, ${to})` }}>
+                <Icon size={40} strokeWidth={1.5} className="text-white" />
+              </div>
+            </div>
+          )
+        })}
+        <MapPin size={44} strokeWidth={1.75} className="absolute top-[30%] left-[46%] fill-white text-brand" />
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        <h2 className="font-display text-[34px] leading-[1.3]">
+          {t.auth.heroTitle[0]}
+          <br />
+          {t.auth.heroTitle[1]}
+        </h2>
+        <p className="text-[15px] text-muted">{t.auth.heroBody}</p>
+      </div>
+    </section>
   )
 }

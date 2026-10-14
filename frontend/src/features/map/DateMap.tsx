@@ -10,12 +10,14 @@ import { categoryOf } from '../../lib/categories'
 import { MAP_ID, MAPS_API_KEY } from '../../lib/maps'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
+import { useIsDesktop } from '../../lib/useIsDesktop'
 
 const SEOUL = { lat: 37.5563, lng: 126.9906 }
 const DEFAULT_ZOOM = 12
 const WORLD: [number, number, number, number] = [-180, -85, 180, 85]
-// Leave room for the place sheet that covers the bottom of the map.
+// Leave room for the place sheet that covers the bottom of the map (phones only).
 const FIT_PADDING = { top: 60, right: 60, bottom: 260, left: 40 }
+const DESKTOP_FIT_PADDING = { top: 80, right: 80, bottom: 80, left: 80 }
 
 interface Props {
   places: Place[]
@@ -61,6 +63,7 @@ interface PinProps {
 function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
   const t = useT()
   const map = useMap()
+  const isDesktop = useIsDesktop()
   const fitted = useRef(false)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const located = useMemo(() => places.filter((p) => p.latitude !== null && p.longitude !== null), [places])
@@ -71,9 +74,9 @@ function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
     if (!map || fitted.current || located.length === 0) return
     const bounds = new google.maps.LatLngBounds()
     located.forEach((p) => bounds.extend({ lat: p.latitude!, lng: p.longitude! }))
-    map.fitBounds(bounds, FIT_PADDING)
+    map.fitBounds(bounds, isDesktop ? DESKTOP_FIT_PADDING : FIT_PADDING)
     fitted.current = true
-  }, [map, located])
+  }, [map, located, isDesktop])
 
   useEffect(() => {
     if (map && selected) map.panTo({ lat: selected.latitude!, lng: selected.longitude! })
@@ -196,7 +199,7 @@ function MapControls() {
 
   return (
     <>
-      <div className="absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 px-3 py-1.5 text-[11px] leading-normal font-semibold">
+      <div className="absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold">
         <span className="flex items-center gap-1">
           <img src={dotVisited} alt="" width={10} height={10} /> {t.status.VISITED}
         </span>
@@ -204,7 +207,7 @@ function MapControls() {
           <img src={dotWish} alt="" width={10} height={10} /> {t.status.WISH}
         </span>
       </div>
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white">
+      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white lg:top-4 lg:right-4 lg:shadow-card">
         <button type="button" onClick={() => zoom(1)} className="flex size-9 items-center justify-center" aria-label={t.map.zoomIn}>
           <Plus size={18} strokeWidth={1.75} />
         </button>
@@ -215,7 +218,7 @@ function MapControls() {
       <button
         type="button"
         onClick={locate}
-        className="absolute right-3 bottom-[250px] flex size-10 items-center justify-center rounded-full bg-white"
+        className="absolute right-3 bottom-[250px] flex size-10 lg:right-4 lg:bottom-5 lg:size-11 lg:shadow-card items-center justify-center rounded-full bg-white"
         aria-label={t.map.locate}
       >
         <img src={locateIcon} alt="" width={18} height={18} />

@@ -83,6 +83,56 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
   )
 }
 
+/** Desktop list beside the map: every card in one scrolling column; a click opens the place. */
+export function PlaceList({
+  places,
+  status,
+  selectedId,
+  onOpen,
+}: {
+  places: Place[]
+  status: PlaceStatus
+  selectedId: number | null
+  onOpen: (id: number) => void
+}) {
+  const t = useT()
+  const cardRefs = useRef(new Map<number, HTMLElement>())
+
+  // Bring the card for a clicked pin into view.
+  useEffect(() => {
+    if (selectedId !== null) cardRefs.current.get(selectedId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [selectedId])
+
+  return (
+    <section className="flex min-h-0 flex-1 flex-col">
+      <h2 className="px-5 pt-1 pb-2.5 font-display text-[18px] leading-normal">
+        {t.map.sheetHeading[status][0]}
+        <span className="text-brand">{places.length}</span>
+        {t.map.sheetHeading[status][1]}
+      </h2>
+      {places.length === 0 ? (
+        <p className="px-5 py-6 text-center text-[13px] text-muted">{t.map.empty[status]}</p>
+      ) : (
+        <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pt-0.5 pb-5">
+          {places.map((place) => (
+            <PlaceCard
+              key={place.id}
+              ref={(el) => {
+                if (el) cardRefs.current.set(place.id, el)
+                else cardRefs.current.delete(place.id)
+              }}
+              place={place}
+              selected={place.id === selectedId}
+              onClick={() => onOpen(place.id)}
+              className="w-full hover:border-brand/50"
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function PlaceCard({
   place,
   selected,

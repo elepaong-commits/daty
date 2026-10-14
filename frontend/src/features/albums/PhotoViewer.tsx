@@ -49,7 +49,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
   const isCover = photo !== undefined && photo.id === coverPhotoId
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col bg-ink text-white" role="dialog" aria-modal="true" aria-label={t.albums.viewer}>
+    <div className="absolute inset-0 z-50 flex flex-col bg-ink text-white lg:fixed" role="dialog" aria-modal="true" aria-label={t.albums.viewer}>
       <div className="flex shrink-0 items-center justify-between px-4 pt-3.5 pb-2">
         <span className="text-[13px] font-semibold tabular-nums">
           {index + 1} / {photos.length}

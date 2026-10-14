@@ -13,17 +13,18 @@ interface Props {
 
 export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
   return (
-    <header className="shrink-0 px-5 pt-4 pb-3">
+    <header className="shrink-0 px-5 pt-4 pb-3 lg:pt-8 lg:pb-5">
       {/* Room between the profile/language row and the title row's buttons below it. */}
       <div className="flex items-center justify-between pb-2.5">
         <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{eyebrow}</p>
-        <div className="flex items-center gap-2">
+        {/* On desktop these live in the sidebar. */}
+        <div className="flex items-center gap-2 lg:hidden">
           <AccountButton />
           <LanguageToggle />
         </div>
       </div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-[26px] leading-[1.25]">{title}</h1>
+        <h1 className="font-display text-[26px] leading-[1.25] lg:text-[28px]">{title}</h1>
         {actions}
       </div>
       {children}

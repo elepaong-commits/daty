@@ -21,7 +21,7 @@ export function ConfirmDialog({ title, message, confirmLabel, cancelLabel, error
   }, [onCancel])
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center px-8" role="alertdialog" aria-modal="true" aria-label={title}>
+    <div className="absolute inset-0 z-50 flex items-center justify-center px-8 lg:fixed" role="alertdialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-ink/42" onClick={onCancel} />
       <div className="relative flex w-full max-w-[320px] flex-col gap-2 rounded-3xl bg-white p-5 text-center shadow-card">
         <h2 className="font-display text-[20px] leading-normal">{title}</h2>
