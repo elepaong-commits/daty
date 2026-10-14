@@ -6,6 +6,7 @@ import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { categoryOf } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
+import type { Place } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { PlaceNotes } from './PlaceNotes'
 
@@ -106,7 +107,15 @@ export function PlaceDetailPage() {
           </section>
         )}
 
-        <div className="mt-auto pt-4 pb-5">
+        <div className="mt-auto flex flex-col gap-2 pt-4 pb-5">
+          <a
+            href={googleMapsLink(place)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-12 w-full items-center justify-center rounded-2xl border border-brand bg-white text-[16px] font-semibold text-brand"
+          >
+            {t.place.openGoogleMaps}
+          </a>
           <button
             type="button"
             onClick={edit}
@@ -118,4 +127,19 @@ export function PlaceDetailPage() {
       </div>
     </div>
   )
+}
+
+/** The place's own Google Maps page when we have it, otherwise a Maps search that lands on it. */
+function googleMapsLink(place: Place) {
+  if (place.googleMapsUrl) return place.googleMapsUrl
+  const params = new URLSearchParams({ api: '1' })
+  if (place.googlePlaceId) {
+    params.set('query', place.name)
+    params.set('query_place_id', place.googlePlaceId)
+  } else if (place.latitude !== null && place.longitude !== null) {
+    params.set('query', `${place.latitude},${place.longitude}`)
+  } else {
+    params.set('query', [place.name, place.address].filter(Boolean).join(' '))
+  }
+  return `https://www.google.com/maps/search/?${params}`
 }
