@@ -213,6 +213,8 @@ const ko = {
     visitDate: '방문 날짜',
     notesOnDetail: '📝 메모는 장소 화면에서 추가하고 지울 수 있어요.',
     albumKept: (title: string) => `📷 연결된 ‘${title}’ 앨범은 그대로 유지돼요.`,
+    delete: '이 장소 삭제',
+    confirmDelete: '이 장소를 삭제할까요? 메모도 함께 지워져요. 캘린더 기록과 앨범은 남아요.',
   },
   albums: {
     eyebrow: '추억 갤러리',
@@ -466,6 +468,8 @@ const ja: Messages = {
     visitDate: '訪問日',
     notesOnDetail: '📝 メモは場所の画面で追加・削除できます。',
     albumKept: (title) => `📷 つながっている「${title}」アルバムはそのまま残ります。`,
+    delete: 'この場所を削除',
+    confirmDelete: 'この場所を削除しますか？メモも一緒に消えます。カレンダーの記録とアルバムは残ります。',
   },
   albums: {
     eyebrow: '思い出ギャラリー',

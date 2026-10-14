@@ -7,7 +7,7 @@ import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
 import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
-import { usePlace, useUpdatePlace } from '../../lib/queries'
+import { useDeletePlace, usePlace, useUpdatePlace } from '../../lib/queries'
 import type { PlaceDetail, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import type { MapFocus } from '../map/MapPage'
@@ -36,6 +36,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
   const t = useT()
   const navigate = useNavigate()
   const updatePlace = useUpdatePlace(place.id)
+  const deletePlace = useDeletePlace(place.id)
   const visit = place.latestVisit
   const [status, setStatus] = useState<PlaceStatus>(place.status)
   const [name, setName] = useState(place.name)
@@ -44,7 +45,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
   const [visitDate, setVisitDate] = useState(visit ? toDateInput(new Date(visit.scheduledAt)) : '')
   const [rating, setRating] = useState<number | null>(visit?.rating ?? null)
   const visited = status === 'VISITED'
-  const canSave = name.trim() !== '' && !updatePlace.isPending
+  const busy = updatePlace.isPending || deletePlace.isPending
+  const canSave = name.trim() !== '' && !busy
+  const error = updatePlace.error ?? deletePlace.error
   const close = () => navigate(`/places/${place.id}`, { replace: true })
   // Saved: back to the map, on the place's (possibly new) tab with its card selected.
   const toMap = (saved: { id: number; status: PlaceStatus }) =>
@@ -67,6 +70,10 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
       },
       { onSuccess: toMap },
     )
+  }
+
+  function remove() {
+    if (window.confirm(t.place.confirmDelete)) deletePlace.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
   return (
@@ -180,18 +187,23 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
         {place.albums[0] && (
           <p className="px-1 text-[11px] leading-normal text-muted">{t.place.albumKept(place.albums[0].title)}</p>
         )}
-        {updatePlace.error && <p className="px-1 text-[12px] text-coral-strong">{errorMessage(updatePlace.error, t)}</p>}
+        {error && <p className="px-1 text-[12px] text-coral-strong">{errorMessage(error, t)}</p>}
 
-        <div className="mt-auto flex gap-3 pt-[18px] pb-5">
-          <button type="button" onClick={close} className="h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted">
-            {t.common.cancel}
-          </button>
-          <button
-            type="submit"
-            disabled={!canSave}
-            className="h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50"
-          >
-            {updatePlace.isPending ? t.common.saving : t.common.saveChanges}
+        <div className="mt-auto pt-[18px] pb-5">
+          <div className="flex gap-3">
+            <button type="button" onClick={close} className="h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted">
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={!canSave}
+              className="h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50"
+            >
+              {updatePlace.isPending ? t.common.saving : t.common.saveChanges}
+            </button>
+          </div>
+          <button type="button" onClick={remove} disabled={busy} className="mx-auto mt-4 block text-[12px] text-muted underline">
+            {t.place.delete}
           </button>
         </div>
       </div>

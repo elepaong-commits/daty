@@ -108,6 +108,20 @@ export function useUpdatePlace(id: number) {
   return useMutation({ mutationFn: (input: UpdatePlaceInput) => api.updatePlace(id, input), onSuccess: invalidate })
 }
 
+/** Notes go with the place; its records stay on the calendar without a place. */
+export function useDeletePlace(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.deletePlace(id),
+    onSuccess: () =>
+      // Skip the deleted place's own detail query: refetching it would only 404 while the page leaves.
+      queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          ['records', keys.places[0], keys.albums[0]].includes(queryKey[0] as string) && queryKey[1] !== id,
+      }),
+  })
+}
+
 export function useUpdateRecord(id: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({ mutationFn: (input: UpdateRecordInput) => api.updateRecord(id, input), onSuccess: invalidate })
