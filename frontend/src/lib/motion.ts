@@ -13,3 +13,6 @@ export const backdropMotion = {
   exit: { opacity: 0, transition: exitTween },
 }
 
+/** Something shrinking back into its place: fast at first, easing into the spot. */
+export const settleTween: Transition = { duration: 0.26, ease: [0.2, 0, 0, 1] }
+

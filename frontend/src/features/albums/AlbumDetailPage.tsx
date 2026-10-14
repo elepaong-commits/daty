@@ -279,6 +279,7 @@ export function AlbumDetailPage() {
                 <button
                   key={photo.id}
                   type="button"
+                  data-photo-id={photo.id}
                   onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft lg:aspect-square lg:h-auto lg:hover:opacity-90 ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
@@ -339,16 +340,18 @@ export function AlbumDetailPage() {
       )}
 
       <AnimatePresence>{editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}</AnimatePresence>
-      {viewing !== null && (
-        <PhotoViewer
-          photos={shown}
-          startIndex={viewing}
-          coverPhotoId={album.coverPhotoId}
-          onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
-          coverPending={updateAlbum.isPending}
-          onClose={() => setViewing(null)}
-        />
-      )}
+      <AnimatePresence>
+        {viewing !== null && (
+          <PhotoViewer
+            photos={shown}
+            startIndex={viewing}
+            coverPhotoId={album.coverPhotoId}
+            onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
+            coverPending={updateAlbum.isPending}
+            onClose={() => setViewing(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
