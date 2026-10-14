@@ -1,3 +1,4 @@
+import { MapPin } from 'lucide-react'
 import mapPinIcon from '../../assets/icons/map-pin.svg'
 import { Field, inputClass } from '../../components/Field'
 import { useT } from '../../lib/i18n'
@@ -22,7 +23,7 @@ export function NewPlaceFields({ mapUrl, onMapUrlChange, mapLinkLabel, name, onN
     <>
       <Field label={mapLinkLabel}>
         <div className={`${inputClass} flex items-center gap-2.5 focus-within:border-brand`}>
-          {!editing && <span className="text-[16px]">📍</span>}
+          {!editing && <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-muted" />}
           <input
             type="url"
             inputMode="url"

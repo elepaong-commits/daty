@@ -1,3 +1,4 @@
+import { Camera, type LucideIcon, MapPin, Star, Video } from 'lucide-react'
 import { Link } from 'react-router'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
@@ -28,8 +29,8 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
         {shownPlaces.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
             {shownPlaces.map((place) => (
-              <span key={place.id} className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-                📍 {place.name}
+              <span key={place.id} className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
+                <MapPin size={12} strokeWidth={1.75} /> {place.name}
               </span>
             ))}
             {morePlaces > 0 && (
@@ -43,7 +44,9 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
         {album.highlightNote && (
           <div className="pt-2">
             <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375]">
-              <span className="font-bold text-amber-strong">⭐ {t.common.mustSee}</span>
+              <span className="flex items-center gap-1 font-bold text-amber-strong">
+                <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
+              </span>
               <span className="text-amber-ink">{album.highlightNote}</span>
             </div>
           </div>
@@ -57,14 +60,14 @@ export function AlbumCard({ album, size }: { album: Album; size: 'large' | 'smal
 function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: string; date: string }) {
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
-  const emoji = categoryOf(category).emoji
+  const { Icon } = categoryOf(category)
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
   const { coverPhoto } = album
   const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
   const videoCount = album.photos.filter((p) => p.mediaType === 'VIDEO').length
 
   const layer = (i: number) => (
-    <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} emoji={i === 0 ? emoji : ''} />
+    <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} Icon={i === 0 ? Icon : null} />
   )
 
   return (
@@ -82,9 +85,14 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
         {layer(0)}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))]" />
         <span className="absolute top-2 left-2 rounded-lg bg-white/95 px-2 py-1 text-[11px] leading-normal font-bold">{date}</span>
-        <span className="absolute right-2 bottom-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] leading-normal font-semibold text-white">
-          📷 {album.photoCount - videoCount}
-          {videoCount > 0 && ` · 🎬 ${videoCount}`}
+        <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] leading-normal font-semibold text-white">
+          <Camera size={12} strokeWidth={1.75} /> {album.photoCount - videoCount}
+          {videoCount > 0 && (
+            <>
+              <span className="pl-1">·</span>
+              <Video size={12} strokeWidth={1.75} /> {videoCount}
+            </>
+          )}
         </span>
       </div>
     </div>
@@ -92,12 +100,20 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
 }
 
 /** One print in the pile; a photo whose file is gone falls back to the gradient. */
-function StackLayer({ src, gradient: [from, to], emoji }: { src: string | null | undefined; gradient: [string, string]; emoji: string }) {
+function StackLayer({
+  src,
+  gradient: [from, to],
+  Icon,
+}: {
+  src: string | null | undefined
+  gradient: [string, string]
+  Icon: LucideIcon | null
+}) {
   const { failed, onError } = useImageFailed(src)
   if (src && !failed) return <img src={src} alt="" onError={onError} className="size-full object-cover" />
   return (
     <div className="flex size-full items-center justify-center" style={{ background: `linear-gradient(${from}, ${to})` }}>
-      <span className="text-[40px] leading-none [text-shadow:0_4px_6px_rgba(0,0,0,0.18)]">{emoji}</span>
+      {Icon && <Icon size={40} strokeWidth={1.5} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]" />}
     </div>
   )
 }

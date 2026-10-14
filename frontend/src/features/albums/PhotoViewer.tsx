@@ -1,3 +1,4 @@
+import { TriangleAlert, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { formatDotted, toTimeInput } from '../../lib/dates'
 import { useT } from '../../lib/i18n'
@@ -56,10 +57,10 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         <button
           type="button"
           onClick={onClose}
-          className="flex size-9 items-center justify-center rounded-full bg-white/15 text-[14px]"
+          className="flex size-9 items-center justify-center rounded-full bg-white/15"
           aria-label={t.common.close}
         >
-          ✕
+          <X size={18} strokeWidth={1.75} />
         </button>
       </div>
 
@@ -157,7 +158,7 @@ function ViewerVideo({ src, poster, active }: { src: string | null; poster: stri
   }
   return (
     <span className="flex flex-col items-center gap-1 text-[12px] text-white/70">
-      <span className="text-[24px]">⚠️</span>
+      <TriangleAlert size={24} strokeWidth={1.5} />
       {t.albums.missingVideo}
     </span>
   )
@@ -171,7 +172,7 @@ function ViewerPhoto({ src, eager }: { src: string | null; eager: boolean }) {
   }
   return (
     <span className="flex flex-col items-center gap-1 text-[12px] text-white/70">
-      <span className="text-[24px]">⚠️</span>
+      <TriangleAlert size={24} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>
   )

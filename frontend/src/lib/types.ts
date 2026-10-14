@@ -1,6 +1,6 @@
 // Mirrors backend/src/modules/*.routes.ts responses. Dates arrive as ISO strings.
 
-export type PlaceCategory = 'FOOD' | 'CAFE' | 'EXHIBIT' | 'TOUR' | 'BAR' | 'ACTIVITY'
+export type PlaceCategory = 'FOOD' | 'CAFE' | 'EXHIBIT' | 'TOUR' | 'ACTIVITY'
 export type PlaceStatus = 'WISH' | 'VISITED'
 export type RecordType = 'PLAN' | 'RECORD'
 /** Tags a memo can carry, stored inline as `{{EAT}}` tokens (see `lib/memo.ts`). */

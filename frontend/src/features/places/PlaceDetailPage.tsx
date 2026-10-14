@@ -1,3 +1,4 @@
+import { Check, Heart, Map, MapPin } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { PhotoTile } from '../../components/PhotoTile'
@@ -41,19 +42,23 @@ export function PlaceDetailPage() {
 
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5">
         <div className="relative h-48 shrink-0">
-          <PhotoTile src={album?.coverPhoto?.thumbnailUrl} category={place.category} className="size-full rounded-xl" emojiSize={56} />
-          <span className={`absolute top-3 left-3 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand' : 'text-coral'}`}>
-            {t.place.badge[place.status]}
+          <PhotoTile src={album?.coverPhoto?.thumbnailUrl} category={place.category} className="size-full rounded-xl" iconSize={56} />
+          <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand' : 'text-coral'}`}>
+            {visited ? <Check size={12} strokeWidth={1.75} /> : <Heart size={12} strokeWidth={1.75} />} {t.place.badge[place.status]}
           </span>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <h2 className="font-display text-[26px] leading-[1.25]">{place.name}</h2>
           <div className="flex items-center gap-2 text-[12px]">
-            <span className="rounded-md bg-brand-soft px-2 py-[3px] font-semibold text-brand-strong">
-              {category.emoji} {t.categories[category.value]}
+            <span className="flex shrink-0 items-center gap-1 rounded-md bg-brand-soft px-2 py-[3px] font-semibold text-brand-strong">
+              <category.Icon size={12} strokeWidth={1.75} /> {t.categories[category.value]}
             </span>
-            {place.address && <span className="text-muted">📍 {place.address}</span>}
+            {place.address && (
+              <span className="flex min-w-0 items-center gap-1 text-muted">
+                <MapPin size={12} strokeWidth={1.75} className="shrink-0" /> {place.address}
+              </span>
+            )}
           </div>
         </div>
 
@@ -94,7 +99,7 @@ export function PlaceDetailPage() {
                   src={album.photos[i]?.thumbnailUrl}
                   category={place.category}
                   className="h-[66px] min-w-0 flex-1 rounded-xl"
-                  emojiSize={22}
+                  iconSize={22}
                 />
               ))}
             </div>
@@ -112,8 +117,9 @@ export function PlaceDetailPage() {
             href={googleMapsLink(place)}
             target="_blank"
             rel="noreferrer"
-            className="flex h-12 w-full items-center justify-center rounded-2xl border border-brand bg-white text-[16px] font-semibold text-brand"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-brand bg-white text-[16px] font-semibold text-brand"
           >
+            <Map size={18} strokeWidth={1.75} />
             {t.place.openGoogleMaps}
           </a>
           <button

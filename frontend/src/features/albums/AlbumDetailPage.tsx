@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, Check, MapPin, Play, Star, TriangleAlert, Video } from 'lucide-react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
@@ -153,8 +154,8 @@ export function AlbumDetailPage() {
           {album.places.length > 0 && (
             <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
               {album.places.map((place) => (
-                <span key={place.id} className="rounded-md bg-brand-soft px-2 py-[3px] text-brand-strong">
-                  📍 {place.name}
+                <span key={place.id} className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-[3px] text-brand-strong">
+                  <MapPin size={12} strokeWidth={1.75} /> {place.name}
                 </span>
               ))}
               {/* One place: show where it is. Several: the names are enough. */}
@@ -165,7 +166,9 @@ export function AlbumDetailPage() {
 
         {album.highlightNote && (
           <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
-            <span className="text-[12px] font-bold text-amber-strong">⭐ {t.common.mustSee}</span>
+            <span className="flex items-center gap-1 text-[12px] font-bold text-amber-strong">
+              <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
+            </span>
             <p className="text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
           </div>
         )}
@@ -239,9 +242,9 @@ export function AlbumDetailPage() {
               type="button"
               onClick={flipDirection}
               aria-label={t.albums.directionLabel(t.albums.direction[direction])}
-              className="h-7 rounded-full px-2.5 font-semibold text-muted"
+              className="flex h-7 items-center gap-1 rounded-full px-2.5 font-semibold text-muted"
             >
-              {direction === 'ASC' ? '↑' : '↓'} {t.albums.direction[direction]}
+              {direction === 'ASC' ? <ArrowUp size={12} strokeWidth={1.75} /> : <ArrowDown size={12} strokeWidth={1.75} />} {t.albums.direction[direction]}
             </button>
           </div>
         )}
@@ -267,21 +270,22 @@ export function AlbumDetailPage() {
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
                     <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
-                      ▶{photo.durationSec !== null && ` ${formatDuration(photo.durationSec)}`}
+                      <Play size={9} strokeWidth={2} />
+                      {photo.durationSec !== null && formatDuration(photo.durationSec)}
                     </span>
                   )}
                   {photo.id === album.coverPhotoId && (
-                    <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
-                      {t.albums.bestCut}
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
+                      <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                     </span>
                   )}
                   {selecting && (
                     <span
-                      className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-[11px] text-white ${
+                      className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-white ${
                         isSelected ? 'bg-brand' : 'bg-ink/30'
                       }`}
                     >
-                      {isSelected && '✓'}
+                      {isSelected && <Check size={12} strokeWidth={2.5} />}
                     </span>
                   )}
                 </button>
@@ -344,14 +348,14 @@ function GridPhoto({ photo }: { photo: Photo }) {
   if (photo.mediaType === 'VIDEO' && !src) {
     return (
       <span className="flex size-full flex-col items-center justify-center gap-1 bg-ink/80 text-[10px] text-white/80">
-        <span className="text-[22px]">🎬</span>
+        <Video size={22} strokeWidth={1.5} />
         {t.albums.video}
       </span>
     )
   }
   return (
     <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
-      <span className="text-[18px]">⚠️</span>
+      <TriangleAlert size={18} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>
   )

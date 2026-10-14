@@ -1,3 +1,4 @@
+import { Check, MapPin } from 'lucide-react'
 import timelineConnector from '../../assets/icons/timeline-connector.svg'
 import { MemoText } from '../../components/Memo'
 import { Stars } from '../../components/Stars'
@@ -83,8 +84,8 @@ function TimelineEntry({
         className={`flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left ${isPlan ? 'border-coral/30' : 'border-card-border'}`}
       >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] leading-normal font-semibold text-brand-strong">
-            {category.emoji} {t.categories[category.value]}
+          <span className="flex items-center gap-1 text-[11px] leading-normal font-semibold text-brand-strong">
+            <category.Icon size={12} strokeWidth={1.75} /> {t.categories[category.value]}
           </span>
           {isPlan ? (
             <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[11px] leading-normal font-bold text-coral">
@@ -95,16 +96,17 @@ function TimelineEntry({
           )}
         </div>
         <h3 className="pt-1 font-display text-[17px] leading-[1.375]">{record.place?.name ?? record.title}</h3>
-        {record.memo && <MemoText content={`📝 ${record.memo}`} className="pt-1 text-[13px] leading-[1.75] whitespace-pre-line text-ink/75" />}
+        {record.memo && <MemoText content={record.memo} className="pt-1 text-[13px] leading-[1.75] whitespace-pre-line text-ink/75" />}
         {mapUrl && (
           <a
             href={mapUrl}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="self-start truncate pt-2 text-[11px] leading-normal font-medium text-brand"
+            className="flex max-w-full items-center gap-1 self-start pt-2 text-[11px] leading-normal font-medium text-brand"
           >
-            📍 {mapUrl.replace(/^https?:\/\//, '')}
+            <MapPin size={12} strokeWidth={1.75} className="shrink-0" />
+            <span className="truncate">{mapUrl.replace(/^https?:\/\//, '')}</span>
           </a>
         )}
         {canComplete && (
@@ -116,8 +118,9 @@ function TimelineEntry({
               complete.mutate({ type: 'RECORD' }, { onSuccess: onComplete })
             }}
             onKeyDown={(e) => e.stopPropagation()}
-            className="mt-3 h-10 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+            className="mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
           >
+            {!complete.isPending && <Check size={16} strokeWidth={1.75} />}
             {complete.isPending ? t.calendar.completing : t.calendar.complete}
           </button>
         )}

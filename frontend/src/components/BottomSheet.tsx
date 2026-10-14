@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
 
@@ -28,10 +29,10 @@ export function BottomSheet({ title, onClose, children }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-full bg-sand-soft text-[14px]"
+            className="flex size-8 items-center justify-center rounded-full bg-sand-soft"
             aria-label={t.common.close}
           >
-            ✕
+            <X size={16} strokeWidth={1.75} />
           </button>
         </div>
         <div className="scrollbar-none -mx-5 overflow-y-auto px-5">{children}</div>

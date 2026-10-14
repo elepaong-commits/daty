@@ -1,17 +1,17 @@
+import { Bike, Coffee, type LucideIcon, Mountain, Palette, Utensils } from 'lucide-react'
 import type { PlaceCategory, TipType } from './types'
 
 // Order matches the filter chips on the map screen. Labels live in `t.categories`.
-export const CATEGORIES: { value: PlaceCategory; emoji: string }[] = [
-  { value: 'FOOD', emoji: '🍽️' },
-  { value: 'CAFE', emoji: '☕' },
-  { value: 'EXHIBIT', emoji: '🎨' },
-  { value: 'TOUR', emoji: '🏞️' },
-  { value: 'BAR', emoji: '🍷' },
-  { value: 'ACTIVITY', emoji: '🚲' },
+export const CATEGORIES: { value: PlaceCategory; Icon: LucideIcon }[] = [
+  { value: 'FOOD', Icon: Utensils },
+  { value: 'CAFE', Icon: Coffee },
+  { value: 'EXHIBIT', Icon: Palette },
+  { value: 'TOUR', Icon: Mountain },
+  { value: 'ACTIVITY', Icon: Bike },
 ]
 
 // The schedule form lists tourist spots first.
-export const FORM_CATEGORY_ORDER: PlaceCategory[] = ['TOUR', 'FOOD', 'CAFE', 'EXHIBIT', 'BAR', 'ACTIVITY']
+export const FORM_CATEGORY_ORDER: PlaceCategory[] = ['TOUR', 'FOOD', 'CAFE', 'EXHIBIT', 'ACTIVITY']
 
 const byValue = Object.fromEntries(CATEGORIES.map((c) => [c.value, c])) as Record<
   PlaceCategory,
@@ -33,6 +33,5 @@ export const PHOTO_GRADIENTS: Record<PlaceCategory, [string, string][]> = {
   TOUR: [['#2d3a5a', '#f4a261'], ['#1e3a5f', '#6c8ebf'], ['#f6bd60', '#f28482']],
   EXHIBIT: [['#b8c0ff', '#e7c6ff'], ['#a0e7e5', '#b4f8c8'], ['#ffaebc', '#fbe7c6']],
   FOOD: [['#fff1c1', '#ffb703'], ['#f4e1d2', '#c08552'], ['#e6f7f5', '#7fd1c7']],
-  BAR: [['#e9d8c4', '#b5835a'], ['#fce3c4', '#e76f51'], ['#ddebcf', '#8ab17d']],
   ACTIVITY: [['#c9ece7', '#4fc3b4'], ['#ffe5b4', '#ffb703'], ['#b3e5fc', '#4fc3f7']],
 }

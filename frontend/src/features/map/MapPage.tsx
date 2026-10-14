@@ -1,3 +1,4 @@
+import { Check, Heart } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
@@ -110,8 +111,9 @@ export function MapPage() {
             role="tab"
             aria-selected={status === value}
             onClick={() => changeStatus(value)}
-            className={`flex-1 rounded-xl text-[14px] leading-normal font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl text-[14px] leading-normal font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
           >
+            {value === 'VISITED' ? <Check size={15} strokeWidth={1.75} /> : <Heart size={15} strokeWidth={1.75} />}
             {t.map.tab[value](counts[value])}
           </button>
         ))}
@@ -123,7 +125,7 @@ export function MapPage() {
         </Chip>
         {CATEGORIES.map((c) => (
           <Chip key={c.value} selected={category === c.value} onClick={() => setCategory(c.value)} borderClass="border-sand">
-            {c.emoji} {t.categories[c.value]}
+            <c.Icon size={14} strokeWidth={1.75} /> {t.categories[c.value]}
           </Chip>
         ))}
       </div>

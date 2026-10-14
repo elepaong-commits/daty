@@ -110,10 +110,10 @@ function PlaceCard({
       } ${className}`}
     >
       <div className="flex w-full items-start justify-between gap-2">
-        <span className="shrink-0 whitespace-nowrap rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-          {category.emoji} {t.categories[category.value]}
+        <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
+          <category.Icon size={12} strokeWidth={1.75} /> {t.categories[category.value]}
         </span>
-        {place.address && <span className="min-w-0 truncate text-[11px] leading-normal text-muted">📍 {place.address}</span>}
+        {place.address && <span className="min-w-0 truncate text-[11px] leading-normal text-muted">{place.address}</span>}
       </div>
       <h3 className="w-full truncate font-display text-[19px] leading-[1.375]">{place.name}</h3>
       <div className="flex items-center gap-1.5 leading-normal">

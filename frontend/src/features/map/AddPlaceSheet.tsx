@@ -78,11 +78,14 @@ export function AddPlaceSheet({ onClose, onSaved }: Props) {
         <div className="flex flex-col gap-1.5 pt-4">
           <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.placeCategory}</span>
           <div className="flex flex-wrap gap-2">
-            {FORM_CATEGORY_ORDER.map((value) => (
-              <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                {categoryOf(value).emoji} {t.categories[value]}
-              </Chip>
-            ))}
+            {FORM_CATEGORY_ORDER.map((value) => {
+              const { Icon } = categoryOf(value)
+              return (
+                <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
+                  <Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
+                </Chip>
+              )
+            })}
           </div>
         </div>
 
