@@ -28,6 +28,9 @@ const placeFields = {
   longitude: z.number().min(-180).max(180).optional(),
 };
 
+// `memo` is about this date; `placeNote` is added to the place's own memos (shown on the place screen).
+const placeNote = z.string().trim().min(1).max(500).optional();
+
 const createBody = z.object({
   type: z.enum(RecordType),
   scheduledAt: z.iso.datetime({ offset: true }),
@@ -35,6 +38,7 @@ const createBody = z.object({
   ...placeFields,
   title: z.string().trim().min(1).max(100).optional(),
   memo: z.string().trim().max(1000).optional(),
+  placeNote,
   rating: z.number().int().min(1).max(5).optional(),
 });
 
@@ -44,6 +48,7 @@ const updateBody = z.object({
   category: z.enum(PlaceCategory).optional(),
   ...placeFields,
   memo: z.string().trim().max(1000).nullable().optional(),
+  placeNote,
   rating: z.number().int().min(1).max(5).nullable().optional(),
 });
 
@@ -113,6 +118,9 @@ recordsRouter.post("/", async (req, res) => {
   const record = await prisma.$transaction(async (tx) => {
     const visited = body.type === RecordType.RECORD;
     const place = await resolvePlace(tx, coupleId, body, visited);
+    if (body.placeNote) {
+      await tx.placeNote.create({ data: { coupleId, placeId: place.id, writerId: req.userId, content: body.placeNote } });
+    }
 
     return tx.dateRecord.create({
       data: {
@@ -161,6 +169,10 @@ recordsRouter.patch("/:id", async (req, res) => {
           data: { googleMapsUrl: body.googleMapsUrl, ...(promote && { status: "VISITED" }) },
         });
       }
+    }
+    if (body.placeNote) {
+      if (!placeId) throw new HttpError(400, "placeNote needs a place");
+      await tx.placeNote.create({ data: { coupleId, placeId, writerId: req.userId, content: body.placeNote } });
     }
 
     return tx.dateRecord.update({

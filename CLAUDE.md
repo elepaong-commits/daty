@@ -6,7 +6,7 @@
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
   - React Router(탭 3개: `/`, `/calendar`, `/albums` + 하위 화면 `/places/:id`, `/places/:id/edit`, `/albums/:id`. 하위 화면에서도 해당 탭이 활성 표시된다), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
-  - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다
+  - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다. 장소 상세 위쪽 사진도 `googlePlaceId`로 Google 장소 사진을 받아 쓰고(`PlaceHero`, 작성자 표시 필수), 없으면 앨범 표지 → 카테고리 타일
   - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand`, `text-muted`, `font-display` 등)
   - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
   - 한국어/일본어 지원. 화면 문구는 하드코딩하지 않고 `src/lib/messages.ts`의 `ko`와 `ja` 양쪽에 넣은 뒤 `useT()`로 쓴다(`ja`는 `Messages` 타입이라 키가 빠지면 빌드가 깨진다). 언어는 헤더 오른쪽 위 토글로 바꾸고 기기(localStorage)에 기억한다. Google 지도 타일 언어는 페이지를 처음 열 때 언어로 고정된다
@@ -60,6 +60,7 @@
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
   - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 장소 이름과 주소는 앱 언어와 상관없이 그 나라 말로 저장한다(일본 장소는 일본어, `LOCAL_LANGUAGE`). 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
+  - `memo`는 그 데이트에 대한 메모(`DateRecord.memo`), `placeNote`는 장소에 대한 메모로 연결된 장소의 `PlaceNote`를 하나 새로 만든다(생성·수정 모두, 수정에서 장소를 옮기면 새 장소에). 일정 폼에 두 칸이 따로 있다
 - `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — `coverPhotoId`가 "베스트 컷"(앨범 표지). 고르지 않으면(`null`) 응답의 `coverPhoto`는 첫 번째 사진. 사진이나 앨범을 지우면 원본·썸네일 R2 객체도 지운다(실패해도 로그만 남김)
   - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30개. 이미지 jpeg/png/webp, 동영상 mp4/quicktime/webm) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`, 그리고 같은 모양의 `thumbnail`(`{uuid}.thumb.jpg`)
   - `POST /api/albums/:id/photos` (`{ photos: [{ key, thumbnailKey, takenAt, durationSec? }] }`) — R2에 HEAD로 실제 업로드(사진은 15MB 이하 이미지, 동영상은 R2 단일 PUT 한도인 5GB 이하 동영상, 썸네일 2MB 이하 이미지)를 확인한 뒤 기록. 키 확장자로 `mediaType`을 정한다. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`와 그 썸네일 키만 받는다. 썸네일 업로드만 실패하면 `thumbnailKey: null`로 보내고 원본을 쓴다(동영상은 응답의 `thumbnailUrl`이 `null`)
