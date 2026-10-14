@@ -38,7 +38,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    throw new ApiError(res.status, body?.error ?? res.statusText, body?.code)
+    // HTTP/2 responses (Vercel, most proxies) carry no status text, so fall back to the code.
+    throw new ApiError(res.status, body?.error ?? (res.statusText || `HTTP ${res.status}`), body?.code)
   }
   return res.status === 204 ? (undefined as T) : res.json()
 }
