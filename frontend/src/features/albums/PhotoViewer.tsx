@@ -14,7 +14,7 @@ interface Props {
   onClose: () => void
 }
 
-/** Full-screen photo viewer; swipe (or arrows/keys) between the album's photos. */
+/** Full-screen viewer; swipe (or arrows/keys) between the album's photos and videos. */
 export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, coverPending, onClose }: Props) {
   const t = useT()
   const strip = useRef<HTMLDivElement>(null)
@@ -71,8 +71,12 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         >
           {photos.map((p, i) => (
             <div key={p.id} className="flex size-full shrink-0 snap-center items-center justify-center">
-              {/* Neighbours load right away so swiping doesn't show a blank frame. */}
-              <ViewerPhoto src={p.imageUrl} eager={Math.abs(i - index) <= 1} />
+              {p.mediaType === 'VIDEO' ? (
+                <ViewerVideo src={p.imageUrl} poster={p.thumbnailUrl} active={i === index} />
+              ) : (
+                // Neighbours load right away so swiping doesn't show a blank frame.
+                <ViewerPhoto src={p.imageUrl} eager={Math.abs(i - index) <= 1} />
+              )}
             </div>
           ))}
         </div>
@@ -124,6 +128,38 @@ function NavButton({ side, label, onClick, children }: { side: 'left' | 'right';
     >
       {children}
     </button>
+  )
+}
+
+/** Plays in place; swiping to another item pauses it. Only the open one fetches more than its poster. */
+function ViewerVideo({ src, poster, active }: { src: string | null; poster: string | null; active: boolean }) {
+  const t = useT()
+  const ref = useRef<HTMLVideoElement>(null)
+  const { failed, onError } = useImageFailed(src)
+
+  useEffect(() => {
+    if (!active) ref.current?.pause()
+  }, [active])
+
+  if (src && !failed) {
+    return (
+      <video
+        ref={ref}
+        src={src}
+        poster={poster ?? undefined}
+        controls
+        playsInline
+        preload={active ? 'metadata' : 'none'}
+        onError={onError}
+        className="max-h-full max-w-full"
+      />
+    )
+  }
+  return (
+    <span className="flex flex-col items-center gap-1 text-[12px] text-white/70">
+      <span className="text-[24px]">⚠️</span>
+      {t.albums.missingVideo}
+    </span>
   )
 }
 

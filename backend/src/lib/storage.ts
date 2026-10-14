@@ -70,17 +70,18 @@ export async function deleteObjects(keys: string[]) {
   );
 }
 
-/** API shape of a photo: uploaded ones get signed URLs, older rows keep their stored URL. */
-export async function serializePhoto<T extends { storageKey: string | null; thumbnailKey: string | null; imageUrl: string | null }>({
-  storageKey,
-  thumbnailKey,
-  imageUrl,
-  ...photo
-}: T) {
+/**
+ * API shape of a photo or video: uploaded ones get signed URLs, older rows keep their stored URL.
+ * For a video `imageUrl` is the video itself and `thumbnailUrl` its first frame.
+ */
+export async function serializePhoto<
+  T extends { storageKey: string | null; thumbnailKey: string | null; imageUrl: string | null; mediaType: string },
+>({ storageKey, thumbnailKey, imageUrl, ...photo }: T) {
   const sign = (key: string) => (r2 ? signedImageUrl(key) : null);
   const full = storageKey ? await sign(storageKey) : imageUrl;
-  // Photos uploaded before thumbnails existed fall back to the full image.
-  return { ...photo, imageUrl: full, thumbnailUrl: thumbnailKey ? await sign(thumbnailKey) : full };
+  // Photos uploaded before thumbnails existed fall back to the full image; a video can't stand in for one.
+  const fallback = photo.mediaType === "VIDEO" ? null : full;
+  return { ...photo, imageUrl: full, thumbnailUrl: thumbnailKey ? await sign(thumbnailKey) : fallback };
 }
 
 /** Every R2 object behind a photo, for deleting it. */

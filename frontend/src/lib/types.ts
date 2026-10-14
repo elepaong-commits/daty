@@ -74,12 +74,19 @@ export interface DateRecord {
   writer: { id: number; nickname: string } | null
 }
 
+export type MediaType = 'PHOTO' | 'VIDEO'
+
+/** A photo or video in an album. */
 export interface Photo {
   id: number
-  imageUrl: string | null // signed R2 URL, valid for at least a day; null if storage is not configured
-  thumbnailUrl: string | null // ≤800px copy for grids and cards; the full image for photos uploaded before thumbnails
+  mediaType: MediaType
+  imageUrl: string | null // signed R2 URL (the video itself for a video), valid for at least a day; null if storage is not configured
+  // ≤800px copy for grids and cards (a video's first frame); the full image for photos uploaded before thumbnails,
+  // null for a video whose frame couldn't be captured
+  thumbnailUrl: string | null
   displayOrder: number
   takenAt: string | null
+  durationSec: number | null // videos only
 }
 
 export interface Album {
@@ -160,7 +167,7 @@ export interface UpdateRecordInput {
   longitude?: number
 }
 
-/** POST /api/albums/:id/photos/uploads: where to PUT one image before registering its key. */
+/** POST /api/albums/:id/photos/uploads: where to PUT one photo or video before registering its key. */
 export interface PhotoUpload {
   key: string
   uploadUrl: string

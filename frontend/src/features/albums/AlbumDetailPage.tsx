@@ -3,12 +3,16 @@ import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
-import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { formatDotted, formatDuration, formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import type { MediaType, Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 import { EditAlbumSheet } from './EditAlbumSheet'
 import { PhotoViewer } from './PhotoViewer'
+
+type MediaFilter = 'ALL' | MediaType
+const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
 
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
@@ -21,7 +25,8 @@ export function AlbumDetailPage() {
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [editing, setEditing] = useState(false)
-  const [viewing, setViewing] = useState<number | null>(null) // index of the photo open in the viewer
+  const [filter, setFilter] = useState<MediaFilter>('ALL')
+  const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
 
   function toggleSelecting() {
     setSelecting((on) => !on)
@@ -73,6 +78,12 @@ export function AlbumDetailPage() {
     )
   }
 
+  const counts = {
+    ALL: album.photos.length,
+    PHOTO: album.photos.filter((p) => p.mediaType === 'PHOTO').length,
+    VIDEO: album.photos.filter((p) => p.mediaType === 'VIDEO').length,
+  }
+  const shown = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
   const date = parseDateOnly(album.albumDate)
   const firstPlace = album.places[0]
   const actionError = updateAlbum.error ?? deletePhotos.error
@@ -86,7 +97,7 @@ export function AlbumDetailPage() {
             {formatSlashDay(date)} · {album.title}
           </h2>
           <p className="text-[12px] leading-normal text-muted">
-            {formatDotted(date)} · {t.common.photos(album.photoCount)}
+            {formatDotted(date)} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
           </p>
           {firstPlace && (
             <div className="flex gap-1.5 text-[11px] font-semibold">
@@ -122,11 +133,11 @@ export function AlbumDetailPage() {
               className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
             >
               {uploadPhotos.progress
-                ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total)
+                ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total, uploadPhotos.progress.percent)
                 : t.albums.addPhotos}
             </button>
           </div>
-          <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
+          <input ref={fileInput} type="file" accept="image/*,video/*" multiple hidden onChange={addPhotos} />
         </div>
 
         {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error, t)}</p>}
@@ -134,15 +145,35 @@ export function AlbumDetailPage() {
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}
 
-        {album.photos.length === 0 ? (
+        {album.photos.length > 0 && (
+          <div className="flex h-10 shrink-0 rounded-2xl bg-white p-1" role="tablist">
+            {FILTERS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={filter === value}
+                onClick={() => {
+                  setFilter(value)
+                  setSelected(new Set()) // don't keep hidden items selected for deletion
+                }}
+                className={`flex-1 rounded-xl text-[13px] leading-normal font-semibold ${filter === value ? 'bg-brand text-white' : 'text-ink'}`}
+              >
+                {t.albums.filter[value](counts[value])}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {shown.length === 0 ? (
           <p className="rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
-            {t.albums.empty}
+            {filter === 'ALL' ? t.albums.empty : t.albums.emptyFilter[filter]}
             <br />
             <span className="text-[11px]">{t.albums.emptyHint}</span>
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
-            {album.photos.map((photo, i) => {
+            {shown.map((photo, i) => {
               const isSelected = selected.has(photo.id)
               return (
                 <button
@@ -152,7 +183,12 @@ export function AlbumDetailPage() {
                   aria-pressed={selecting ? isSelected : undefined}
                   className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
-                  <GridPhoto src={photo.thumbnailUrl} />
+                  <GridPhoto photo={photo} />
+                  {photo.mediaType === 'VIDEO' && (
+                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+                      ▶{photo.durationSec !== null && ` ${formatDuration(photo.durationSec)}`}
+                    </span>
+                  )}
                   {photo.id === album.coverPhotoId && (
                     <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
                       {t.albums.bestCut}
@@ -203,7 +239,7 @@ export function AlbumDetailPage() {
       {editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}
       {viewing !== null && (
         <PhotoViewer
-          photos={album.photos}
+          photos={shown}
           startIndex={viewing}
           coverPhotoId={album.coverPhotoId}
           onSetCover={(coverPhotoId) => updateAlbum.mutate({ coverPhotoId })}
@@ -215,11 +251,23 @@ export function AlbumDetailPage() {
   )
 }
 
-/** Grid image; a photo whose file is gone says so, so it can still be selected and deleted. */
-function GridPhoto({ src }: { src: string | null }) {
+/**
+ * Grid image (a video's first frame); a photo whose file is gone says so, so it can still be selected
+ * and deleted. A video without a captured frame gets a plain placeholder.
+ */
+function GridPhoto({ photo }: { photo: Photo }) {
   const t = useT()
+  const src = photo.thumbnailUrl
   const { failed, onError } = useImageFailed(src)
   if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
+  if (photo.mediaType === 'VIDEO' && !src) {
+    return (
+      <span className="flex size-full flex-col items-center justify-center gap-1 bg-ink/80 text-[10px] text-white/80">
+        <span className="text-[22px]">🎬</span>
+        {t.albums.video}
+      </span>
+    )
+  }
   return (
     <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
       <span className="text-[18px]">⚠️</span>

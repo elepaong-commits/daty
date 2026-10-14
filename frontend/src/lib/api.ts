@@ -84,19 +84,38 @@ export const api = {
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
   photoUploads: (albumId: number, files: { contentType: string }[]) =>
     post<{ uploads: PhotoUpload[] }>(`/api/albums/${albumId}/photos/uploads`, { files }),
-  addPhotos: (albumId: number, photos: { key: string; thumbnailKey: string | null; takenAt: string | null }[]) =>
+  addPhotos: (
+    albumId: number,
+    photos: { key: string; thumbnailKey: string | null; takenAt: string | null; durationSec?: number | null }[],
+  ) =>
     post<Album>(`/api/albums/${albumId}/photos`, { photos }),
 }
 
-/** PUT an image straight to R2 with a presigned URL: no API base and no cookies. */
-export async function uploadToStorage(upload: Omit<PhotoUpload, 'thumbnail'>, body: Blob) {
-  const res = await fetch(upload.uploadUrl, { method: 'PUT', headers: upload.headers, body })
-  if (!res.ok) throw new ApiError(res.status, `R2 upload failed: ${res.status}`)
+/**
+ * PUT a file straight to R2 with a presigned URL: no API base and no cookies.
+ * With `onProgress` it goes through XHR, since fetch can't report upload progress (videos take a while).
+ */
+export async function uploadToStorage(upload: Omit<PhotoUpload, 'thumbnail'>, body: Blob, onProgress?: (fraction: number) => void) {
+  if (!onProgress) {
+    const res = await fetch(upload.uploadUrl, { method: 'PUT', headers: upload.headers, body })
+    if (!res.ok) throw new ApiError(res.status, `R2 upload failed: ${res.status}`)
+    return
+  }
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', upload.uploadUrl)
+    for (const [name, value] of Object.entries(upload.headers)) xhr.setRequestHeader(name, value)
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total)
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new ApiError(xhr.status, `R2 upload failed: ${xhr.status}`))
+    xhr.onerror = () => reject(new ApiError(0, 'R2 upload failed: network error'))
+    xhr.send(body)
+  })
 }
 
-/** A photo that could not be prepared for upload; `code` picks the message. */
+/** A photo or video that could not be prepared for upload; `code` picks the message. */
 export class ImageError extends Error {
-  readonly code: 'IMAGE_UNREADABLE' | 'IMAGE_ENCODE_FAILED'
+  readonly code: 'IMAGE_UNREADABLE' | 'IMAGE_ENCODE_FAILED' | 'VIDEO_UNSUPPORTED'
 
   constructor(fileName: string, code: ImageError['code']) {
     super(fileName)

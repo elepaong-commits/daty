@@ -50,3 +50,11 @@ export function monthGrid(month: Date) {
   // Drop a trailing week that belongs entirely to the next month.
   return weeks.filter((week) => week.some((d) => d.getMonth() === first.getMonth()))
 }
+
+/** Video length as `m:ss` (or `h:mm:ss`). */
+export function formatDuration(totalSec: number) {
+  const s = Math.round(totalSec)
+  const [h, m, sec] = [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`
+}
