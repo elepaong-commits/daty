@@ -1,7 +1,8 @@
-import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router'
 import { BottomNav } from './components/BottomNav'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { I18nProvider } from './components/I18nProvider'
 import { QueryState } from './components/Field'
@@ -17,6 +18,13 @@ import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
 import { keys, useMe } from './lib/queries'
 
+// An expired session on any screen sends the user back to login; a lost couple back to setup.
+function onApiError(error: Error) {
+  if (!(error instanceof ApiError)) return
+  if (error.status === 401) queryClient.setQueryData(keys.me, null)
+  if (error.code === 'COUPLE_REQUIRED') queryClient.invalidateQueries({ queryKey: keys.me })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -24,14 +32,8 @@ const queryClient = new QueryClient({
       retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 1,
     },
   },
-  queryCache: new QueryCache({
-    // An expired session on any screen sends the user back to login; a lost couple back to setup.
-    onError: (error) => {
-      if (!(error instanceof ApiError)) return
-      if (error.status === 401) queryClient.setQueryData(keys.me, null)
-      if (error.code === 'COUPLE_REQUIRED') queryClient.invalidateQueries({ queryKey: keys.me })
-    },
-  }),
+  queryCache: new QueryCache({ onError: onApiError }),
+  mutationCache: new MutationCache({ onError: onApiError }),
 })
 
 /**
@@ -90,6 +92,7 @@ function AuthGate() {
         <Route path="places/:id/edit" element={<PlaceEditPage />} />
         <Route path="albums" element={<AlbumsPage />} />
         <Route path="albums/:id" element={<AlbumDetailPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   )
@@ -100,7 +103,9 @@ export default function App() {
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AuthGate />
+          <ErrorBoundary>
+            <AuthGate />
+          </ErrorBoundary>
         </BrowserRouter>
       </QueryClientProvider>
     </I18nProvider>
