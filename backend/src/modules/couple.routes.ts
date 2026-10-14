@@ -15,6 +15,7 @@ const MAX_MEMBERS = 2;
 const generateCode = () => randomCode(6);
 
 const createBody = z.object({ anniversaryDate: z.iso.date() });
+const updateBody = createBody;
 const joinBody = z.object({ code: z.string().trim().toUpperCase().length(6) });
 
 async function assertNotInCouple(userId: number) {
@@ -33,6 +34,12 @@ coupleRouter.get("/", requireCouple, async (req, res) => {
     anniversaryDate: toDateOnly(couple.anniversaryDate),
     users: couple.users,
   });
+});
+
+coupleRouter.patch("/", requireCouple, async (req, res) => {
+  const { anniversaryDate } = updateBody.parse(req.body);
+  await prisma.couple.update({ where: { id: req.coupleId }, data: { anniversaryDate: new Date(anniversaryDate) } });
+  res.json(await loadMe(req.userId));
 });
 
 coupleRouter.post("/", async (req, res) => {

@@ -27,7 +27,9 @@ const credentialsLimiter = rateLimit({
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
 const password = z.string().min(8, "8자 이상").max(72);
 
-const signupBody = z.object({ email, password, nickname: z.string().trim().min(1).max(20) });
+const nickname = z.string().trim().min(1).max(20);
+const signupBody = z.object({ email, password, nickname });
+const updateMeBody = z.object({ nickname });
 const loginBody = z.object({ email, password: z.string().min(1).max(72) });
 
 /** Shape returned by every auth endpoint: who is logged in and their couple, if any. */
@@ -89,6 +91,12 @@ authRouter.post("/logout", (_req, res) => {
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {
+  res.json(await loadMe(req.userId));
+});
+
+authRouter.patch("/me", requireAuth, async (req, res) => {
+  const { nickname } = updateMeBody.parse(req.body);
+  await prisma.user.update({ where: { id: req.userId }, data: { nickname } });
   res.json(await loadMe(req.userId));
 });
 
