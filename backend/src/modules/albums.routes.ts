@@ -156,16 +156,26 @@ albumsRouter.patch("/:id", async (req, res) => {
   res.json(await serializeAlbum(album));
 });
 
-// Photo upload (CLAUDE.md "이미지 업로드 패턴"): the browser asks for presigned URLs, PUTs each image
-// (and a small JPEG thumbnail of it) straight to R2, then reports the keys back here to be recorded.
+// Photo and video upload (CLAUDE.md "이미지 업로드 패턴"): the browser asks for presigned URLs, PUTs each file
+// (and a small JPEG thumbnail of it, a video's first frame) straight to R2, then reports the keys back here.
 
 const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
+// Videos are uploaded as shot (browsers can't reliably re-encode them), so the only cap is R2's single PUT.
+const MAX_VIDEO_BYTES = 5 * 1000 ** 3;
 const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024;
 const PHOTOS_PER_REQUEST = 30;
-const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
+const extensions = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "video/mp4": "mp4",
+  "video/quicktime": "mov",
+  "video/webm": "webm",
+} as const;
+const videoExtension = /\.(mp4|mov|webm)$/;
 
 const albumPhotoKey = (coupleId: number, albumId: number) =>
-  new RegExp(`^couples/${coupleId}/albums/${albumId}/[0-9a-f-]{36}\\.(jpg|png|webp)$`);
+  new RegExp(`^couples/${coupleId}/albums/${albumId}/[0-9a-f-]{36}\\.(jpg|png|webp|mp4|mov|webm)$`);
 
 /** The thumbnail sits next to its photo: `{uuid}.jpg` → `{uuid}.thumb.jpg`. */
 const thumbnailKeyFor = (key: string) => key.replace(/\.\w+$/, ".thumb.jpg");
@@ -205,6 +215,7 @@ const addPhotosBody = z.object({
         // Optional: if only the thumbnail upload failed, the photo is still kept and shown full size.
         thumbnailKey: z.string().max(200).nullish(),
         takenAt: z.iso.datetime({ offset: true }).nullish(),
+        durationSec: z.number().positive().max(86_400).nullish(), // videos only
       }),
     )
     .min(1)
@@ -221,27 +232,30 @@ albumsRouter.post("/:id/photos", async (req, res) => {
   await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
 
   // The presigned PUT can't cap size or type, so check what actually landed before recording it.
-  const objects = photos.flatMap((p) => [
-    { key: p.key, maxBytes: MAX_PHOTO_BYTES },
-    ...(p.thumbnailKey ? [{ key: p.thumbnailKey, maxBytes: MAX_THUMBNAIL_BYTES }] : []),
+  const items = photos.map((p) => ({ ...p, isVideo: videoExtension.test(p.key) }));
+  const objects = items.flatMap((p) => [
+    p.isVideo ? { key: p.key, maxBytes: MAX_VIDEO_BYTES, type: "video/" } : { key: p.key, maxBytes: MAX_PHOTO_BYTES, type: "image/" },
+    ...(p.thumbnailKey ? [{ key: p.thumbnailKey, maxBytes: MAX_THUMBNAIL_BYTES, type: "image/" }] : []),
   ]);
   const stats = await Promise.all(objects.map((o) => statObject(o.key)));
-  const valid = stats.every((s, i) => s && s.size <= objects[i]!.maxBytes && s.contentType.startsWith("image/"));
+  const valid = stats.every((s, i) => s && s.size <= objects[i]!.maxBytes && s.contentType.startsWith(objects[i]!.type));
   if (!valid) {
     await deleteObjects(objects.filter((_, i) => stats[i]).map((o) => o.key));
-    throw new HttpError(400, "Upload missing or not an image under 15MB", "INVALID_UPLOAD");
+    throw new HttpError(400, "Upload missing, of the wrong type or too large", "INVALID_UPLOAD");
   }
 
   const album = await prisma.$transaction(async (tx) => {
     const { _max } = await tx.photo.aggregate({ where: { albumId: id }, _max: { displayOrder: true } });
     const start = (_max.displayOrder ?? 0) + 1;
     await tx.photo.createMany({
-      data: photos.map((p, i) => ({
+      data: items.map((p, i) => ({
         albumId: id,
         storageKey: p.key,
         thumbnailKey: p.thumbnailKey ?? null,
         displayOrder: start + i,
         takenAt: p.takenAt ? new Date(p.takenAt) : null,
+        mediaType: p.isVideo ? ("VIDEO" as const) : ("PHOTO" as const),
+        durationSec: p.isVideo ? (p.durationSec ?? null) : null,
       })),
       skipDuplicates: true, // a retried confirm shouldn't fail on keys it already recorded
     });

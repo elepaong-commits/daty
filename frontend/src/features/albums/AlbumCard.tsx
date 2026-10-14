@@ -53,6 +53,7 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
   const { coverPhoto } = album
   const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
+  const videoCount = album.photos.filter((p) => p.mediaType === 'VIDEO').length
 
   const layer = (i: number) => (
     <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} emoji={i === 0 ? emoji : ''} />
@@ -74,7 +75,8 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))]" />
         <span className="absolute top-2 left-2 rounded-lg bg-white/95 px-2 py-1 text-[11px] leading-normal font-bold">{date}</span>
         <span className="absolute right-2 bottom-2 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] leading-normal font-semibold text-white">
-          📷 {album.photoCount}
+          📷 {album.photoCount - videoCount}
+          {videoCount > 0 && ` · 🎬 ${videoCount}`}
         </span>
       </div>
     </div>

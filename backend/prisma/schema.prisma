@@ -27,6 +27,11 @@ enum RecordType {
   RECORD
 }
 
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
 model Couple {
   id              Int          @id @default(autoincrement())
   coupleCode      String       @unique @map("couple_code")
@@ -159,9 +164,11 @@ model Photo {
   albumId      Int       @map("album_id")
   imageUrl     String?   @map("image_url") // 외부 URL로 들어온 예전 사진
   storageKey   String?   @unique @map("storage_key") // R2 객체 키. 응답에서는 서명 URL로 바뀐다
-  thumbnailKey String?   @unique @map("thumbnail_key") // 목록·카드용 작은 사본의 R2 키. 없으면 원본을 쓴다
+  thumbnailKey String?   @unique @map("thumbnail_key") // 목록·카드용 작은 사본의 R2 키(동영상은 첫 장면). 없으면 원본을 쓴다
   displayOrder Int       @default(1) @map("display_order")
-  takenAt      DateTime? @map("taken_at") // 사진의 EXIF 촬영 시각 → 날짜별 자동 묶기
+  takenAt      DateTime? @map("taken_at") // 사진의 EXIF(동영상은 mvhd) 촬영 시각 → 날짜별 자동 묶기
+  mediaType    MediaType @default(PHOTO) @map("media_type")
+  durationSec  Float?    @map("duration_sec") // 동영상 길이. 브라우저가 못 읽은 동영상은 null
   createdAt    DateTime  @default(now()) @map("created_at")
   album        Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
