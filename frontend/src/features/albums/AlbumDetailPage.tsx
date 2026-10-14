@@ -14,6 +14,23 @@ import { PhotoViewer } from './PhotoViewer'
 type MediaFilter = 'ALL' | MediaType
 const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
 
+// Upload order is `displayOrder`; taken order puts items without a capture time last, in upload order.
+type SortOrder = 'UPLOADED' | 'TAKEN'
+const SORTS: SortOrder[] = ['UPLOADED', 'TAKEN']
+const SORT_STORAGE_KEY = 'daty.albumSort'
+
+const byTakenAt = (a: Photo, b: Photo) =>
+  (a.takenAt ?? '\uffff').localeCompare(b.takenAt ?? '\uffff') || a.displayOrder - b.displayOrder
+
+/** The viewer's last pick, remembered on this device. */
+function savedSort(): SortOrder {
+  try {
+    return localStorage.getItem(SORT_STORAGE_KEY) === 'TAKEN' ? 'TAKEN' : 'UPLOADED'
+  } catch {
+    return 'UPLOADED'
+  }
+}
+
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
@@ -26,6 +43,7 @@ export function AlbumDetailPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [editing, setEditing] = useState(false)
   const [filter, setFilter] = useState<MediaFilter>('ALL')
+  const [sort, setSort] = useState<SortOrder>(savedSort)
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
 
   function toggleSelecting() {
@@ -53,6 +71,15 @@ export function AlbumDetailPage() {
     const files = [...(e.target.files ?? [])]
     e.target.value = '' // let the same files be picked again after a failure
     if (files.length > 0) uploadPhotos.mutate(files)
+  }
+
+  function changeSort(next: SortOrder) {
+    setSort(next)
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, next)
+    } catch {
+      // Private mode etc.: the order just isn't remembered.
+    }
   }
 
   function removeSelected() {
@@ -83,7 +110,9 @@ export function AlbumDetailPage() {
     PHOTO: album.photos.filter((p) => p.mediaType === 'PHOTO').length,
     VIDEO: album.photos.filter((p) => p.mediaType === 'VIDEO').length,
   }
-  const shown = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
+  const filtered = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
+  // The API already returns upload order.
+  const shown = sort === 'TAKEN' ? filtered.toSorted(byTakenAt) : filtered
   const date = parseDateOnly(album.albumDate)
   const firstPlace = album.places[0]
   const actionError = updateAlbum.error ?? deletePhotos.error
@@ -160,6 +189,22 @@ export function AlbumDetailPage() {
                 className={`flex-1 rounded-xl text-[13px] leading-normal font-semibold ${filter === value ? 'bg-brand text-white' : 'text-ink'}`}
               >
                 {t.albums.filter[value](counts[value])}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {album.photos.length > 1 && (
+          <div className="flex items-center justify-end gap-1 text-[12px]" role="group" aria-label={t.albums.sortLabel}>
+            {SORTS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sort === value}
+                onClick={() => changeSort(value)}
+                className={`h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
+              >
+                {t.albums.sort[value]}
               </button>
             ))}
           </div>
