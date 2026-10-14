@@ -14,6 +14,43 @@ import { PhotoViewer } from './PhotoViewer'
 type MediaFilter = 'ALL' | MediaType
 const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
 
+// Upload order is `displayOrder`; taken order keeps items without a capture time last either way.
+type SortOrder = 'UPLOADED' | 'TAKEN'
+type SortDirection = 'ASC' | 'DESC'
+const SORTS: SortOrder[] = ['UPLOADED', 'TAKEN']
+const SORT_STORAGE_KEY = 'daty.albumSort'
+const DIRECTION_STORAGE_KEY = 'daty.albumSortDirection'
+
+function sortItems(items: Photo[], sort: SortOrder, direction: SortDirection) {
+  const sign = direction === 'ASC' ? 1 : -1
+  return items.toSorted((a, b) => {
+    if (sort === 'TAKEN') {
+      if (!a.takenAt !== !b.takenAt) return a.takenAt ? -1 : 1
+      const byTime = a.takenAt && b.takenAt ? a.takenAt.localeCompare(b.takenAt) : 0
+      if (byTime !== 0) return sign * byTime
+    }
+    return sign * (a.displayOrder - b.displayOrder)
+  })
+}
+
+/** The viewer's last pick, remembered on this device; `fallback` when missing or unreadable. */
+function saved<T extends string>(key: string, values: readonly T[], fallback: T): T {
+  try {
+    const value = localStorage.getItem(key)
+    return values.find((v) => v === value) ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+function remember(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Private mode etc.: the order just isn't remembered.
+  }
+}
+
 export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
@@ -26,6 +63,8 @@ export function AlbumDetailPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [editing, setEditing] = useState(false)
   const [filter, setFilter] = useState<MediaFilter>('ALL')
+  const [sort, setSort] = useState(() => saved(SORT_STORAGE_KEY, SORTS, 'UPLOADED'))
+  const [direction, setDirection] = useState(() => saved<SortDirection>(DIRECTION_STORAGE_KEY, ['ASC', 'DESC'], 'ASC'))
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
 
   function toggleSelecting() {
@@ -53,6 +92,17 @@ export function AlbumDetailPage() {
     const files = [...(e.target.files ?? [])]
     e.target.value = '' // let the same files be picked again after a failure
     if (files.length > 0) uploadPhotos.mutate(files)
+  }
+
+  function changeSort(next: SortOrder) {
+    setSort(next)
+    remember(SORT_STORAGE_KEY, next)
+  }
+
+  function flipDirection() {
+    const next = direction === 'ASC' ? 'DESC' : 'ASC'
+    setDirection(next)
+    remember(DIRECTION_STORAGE_KEY, next)
   }
 
   function removeSelected() {
@@ -83,7 +133,8 @@ export function AlbumDetailPage() {
     PHOTO: album.photos.filter((p) => p.mediaType === 'PHOTO').length,
     VIDEO: album.photos.filter((p) => p.mediaType === 'VIDEO').length,
   }
-  const shown = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
+  const filtered = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
+  const shown = sortItems(filtered, sort, direction)
   const date = parseDateOnly(album.albumDate)
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
   const actionError = updateAlbum.error ?? deletePhotos.error
@@ -167,6 +218,31 @@ export function AlbumDetailPage() {
                 {t.albums.filter[value](counts[value])}
               </button>
             ))}
+          </div>
+        )}
+
+        {album.photos.length > 1 && (
+          <div className="flex items-center justify-end gap-1 text-[12px]" role="group" aria-label={t.albums.sortLabel}>
+            {SORTS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sort === value}
+                onClick={() => changeSort(value)}
+                className={`h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
+              >
+                {t.albums.sort[value]}
+              </button>
+            ))}
+            <span className="mx-0.5 h-3.5 w-px bg-sand" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={flipDirection}
+              aria-label={t.albums.directionLabel(t.albums.direction[direction])}
+              className="h-7 rounded-full px-2.5 font-semibold text-muted"
+            >
+              {direction === 'ASC' ? '↑' : '↓'} {t.albums.direction[direction]}
+            </button>
           </div>
         )}
 
