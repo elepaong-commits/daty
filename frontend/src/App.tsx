@@ -1,22 +1,25 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router'
 import { BottomNav } from './components/BottomNav'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { I18nProvider } from './components/I18nProvider'
 import { QueryState } from './components/Field'
-import { AlbumDetailPage } from './features/albums/AlbumDetailPage'
-import { AlbumsPage } from './features/albums/AlbumsPage'
-import { AuthPage } from './features/auth/AuthPage'
-import { CoupleSetupPage } from './features/auth/CoupleSetupPage'
-import { CalendarPage } from './features/calendar/CalendarPage'
 import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
-import { PlaceEditPage } from './features/places/PlaceEditPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
 import { keys, useMe } from './lib/queries'
+
+// The map (and the place column inside it) is the home screen and loads up front; the other
+// screens, and login/setup that a signed-in user never sees, load when first opened.
+const AuthPage = lazy(() => import('./features/auth/AuthPage').then((m) => ({ default: m.AuthPage })))
+const CoupleSetupPage = lazy(() => import('./features/auth/CoupleSetupPage').then((m) => ({ default: m.CoupleSetupPage })))
+const CalendarPage = lazy(() => import('./features/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })))
+const AlbumsPage = lazy(() => import('./features/albums/AlbumsPage').then((m) => ({ default: m.AlbumsPage })))
+const AlbumDetailPage = lazy(() => import('./features/albums/AlbumDetailPage').then((m) => ({ default: m.AlbumDetailPage })))
+const PlaceEditPage = lazy(() => import('./features/places/PlaceEditPage').then((m) => ({ default: m.PlaceEditPage })))
 
 // An expired session on any screen sends the user back to login; a lost couple back to setup.
 function onApiError(error: Error) {
@@ -58,7 +61,9 @@ function AppShell() {
       <Frame wide>
         <Sidebar />
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          <Outlet />
+          <Suspense fallback={<QueryState isLoading error={null} />}>
+            <Outlet />
+          </Suspense>
         </main>
         <BottomNav />
       </Frame>
@@ -78,8 +83,9 @@ function AuthGate() {
       </Frame>
     )
   }
-  if (!me) return <Frame wide><AuthPage /></Frame>
-  if (!me.couple) return <Frame><CoupleSetupPage /></Frame>
+  const loading = <QueryState isLoading error={null} />
+  if (!me) return <Frame wide><Suspense fallback={loading}><AuthPage /></Suspense></Frame>
+  if (!me.couple) return <Frame><Suspense fallback={loading}><CoupleSetupPage /></Suspense></Frame>
   return (
     <Routes>
       <Route element={<AppShell />}>

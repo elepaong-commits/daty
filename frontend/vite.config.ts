@@ -8,6 +8,17 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Libraries change far less often than app code, so they get their own long-cached chunk.
+        // exifr is only needed when uploading and stays in its own lazy chunk.
+        codeSplitting: {
+          groups: [{ name: 'vendor', test: /node_modules[\\/](?!exifr)/ }],
+        },
+      },
+    },
+  },
   server: {
     // Same-origin API calls in dev; the backend runs on :4000 (npm run dev in backend/)
     proxy: {
