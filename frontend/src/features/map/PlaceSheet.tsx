@@ -11,10 +11,14 @@ interface Props {
   places: Place[]
   status: PlaceStatus
   selectedId: number | null
+  onSelect: (id: number) => void
 }
 
-/** Sheet over the bottom of the map: a swipeable card row, or a full list when expanded. Cards open the place. */
-export function PlaceSheet({ places, status, selectedId }: Props) {
+/**
+ * Sheet over the bottom of the map: a swipeable card row, or a full list when expanded.
+ * The first tap on a card selects it (and the map pans to it); tapping the selected card opens the place.
+ */
+export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
   const navigate = useNavigate()
   const t = useT()
   const [expanded, setExpanded] = useState(false)
@@ -62,7 +66,14 @@ export function PlaceSheet({ places, status, selectedId }: Props) {
               }}
               place={place}
               selected={place.id === selectedId}
-              onClick={() => navigate(`/places/${place.id}`)}
+              onClick={() => {
+                if (place.id === selectedId) {
+                  navigate(`/places/${place.id}`)
+                  return
+                }
+                onSelect(place.id)
+                setExpanded(false) // the full list covers the map; drop back to the card row so the pan is visible
+              }}
               className={expanded ? 'w-full' : 'w-[325px] max-w-[85%] snap-start'}
             />
           ))}
@@ -98,11 +109,11 @@ function PlaceCard({
         selected ? 'border-brand' : 'border-card-border'
       } ${className}`}
     >
-      <div className="flex w-full items-start justify-between">
-        <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
+      <div className="flex w-full items-start justify-between gap-2">
+        <span className="shrink-0 whitespace-nowrap rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
           {category.emoji} {t.categories[category.value]}
         </span>
-        {place.address && <span className="text-[11px] leading-normal text-muted">📍 {place.address}</span>}
+        {place.address && <span className="min-w-0 truncate text-[11px] leading-normal text-muted">📍 {place.address}</span>}
       </div>
       <h3 className="w-full truncate font-display text-[19px] leading-[1.375]">{place.name}</h3>
       <div className="flex items-center gap-1.5 leading-normal">
