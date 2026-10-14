@@ -27,7 +27,7 @@ export const useMe = () =>
     staleTime: Infinity,
   })
 
-/** Login, signup, and couple setup all answer with the fresh `Me`. */
+/** Login, signup, profile edits, and couple setup all answer with the fresh `Me`. */
 function useMeMutation<TInput>(mutationFn: (input: TInput) => Promise<Me>) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -41,6 +41,20 @@ export const useSignup = () => useMeMutation(api.signup)
 export const useCreateCouple = () => useMeMutation(api.createCouple)
 export const useJoinCouple = () => useMeMutation(api.joinCouple)
 export const useResetPassword = () => useMeMutation(api.resetPassword)
+
+/** Notes and records show the writer's nickname, so a rename refreshes them too. */
+export function useUpdateMe() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.updateMe,
+    onSuccess: (me) => {
+      queryClient.setQueryData(keys.me, me)
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+    },
+  })
+}
+
+export const useUpdateCouple = () => useMeMutation(api.updateCouple)
 export const useChangePassword = () => useMutation({ mutationFn: api.changePassword })
 export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })
 

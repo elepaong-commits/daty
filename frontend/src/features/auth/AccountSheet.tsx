@@ -4,6 +4,7 @@ import { BottomSheet } from '../../components/BottomSheet'
 import { useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { ChangePassword, PartnerResetCode } from './PasswordSettings'
+import { ProfileSettings } from './ProfileSettings'
 
 export function AccountSheet({ onClose }: { onClose: () => void }) {
   const me = useMe().data
@@ -54,6 +55,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        <ProfileSettings me={me} />
         <ChangePassword />
         {partner && <PartnerResetCode partnerName={partner.nickname} />}
 
