@@ -16,3 +16,8 @@ export const backdropMotion = {
 /** Something shrinking back into its place: fast at first, easing into the spot. */
 export const settleTween: Transition = { duration: 0.26, ease: [0.2, 0, 0, 1] }
 
+/** A screen (tab or detail) appearing: a quick fade with a slight rise, no exit so switching never waits. */
+export const screenEnter = {
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0, 0, 0.2, 1] } },
+} as const

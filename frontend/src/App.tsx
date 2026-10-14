@@ -1,6 +1,7 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, type ReactNode } from 'react'
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router'
+import { m } from 'motion/react'
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { BottomNav } from './components/BottomNav'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
@@ -11,6 +12,8 @@ import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
+import { screenEnter } from './lib/motion'
+import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
 
 // The map (and the place column inside it) is the home screen and loads up front; the other
@@ -56,6 +59,21 @@ function Frame({ children, wide = false }: { children: ReactNode; wide?: boolean
   )
 }
 
+/**
+ * The routed screen, easing in whenever the screen changes. On desktop a place opens inside the map
+ * screen's column, so the map and its places count as one screen there and the map isn't redrawn.
+ */
+function Screen() {
+  const { pathname } = useLocation()
+  const isDesktop = useIsDesktop()
+  const key = isDesktop && /^\/(places\/[^/]+)?$/.test(pathname) ? '/' : pathname
+  return (
+    <m.div key={key} {...screenEnter} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <Outlet />
+    </m.div>
+  )
+}
+
 function AppShell() {
   return (
     <MapsProvider>
@@ -63,7 +81,7 @@ function AppShell() {
         <Sidebar />
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <Suspense fallback={<QueryState isLoading error={null} />}>
-            <Outlet />
+            <Screen />
           </Suspense>
         </main>
         <BottomNav />
