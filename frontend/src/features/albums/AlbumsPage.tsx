@@ -26,6 +26,7 @@ export function AlbumsPage() {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
+        <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
         <ScreenHeader
           eyebrow={t.albums.eyebrow}
           title={t.albums.title}
@@ -33,7 +34,7 @@ export function AlbumsPage() {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong"
             >
               <img src={plusIcon} alt="" width={16} height={16} />{t.albums.newAlbum}
             </button>
@@ -44,18 +45,23 @@ export function AlbumsPage() {
           </p>
         </ScreenHeader>
 
-        <div className="flex flex-col gap-5 px-4 pt-2 pb-8">
+        <div className="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-5 lg:pb-12">
           <QueryState isLoading={isLoading} error={error} />
-          {featured && <AlbumCard album={featured} size="large" />}
+          {/* Phones: the latest album full width, then two columns. Desktop: one grid with the latest album at 2×2. */}
           {!isLoading && !error && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">
+              {featured && (
+                <div className="col-span-2 lg:row-span-2">
+                  <AlbumCard album={featured} size="large" />
+                </div>
+              )}
               {rest.map((album) => (
                 <AlbumCard key={album.id} album={album} size="small" />
               ))}
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4"
+                className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft lg:max-h-[240px]"
               >
                 <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white">+</span>
                 <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>
@@ -67,6 +73,7 @@ export function AlbumsPage() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
 

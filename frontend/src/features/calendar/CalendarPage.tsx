@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import chevronLeft from '../../assets/icons/chevron-left.svg'
 import chevronRight from '../../assets/icons/chevron-right.svg'
 import markerPlan from '../../assets/icons/marker-plan.svg'
@@ -8,21 +8,32 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
-import { addMonths, isSameDay, monthGrid, startOfDay, startOfMonth, toDateInput } from '../../lib/dates'
+import { addMonths, isSameDay, monthGrid, parseDateOnly, startOfDay, startOfMonth, toDateInput } from '../../lib/dates'
 import { useAddRecordToAlbum, useAlbums, useMonthRecords } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import type { NewAlbumDraft } from '../albums/CreateAlbumSheet'
 import { ScheduleSheet } from '../records/ScheduleSheet'
 import { DayTimeline } from './DayTimeline'
 import { useT } from '../../lib/i18n'
+import { useIsDesktop } from '../../lib/useIsDesktop'
 
 const MAX_BARS = 2
+const MAX_BARS_DESKTOP = 3
 
 export function CalendarPage() {
   const t = useT()
   const today = startOfDay(new Date())
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
+  // A schedule added from the desktop sidebar lands here with its date (YYYY-MM-DD) in router state.
+  const focusDate = (useLocation().state as { focusDate?: string } | null)?.focusDate
+  const [shownFocus, setShownFocus] = useState<string>()
+  if (focusDate && focusDate !== shownFocus) {
+    const day = parseDateOnly(focusDate)
+    setShownFocus(focusDate)
+    setMonth(startOfMonth(day))
+    setSelected(day)
+  }
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<DateRecord | null>(null)
   const [completed, setCompleted] = useState<DateRecord | null>(null)
@@ -67,7 +78,8 @@ export function CalendarPage() {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto pb-28">
+      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto pb-28 lg:pb-10">
+        <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
         <ScreenHeader
           eyebrow={t.calendar.eyebrow}
           title={t.dates.yearMonth(month)}
@@ -86,7 +98,9 @@ export function CalendarPage() {
           }
         />
 
-        <section className="mx-4 rounded-3xl bg-white p-3 shadow-card">
+        {/* The day panel sits beside the month from xl; below it on narrower desktops so the cells keep their width. */}
+        <div className="lg:px-5 xl:flex xl:items-start xl:gap-6">
+        <section className="mx-4 rounded-3xl bg-white p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
               <img src={markerRecord} alt="" width={8} height={8} /> {t.calendar.legendRecord}
@@ -109,7 +123,7 @@ export function CalendarPage() {
 
           <div className="flex flex-col gap-1">
             {weeks.map((week) => (
-              <div key={week[0]!.toISOString()} className="grid min-h-[60px] grid-cols-7">
+              <div key={week[0]!.toISOString()} className="grid min-h-[60px] grid-cols-7 lg:min-h-[108px] lg:gap-1">
                 {week.map((day) => (
                   <DayCell
                     key={day.toISOString()}
@@ -126,19 +140,21 @@ export function CalendarPage() {
           </div>
         </section>
 
-        <div className="px-5 pt-6">
+        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-white lg:p-5 lg:shadow-card xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
             <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} onComplete={setCompleted} />
           )}
         </div>
+        </div>
+        </div>
       </div>
 
       <button
         type="button"
         onClick={() => setSheetOpen(true)}
-        className="absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta"
+        className="absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta lg:hidden"
       >
         <span className="text-[24px] leading-none">+</span>
         <span className="text-[16px] font-semibold">{t.calendar.addSchedule}</span>
@@ -206,6 +222,7 @@ function DayCell({
   onSelect: () => void
 }) {
   const t = useT()
+  const isDesktop = useIsDesktop()
   const weekday = day.getDay()
   const numberColor = !inMonth
     ? 'text-[rgba(203,213,224,0.6)]'
@@ -216,7 +233,7 @@ function DayCell({
         : weekday === 6
           ? 'text-brand'
           : 'text-ink'
-  const visible = inMonth ? records.slice(0, MAX_BARS) : []
+  const visible = inMonth ? records.slice(0, isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) : []
   const hidden = inMonth ? records.length - visible.length : 0
 
   return (
@@ -226,10 +243,12 @@ function DayCell({
       disabled={!inMonth}
       aria-pressed={isSelected}
       aria-label={t.calendar.dayLabel(t.dates.monthDay(day), records.length)}
-      className={`flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 ${isSelected ? 'bg-brand-soft' : ''}`}
+      className={`flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
+        isSelected ? 'bg-brand-soft lg:border-brand' : 'lg:border-card-border'
+      } ${inMonth && !isSelected ? 'lg:hover:bg-cream' : ''}`}
     >
       <span
-        className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold ${numberColor} ${
+        className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold lg:mx-0 ${numberColor} ${
           isSelected ? 'bg-brand' : isToday ? 'ring-1 ring-brand' : ''
         }`}
       >
@@ -238,7 +257,7 @@ function DayCell({
       {visible.map((r) => (
         <span
           key={r.id}
-          className={`h-3.5 truncate rounded px-1 text-left text-[9px] leading-[1.556] font-semibold ${
+          className={`h-3.5 truncate rounded px-1 text-left text-[9px] leading-[1.556] font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
             r.type === 'RECORD'
               ? 'border border-transparent bg-brand-soft text-brand-strong'
               : 'border border-coral/45 bg-coral-soft text-coral-strong'
@@ -247,7 +266,7 @@ function DayCell({
           {r.place?.name ?? r.title}
         </span>
       ))}
-      {hidden > 0 && <span className="text-left text-[9px] leading-normal font-semibold text-muted">+{hidden}</span>}
+      {hidden > 0 && <span className="text-left text-[9px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
     </button>
   )
 }

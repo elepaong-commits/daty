@@ -1,23 +1,15 @@
-import { CalendarDays, Images, type LucideIcon, Map } from 'lucide-react'
-import { NavLink, useLocation } from 'react-router'
-import { type Messages, useT } from '../lib/i18n'
+import { NavLink } from 'react-router'
+import { useT } from '../lib/i18n'
+import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 
-// `paths` lists the screens under each tab, so a detail page keeps its tab highlighted.
-const ITEMS: { to: string; paths: string[]; Icon: LucideIcon; key: keyof Messages['nav'] }[] = [
-  { to: '/', paths: ['/', '/places'], Icon: Map, key: 'map' },
-  { to: '/calendar', paths: ['/calendar'], Icon: CalendarDays, key: 'calendar' },
-  { to: '/albums', paths: ['/albums'], Icon: Images, key: 'albums' },
-]
-
+/** Phone tab bar; the desktop layout uses `Sidebar` instead. */
 export function BottomNav() {
-  const { pathname } = useLocation()
+  const isUnder = useIsUnder()
   const t = useT()
-  const isUnder = (paths: string[]) =>
-    paths.some((path) => pathname === path || (path !== '/' && pathname.startsWith(`${path}/`)))
 
   return (
-    <nav className="flex shrink-0 border-t border-sand bg-white pt-2 pb-[max(10px,env(safe-area-inset-bottom))]">
-      {ITEMS.map(({ to, paths, Icon, key }) => (
+    <nav className="flex shrink-0 border-t border-sand bg-white pt-2 pb-[max(10px,env(safe-area-inset-bottom))] lg:hidden">
+      {NAV_ITEMS.map(({ to, paths, Icon, key }) => (
         <NavLink key={to} to={to} className="flex flex-1 flex-col items-center gap-1">
           {() => {
             const isActive = isUnder(paths)

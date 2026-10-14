@@ -141,11 +141,13 @@ export function AlbumDetailPage() {
   const actionError = updateAlbum.error ?? deletePhotos.error
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
       {header}
-      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3">
+      {/* Desktop: album info in a sticky left column, photos on the right. */}
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:flex-row lg:items-start lg:gap-8 lg:pb-10">
+        <div className="flex flex-col gap-3 lg:sticky lg:top-0 lg:w-[260px] lg:shrink-0 xl:w-[320px]">
         <div className="flex flex-col gap-[5px]">
-          <h2 className="font-display text-[20px] leading-[1.38]">
+          <h2 className="font-display text-[20px] leading-[1.38] lg:text-[26px]">
             {formatSlashDay(date)} · {album.title}
           </h2>
           <p className="text-[12px] leading-normal text-muted">
@@ -172,6 +174,19 @@ export function AlbumDetailPage() {
             <p className="text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
           </div>
         )}
+
+        {album.coverPhoto?.thumbnailUrl && (
+          <div className="hidden px-3 py-2 lg:block">
+            <img
+              src={album.coverPhoto.thumbnailUrl}
+              alt={t.albums.bestCut}
+              className="aspect-[4/5] w-full -rotate-2 rounded-2xl border-4 border-white object-cover shadow-photo"
+            />
+          </div>
+        )}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-1">
 
         <div className="flex items-center justify-between">
           <h3 className="font-display text-[18px]">{t.albums.moments}</h3>
@@ -256,7 +271,7 @@ export function AlbumDetailPage() {
             <span className="text-[11px]">{t.albums.emptyHint}</span>
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-4 xl:grid-cols-5">
             {shown.map((photo, i) => {
               const isSelected = selected.has(photo.id)
               return (
@@ -265,7 +280,7 @@ export function AlbumDetailPage() {
                   type="button"
                   onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
-                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
+                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft lg:aspect-square lg:h-auto lg:hover:opacity-90 ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
@@ -293,6 +308,7 @@ export function AlbumDetailPage() {
             })}
           </div>
         )}
+        </div>
       </div>
 
       {selecting && (
