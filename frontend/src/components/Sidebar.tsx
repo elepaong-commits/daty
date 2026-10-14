@@ -1,4 +1,5 @@
 import { Heart, Plus, Settings } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import { AccountSheet } from '../features/auth/AccountSheet'
@@ -98,7 +99,7 @@ export function Sidebar() {
           onSaved={(at) => navigate('/calendar', { state: { focusDate: toDateInput(at) } })}
         />
       )}
-      {account && <AccountSheet onClose={() => setAccount(false)} />}
+      <AnimatePresence>{account && <AccountSheet onClose={() => setAccount(false)} />}</AnimatePresence>
     </aside>
   )
 }

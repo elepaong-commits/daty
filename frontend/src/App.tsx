@@ -5,6 +5,7 @@ import { BottomNav } from './components/BottomNav'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { I18nProvider } from './components/I18nProvider'
+import { MotionProvider } from './components/MotionProvider'
 import { QueryState } from './components/Field'
 import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
@@ -108,11 +109,13 @@ export default function App() {
   return (
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ErrorBoundary>
-            <AuthGate />
-          </ErrorBoundary>
-        </BrowserRouter>
+        <MotionProvider>
+          <BrowserRouter>
+            <ErrorBoundary>
+              <AuthGate />
+            </ErrorBoundary>
+          </BrowserRouter>
+        </MotionProvider>
       </QueryClientProvider>
     </I18nProvider>
   )

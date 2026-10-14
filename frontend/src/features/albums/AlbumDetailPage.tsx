@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Check, MapPin, Play, Star, TriangleAlert, Video } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
@@ -337,7 +338,7 @@ export function AlbumDetailPage() {
         </div>
       )}
 
-      {editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}
+      <AnimatePresence>{editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}</AnimatePresence>
       {viewing !== null && (
         <PhotoViewer
           photos={shown}

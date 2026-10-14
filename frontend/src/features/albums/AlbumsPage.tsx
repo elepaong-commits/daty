@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
@@ -77,15 +78,17 @@ export function AlbumsPage() {
         </div>
       </div>
 
-      {sheetOpen && (
-        <CreateAlbumSheet
-          draft={draft}
-          onClose={() => {
-            setSheetOpen(false)
-            setDraft(undefined)
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {sheetOpen && (
+          <CreateAlbumSheet
+            draft={draft}
+            onClose={() => {
+              setSheetOpen(false)
+              setDraft(undefined)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

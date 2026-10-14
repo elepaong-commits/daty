@@ -1,6 +1,9 @@
 import { X } from 'lucide-react'
-import { useEffect, type ReactNode } from 'react'
+import { m, useDragControls, useIsPresent, type PanInfo } from 'motion/react'
+import { useEffect, type PointerEvent, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
+import { backdropMotion, enterSpring, exitTween } from '../lib/motion'
+import { useIsDesktop } from '../lib/useIsDesktop'
 
 interface Props {
   title: string
@@ -8,35 +11,85 @@ interface Props {
   children: ReactNode
 }
 
-/** Modal sheet that slides up over the current screen (design: "Schedule modal overlay"); a centered dialog on desktop. */
+// Pulled down this far, or flicked down this fast, the sheet closes instead of springing back.
+const CLOSE_DISTANCE = 120
+const CLOSE_VELOCITY = 600
+
+/**
+ * Modal sheet that slides up over the current screen (design: "Schedule modal overlay"); a centered dialog on desktop.
+ * On phones it can be dragged down by its handle and title to close. Render it inside `AnimatePresence`
+ * so it also animates out.
+ */
 export function BottomSheet({ title, onClose, children }: Props) {
   const t = useT()
+  const isDesktop = useIsDesktop()
+  const isPresent = useIsPresent()
+  const dragControls = useDragControls()
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Drags start only from the top bar, so the form below still scrolls and its fields take taps.
+  const startDrag = (e: PointerEvent) => {
+    if (!isDesktop && !(e.target as Element).closest('button')) dragControls.start(e)
+  }
+  const endDrag = (_: unknown, info: PanInfo) => {
+    if (info.offset.y > CLOSE_DISTANCE || info.velocity.y > CLOSE_VELOCITY) onClose()
+  }
+
+  const panel = isDesktop
+    ? {
+        initial: { opacity: 0, scale: 0.96, y: 12 },
+        animate: { opacity: 1, scale: 1, y: 0, transition: enterSpring },
+        exit: { opacity: 0, scale: 0.97, y: 8, transition: exitTween },
+      }
+    : {
+        initial: { y: '100%' },
+        animate: { y: 0, transition: enterSpring },
+        exit: { y: '100%', transition: { ...exitTween, duration: 0.24 } },
+      }
+
   return (
-    <div className="absolute inset-0 z-50 flex flex-col justify-end lg:fixed lg:items-center lg:justify-center lg:p-8" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-ink/42" onClick={onClose} />
-      <div className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card">
-        <div className="flex justify-center pb-2 lg:hidden">
-          <div className="h-1.5 w-10 rounded-full bg-handle" />
-        </div>
-        <div className="flex items-center justify-between pb-4">
-          <h2 className="font-display text-[20px] leading-normal lg:text-[24px]">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-full bg-sand-soft"
-            aria-label={t.common.close}
-          >
-            <X size={16} strokeWidth={1.75} />
-          </button>
+    <div
+      className={`absolute inset-0 z-50 flex flex-col justify-end lg:fixed lg:items-center lg:justify-center lg:p-8 ${
+        isPresent ? '' : 'pointer-events-none'
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <m.div className="absolute inset-0 bg-ink/42" onClick={onClose} {...backdropMotion} />
+      <m.div
+        {...panel}
+        drag={isDesktop ? false : 'y'}
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0.04, bottom: 1 }}
+        onDragEnd={endDrag}
+        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card"
+      >
+        <div onPointerDown={startDrag} className="touch-none lg:touch-auto">
+          <div className="flex justify-center pb-2 lg:hidden">
+            <div className="h-1.5 w-10 rounded-full bg-handle" />
+          </div>
+          <div className="flex items-center justify-between pb-4">
+            <h2 className="font-display text-[20px] leading-normal lg:text-[24px]">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-8 items-center justify-center rounded-full bg-sand-soft"
+              aria-label={t.common.close}
+            >
+              <X size={16} strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
         <div className="scrollbar-none -mx-5 overflow-y-auto px-5 lg:-mx-7 lg:px-7">{children}</div>
-      </div>
+      </m.div>
     </div>
   )
 }

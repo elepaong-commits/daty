@@ -12,9 +12,10 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         // Libraries change far less often than app code, so they get their own long-cached chunk.
-        // exifr is only needed when uploading and stays in its own lazy chunk.
+        // exifr is only needed when uploading and stays in its own lazy chunk; so do Motion's
+        // animation features (see MotionProvider), which the first paint doesn't need.
         codeSplitting: {
-          groups: [{ name: 'vendor', test: /node_modules[\\/](?!exifr)/ }],
+          groups: [{ name: 'vendor', test: /node_modules[\\/](?!exifr|motion|framer-motion)/ }],
         },
       },
     },
