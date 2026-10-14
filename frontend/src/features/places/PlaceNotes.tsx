@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { MemoInput, MemoText } from '../../components/Memo'
 import { errorMessage } from '../../lib/api'
@@ -47,9 +48,9 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
                   onClick={() => remove(note.id)}
                   disabled={deleteNote.isPending}
                   aria-label={t.place.deleteNote}
-                  className="px-1 text-[12px]"
+                  className="px-1"
                 >
-                  ✕
+                  <X size={14} strokeWidth={1.75} />
                 </button>
               </div>
             </li>

@@ -224,9 +224,8 @@ function shortAddress(place: google.maps.places.Place) {
 
 const TYPE_TO_CATEGORY: [string[], PlaceCategory][] = [
   [['cafe', 'coffee_shop', 'bakery', 'dessert_shop', 'tea_house'], 'CAFE'],
-  [['bar', 'pub', 'wine_bar', 'night_club'], 'BAR'],
   [['museum', 'art_gallery', 'cultural_center'], 'EXHIBIT'],
-  [['restaurant', 'food', 'meal_takeaway'], 'FOOD'],
+  [['restaurant', 'food', 'meal_takeaway', 'bar', 'pub', 'wine_bar'], 'FOOD'],
   [['amusement_park', 'bowling_alley', 'gym', 'movie_theater', 'spa', 'zoo', 'aquarium'], 'ACTIVITY'],
   [['tourist_attraction', 'park', 'natural_feature', 'hiking_area', 'observation_deck', 'historical_landmark', 'historical_place', 'cultural_landmark', 'monument', 'neighborhood', 'plaza', 'garden'], 'TOUR'],
 ]

@@ -30,7 +30,7 @@ export function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex h-9 shrink-0 items-center rounded-full border px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap ${
+      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap ${
         selected ? 'border-brand bg-brand text-white' : `${borderClass} bg-white text-ink`
       }`}
     >

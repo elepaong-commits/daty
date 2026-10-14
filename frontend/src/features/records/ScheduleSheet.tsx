@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import calendarDaysIcon from '../../assets/icons/calendar-days.svg'
 import calendarIcon from '../../assets/icons/calendar.svg'
@@ -197,7 +198,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                 const c = categoryOf(value)
                 return (
                   <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                    {c.emoji} {t.categories[value]}
+                    <c.Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
                   </Chip>
                 )
               })}
@@ -217,9 +218,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                   aria-checked={rating === n}
                   aria-label={t.common.points(n)}
                   onClick={() => setRating(n)}
-                  className={`text-[26px] leading-none ${n <= rating ? 'text-amber' : 'text-chip-border'}`}
+                  className={n <= rating ? 'text-amber' : 'text-chip-border'}
                 >
-                  ★
+                  <Star size={26} strokeWidth={1.5} fill={n <= rating ? 'currentColor' : 'none'} />
                 </button>
               ))}
             </div>

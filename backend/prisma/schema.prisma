@@ -13,7 +13,6 @@ enum PlaceCategory {
   CAFE
   EXHIBIT
   TOUR
-  BAR
   ACTIVITY
 }
 

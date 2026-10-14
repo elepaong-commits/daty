@@ -41,7 +41,7 @@ const wished: SeedPlace[] = [
   { name: "연남 화덕피자", category: "FOOD", address: "연남동", lat: 37.562, lng: 126.925 },
   { name: "리움미술관", category: "EXHIBIT", address: "한남동", lat: 37.5384, lng: 126.999 },
   { name: "서울숲 피크닉", category: "ACTIVITY", address: "성수동", lat: 37.5444, lng: 127.0374 },
-  { name: "을지로 노가리 골목", category: "BAR", address: "을지로", lat: 37.566, lng: 126.991 },
+  { name: "을지로 노가리 골목", category: "FOOD", address: "을지로", lat: 37.566, lng: 126.991 },
 ];
 
 // [place name, KST datetime, memo, rating]

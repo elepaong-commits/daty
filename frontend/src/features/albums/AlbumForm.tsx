@@ -6,7 +6,7 @@ import { fromInputs, parseDateOnly, toDateInput, toTimeInput } from '../../lib/d
 import { errorMessage } from '../../lib/api'
 import { useAlbums, useMonthRecords, usePlaces } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
-import type { Album } from '../../lib/types'
+import type { Album, PlaceCategory } from '../../lib/types'
 import type { NewAlbumDraft } from './CreateAlbumSheet'
 import { SavedPlacePicker } from '../records/SavedPlacePicker'
 
@@ -120,15 +120,15 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           <label key={r.id} className="flex items-center gap-2 rounded-xl border border-field-border bg-field px-3 py-2.5 text-[14px]">
             <input type="checkbox" checked={picked.has(r.id)} onChange={() => toggle(r.id)} className="accent-brand" />
             <span className="text-muted">{toTimeInput(new Date(r.scheduledAt))}</span>
-            {categoryOf(r.category).emoji} {r.place?.name ?? r.title}
+            <CategoryIcon category={r.category} />
+            {r.place?.name ?? r.title}
           </label>
         ))}
         {addedPlaces.map((p) => (
           <div key={p.id} className="flex items-center gap-2 rounded-xl border border-brand bg-brand-soft px-3 py-2.5 text-[14px]">
             <span className="text-[11px] font-semibold text-brand-strong">{t.albums.newVisit}</span>
-            <span className="min-w-0 flex-1 truncate">
-              {categoryOf(p.category).emoji} {p.name}
-            </span>
+            <CategoryIcon category={p.category} />
+            <span className="min-w-0 flex-1 truncate">{p.name}</span>
             <button type="button" onClick={() => togglePlace(p.id)} className="text-[12px] font-semibold text-muted">
               {t.albums.removePlace}
             </button>
@@ -165,4 +165,9 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       </button>
     </form>
   )
+}
+
+function CategoryIcon({ category }: { category: PlaceCategory }) {
+  const { Icon } = categoryOf(category)
+  return <Icon size={14} strokeWidth={1.75} className="shrink-0 text-brand-strong" />
 }

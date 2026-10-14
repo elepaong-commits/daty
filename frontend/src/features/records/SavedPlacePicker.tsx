@@ -1,3 +1,4 @@
+import { Check, Heart } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { categoryOf } from '../../lib/categories'
 import { useT } from '../../lib/i18n'
@@ -46,13 +47,13 @@ export function SavedPlacePicker({ places, selectedIds, onSelect }: Props) {
                   selected ? 'border-brand bg-brand-soft' : 'border-field-border bg-white'
                 }`}
               >
-                <span className="text-[16px]">{category.emoji}</span>
+                <category.Icon size={18} strokeWidth={1.75} className="shrink-0 text-brand-strong" />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[14px] font-semibold">{place.name}</span>
-                  {place.address && <span className="truncate text-[11px] text-muted">📍 {place.address}</span>}
+                  {place.address && <span className="truncate text-[11px] text-muted">{place.address}</span>}
                 </span>
-                <span className={`shrink-0 text-[11px] font-semibold ${place.status === 'WISH' ? 'text-coral' : 'text-brand'}`}>
-                  {place.status === 'WISH' ? '♡' : '✓'} {t.status[place.status]}
+                <span className={`flex shrink-0 items-center gap-1 text-[11px] font-semibold ${place.status === 'WISH' ? 'text-coral' : 'text-brand'}`}>
+                  {place.status === 'WISH' ? <Heart size={12} strokeWidth={1.75} /> : <Check size={12} strokeWidth={1.75} />} {t.status[place.status]}
                 </span>
               </button>
             </li>

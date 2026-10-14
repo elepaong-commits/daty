@@ -1,3 +1,4 @@
+import { Heart } from 'lucide-react'
 import { useState } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
 import { useLogout, useMe } from '../../lib/queries'
@@ -34,7 +35,9 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           <div className="rounded-2xl border border-card-border p-4">
             <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
             {partner ? (
-              <p className="pt-1 text-[15px] font-semibold">💞 {partner.nickname}</p>
+              <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
+                <Heart size={15} strokeWidth={1.75} className="text-coral" /> {partner.nickname}
+              </p>
             ) : (
               <>
                 <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>

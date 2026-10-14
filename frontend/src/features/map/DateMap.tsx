@@ -1,3 +1,4 @@
+import { Minus, Plus } from 'lucide-react'
 import { AdvancedMarker, Map, useMap } from '@vis.gl/react-google-maps'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Supercluster from 'supercluster'
@@ -165,6 +166,7 @@ function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
 function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; selected: boolean }) {
   const size = selected ? 41.5 : 34
   const visited = place.status === 'VISITED'
+  const { Icon } = categoryOf(place.category)
   return (
     <div className={`relative ${dimmed ? 'opacity-32' : ''}`} style={{ width: size, height: size, marginBottom: size * 0.21 }}>
       {selected && <img src={selectedHalo} alt="" width={53.5} height={53.5} className="absolute -top-1.5 -left-1.5 max-w-none" />}
@@ -173,7 +175,9 @@ function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; 
           visited ? 'border-3 border-white bg-brand' : 'border-2 border-coral bg-coral-soft'
         }`}
       />
-      <span className="absolute inset-0 flex items-center justify-center text-[15px] leading-none">{categoryOf(place.category).emoji}</span>
+      <span className={`absolute inset-0 flex items-center justify-center ${visited ? 'text-white' : 'text-coral-strong'}`}>
+        <Icon size={selected ? 18 : 15} strokeWidth={2} />
+      </span>
       {selected && (
         <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
           {place.name}
@@ -200,12 +204,12 @@ function MapControls() {
           <img src={dotWish} alt="" width={10} height={10} /> {t.status.WISH}
         </span>
       </div>
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white text-[18px] leading-normal font-semibold">
-        <button type="button" onClick={() => zoom(1)} className="size-9" aria-label={t.map.zoomIn}>
-          +
+      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white">
+        <button type="button" onClick={() => zoom(1)} className="flex size-9 items-center justify-center" aria-label={t.map.zoomIn}>
+          <Plus size={18} strokeWidth={1.75} />
         </button>
-        <button type="button" onClick={() => zoom(-1)} className="size-9" aria-label={t.map.zoomOut}>
-          −
+        <button type="button" onClick={() => zoom(-1)} className="flex size-9 items-center justify-center" aria-label={t.map.zoomOut}>
+          <Minus size={18} strokeWidth={1.75} />
         </button>
       </div>
       <button

@@ -1,3 +1,4 @@
+import { Check, Heart, Star } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import calendarDaysIcon from '../../assets/icons/calendar-days.svg'
@@ -95,9 +96,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                 role="radio"
                 aria-checked={status === value}
                 onClick={() => setStatus(value)}
-                className={`flex-1 rounded-xl text-[13px] font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-xl text-[13px] font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
               >
-                {value === 'VISITED' ? `✓ ${t.status.VISITED}` : `♡ ${t.status.WISH}`}
+                {value === 'VISITED' ? <Check size={14} strokeWidth={1.75} /> : <Heart size={14} strokeWidth={1.75} />} {t.status[value]}
               </button>
             ))}
           </div>
@@ -117,11 +118,11 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                     type="button"
                     aria-pressed={category === value}
                     onClick={() => setCategory(value)}
-                    className={`h-[34px] rounded-full border px-3 text-[12px] font-semibold ${
+                    className={`flex h-[34px] items-center gap-1 rounded-full border px-3 text-[12px] font-semibold ${
                       category === value ? 'border-brand bg-brand text-white' : 'border-field-border bg-white'
                     }`}
                   >
-                    {c.emoji} {t.categories[value]}
+                    <c.Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
                   </button>
                 )
               })}
@@ -170,9 +171,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                       aria-checked={rating === n}
                       aria-label={t.common.points(n)}
                       onClick={() => setRating(n)}
-                      className={`text-[23px] leading-none ${rating !== null && n <= rating ? 'text-[#eaa300]' : 'text-chip-border'}`}
+                      className={rating !== null && n <= rating ? 'text-[#eaa300]' : 'text-chip-border'}
                     >
-                      ★
+                      <Star size={23} strokeWidth={1.5} fill={rating !== null && n <= rating ? 'currentColor' : 'none'} />
                     </button>
                   ))}
                 </div>
