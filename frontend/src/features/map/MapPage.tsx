@@ -135,7 +135,7 @@ export function MapPage() {
             <QueryState isLoading={isLoading} error={error} />
           </div>
         ) : (
-          <PlaceSheet places={listed} status={status} selectedId={selectedId} />
+          <PlaceSheet places={listed} status={status} selectedId={selectedId} onSelect={setSelectedId} />
         )}
       </div>
 
