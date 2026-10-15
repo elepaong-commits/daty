@@ -46,7 +46,7 @@ export function CalendarPage() {
   const addToAlbum = useAddRecordToAlbum()
   // A day keeps one album: a finished date joins the album its day already has.
   const completedDay = completed && toDateInput(new Date(completed.scheduledAt))
-  const dayAlbum = albums.find((a) => a.albumDate === completedDay)
+  const dayAlbum = completedDay ? albums.find((a) => a.albumDate <= completedDay && completedDay <= a.albumEndDate) : undefined
   const { data: records = [], isLoading, error } = useMonthRecords(month)
 
   const byDay = useMemo(() => {

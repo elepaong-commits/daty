@@ -92,7 +92,8 @@ export interface Photo {
 export interface Album {
   id: number
   title: string
-  albumDate: string // YYYY-MM-DD
+  albumDate: string // YYYY-MM-DD, the first day
+  albumEndDate: string // the last day; same as albumDate for a one-day album
   highlightNote: string | null
   coverPhotoId: number | null // the "best cut"
   photoCount: number
@@ -124,6 +125,7 @@ export interface CreateRecordInput {
 export interface CreateAlbumInput {
   title: string
   albumDate: string
+  albumEndDate?: string | null // null for one day
   highlightNote?: string
   recordIds?: number[]
   placeIds?: number[] // saved places visited that day; each becomes a visit record in the album
@@ -139,6 +141,7 @@ export interface PlaceDetail extends Place {
     id: number
     title: string
     albumDate: string
+    albumEndDate: string
     coverPhotoId: number | null
     photoCount: number
     coverPhoto: Photo | null // the best cut, or the first photo when none is picked
@@ -181,6 +184,7 @@ export interface PhotoUpload {
 export interface UpdateAlbumInput {
   title?: string
   albumDate?: string
+  albumEndDate?: string | null // null makes it one day again
   highlightNote?: string | null
   coverPhotoId?: number | null
   recordIds?: number[]

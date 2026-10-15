@@ -26,6 +26,7 @@ async function serializeAlbum({ photos, records, ...album }: AlbumWithRelations)
   return {
     ...album,
     albumDate: toDateOnly(album.albumDate),
+    albumEndDate: toDateOnly(album.albumEndDate ?? album.albumDate),
     photoCount: photos.length,
     coverPhoto: cover,
     category: records[0]?.category ?? null,
@@ -45,6 +46,8 @@ const placeVisits = {
 const albumBody = z.object({
   title: z.string().trim().min(1).max(100),
   albumDate: z.iso.date(),
+  // Last day of a trip; leave out (or same as albumDate) for a one-day album.
+  albumEndDate: z.iso.date().nullish(),
   highlightNote: z.string().trim().max(300).nullish(),
   recordIds: z.array(z.number().int().positive()).max(50).optional(),
   ...placeVisits,
@@ -96,27 +99,45 @@ albumsRouter.get("/:id", async (req, res) => {
   res.json(await serializeAlbum(album));
 });
 
+/** An album covers albumDate..albumEndDate; a one-day album stores no end. */
+function albumRange(start: Date, end: Date | null) {
+  if (end && end < start) throw new HttpError(400, "albumEndDate must not be before albumDate");
+  return { albumDate: start, albumEndDate: end && end > start ? end : null };
+}
+
 /** One album per day: a day's dates and photos all go into the album that already holds that day. */
-async function assertDayFree(tx: Prisma.TransactionClient, coupleId: number, albumDate: string, exceptId?: number) {
+async function assertDaysFree(
+  tx: Prisma.TransactionClient,
+  coupleId: number,
+  { albumDate, albumEndDate }: { albumDate: Date; albumEndDate: Date | null },
+  exceptId?: number,
+) {
+  const end = albumEndDate ?? albumDate;
   const taken = await tx.album.findFirst({
-    where: { coupleId, albumDate: new Date(albumDate), ...(exceptId && { id: { not: exceptId } }) },
+    where: {
+      coupleId,
+      ...(exceptId && { id: { not: exceptId } }),
+      albumDate: { lte: end },
+      OR: [{ albumEndDate: null, albumDate: { gte: albumDate } }, { albumEndDate: { gte: albumDate } }],
+    },
     select: { id: true },
   });
   if (taken) throw new HttpError(409, "That day already has an album", "ALBUM_EXISTS");
 }
 
 albumsRouter.post("/", async (req, res) => {
-  const { recordIds = [], placeIds = [], visitAt, albumDate, ...data } = albumBody.parse(req.body);
+  const { recordIds = [], placeIds = [], visitAt, albumDate, albumEndDate, ...data } = albumBody.parse(req.body);
   const { coupleId } = req;
+  const range = albumRange(new Date(albumDate), albumEndDate ? new Date(albumEndDate) : null);
   const album = await prisma.$transaction(async (tx) => {
     const owned = await tx.dateRecord.count({ where: { id: { in: recordIds }, coupleId } });
     if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
-    await assertDayFree(tx, coupleId, albumDate);
+    await assertDaysFree(tx, coupleId, range);
     const { id } = await tx.album.create({
       data: {
         ...data,
+        ...range,
         coupleId,
-        albumDate: new Date(albumDate),
         records: { connect: recordIds.map((id) => ({ id })) },
       },
     });
@@ -129,6 +150,8 @@ albumsRouter.post("/", async (req, res) => {
 const updateBody = z.object({
   title: z.string().trim().min(1).max(100).optional(),
   albumDate: z.iso.date().optional(),
+  // null makes it a one-day album again.
+  albumEndDate: z.iso.date().nullable().optional(),
   highlightNote: z.string().trim().max(300).nullable().optional(),
   // The "best cut" shown on the album card; must be one of this album's photos.
   coverPhotoId: z.number().int().positive().nullable().optional(),
@@ -139,9 +162,22 @@ const updateBody = z.object({
 
 albumsRouter.patch("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const { recordIds, placeIds = [], visitAt, albumDate, ...data } = updateBody.parse(req.body);
+  const { recordIds, placeIds = [], visitAt, albumDate, albumEndDate, ...data } = updateBody.parse(req.body);
   const { coupleId } = req;
-  await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
+  const current = await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
+  const moving = albumDate !== undefined || albumEndDate !== undefined;
+  let range: ReturnType<typeof albumRange> | undefined;
+  if (moving) {
+    const start = albumDate ? new Date(albumDate) : current.albumDate;
+    // A new start alone keeps the old end when it still comes after it, otherwise the album shrinks to that day.
+    const end =
+      albumEndDate !== undefined
+        ? albumEndDate ? new Date(albumEndDate) : null
+        : current.albumEndDate && current.albumEndDate > start
+          ? current.albumEndDate
+          : null;
+    range = albumRange(start, end);
+  }
   if (data.coverPhotoId) {
     await prisma.photo.findFirstOrThrow({ where: { id: data.coverPhotoId, albumId: id } });
   }
@@ -152,12 +188,12 @@ albumsRouter.patch("/:id", async (req, res) => {
       });
       if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
     }
-    if (albumDate) await assertDayFree(tx, coupleId, albumDate, id);
+    if (range) await assertDaysFree(tx, coupleId, range, id);
     await tx.album.update({
       where: { id },
       data: {
         ...data,
-        ...(albumDate && { albumDate: new Date(albumDate) }),
+        ...range,
         ...(recordIds && { records: { set: recordIds.map((recordId) => ({ id: recordId })) } }),
       },
     });

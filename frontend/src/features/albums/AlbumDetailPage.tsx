@@ -5,7 +5,7 @@ import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
-import { formatDotted, formatDuration, formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { daysBetween, formatDotted, formatDuration, formatMonthDay, formatSlashRange, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
@@ -145,7 +145,15 @@ export function AlbumDetailPage() {
   }
   const filtered = filter === 'ALL' ? album.photos : album.photos.filter((p) => p.mediaType === filter)
   const shown = sortItems(filtered, sort, direction)
-  const date = parseDateOnly(album.albumDate)
+  const start = parseDateOnly(album.albumDate)
+  const end = parseDateOnly(album.albumEndDate)
+  const days = daysBetween(start, end) + 1
+  const dayHeading = (d: Date, label: string) => t.calendar.dayHeading(label, t.weekdays[d.getDay()]!)
+  // One day: `2026.09.10 (목)`. A trip: `2026.09.10 (목) ~ 09.12 (토) · 2박 3일`.
+  const period =
+    days === 1
+      ? dayHeading(start, formatDotted(start))
+      : `${dayHeading(start, formatDotted(start))} ~ ${dayHeading(end, start.getFullYear() === end.getFullYear() ? formatMonthDay(end) : formatDotted(end))} · ${t.albums.tripLength(days - 1, days)}`
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
   const actionError = updateAlbum.error ?? deletePhotos.error
 
@@ -169,14 +177,14 @@ export function AlbumDetailPage() {
             <div className="flex flex-col gap-[5px]">
               <div className="flex items-start gap-3">
                 <h2 className="min-w-0 flex-1 font-display text-[20px] leading-[1.38] lg:text-[26px]">
-                  {formatSlashDay(date)} · {album.title}
+                  {formatSlashRange(start, end)} · {album.title}
                 </h2>
                 <div className="hidden shrink-0 lg:block">
                   <HeaderAction onClick={() => setEditing(true)}>{t.albums.editAlbum}</HeaderAction>
                 </div>
               </div>
               <p className="text-[12px] leading-normal text-muted">
-                {t.calendar.dayHeading(formatDotted(date), t.weekdays[date.getDay()]!)} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
+                {period} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
               </p>
               {album.places.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">

@@ -146,7 +146,8 @@ model Album {
   id            Int          @id @default(autoincrement())
   coupleId      Int          @map("couple_id")
   title         String
-  albumDate     DateTime     @map("album_date") @db.Date
+  albumDate     DateTime     @map("album_date") @db.Date // first day
+  albumEndDate  DateTime?    @map("album_end_date") @db.Date // last day of a trip; null when the album is one day
   highlightNote String?      @map("highlight_note") // 꼭 봐야 할 포인트
   coverPhotoId  Int?         @map("cover_photo_id")
   createdAt     DateTime     @default(now()) @map("created_at")

@@ -4,13 +4,14 @@ import { api, ApiError, ImageError, uploadToStorage } from './api'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
 import type { Album, Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
-import { addMonths, startOfMonth } from './dates'
+import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
 
 export const keys = {
   me: ['me'] as const,
   places: ['places'] as const,
   place: (id: number) => ['places', id] as const,
   records: (month: Date) => ['records', month.getFullYear(), month.getMonth()] as const,
+  recordRange: (from: string, to: string) => ['records', 'range', from, to] as const,
   albums: ['albums'] as const,
   album: (id: number) => ['albums', id] as const,
 }
@@ -78,6 +79,14 @@ export const useMonthRecords = (month: Date) =>
   useQuery({
     queryKey: keys.records(month),
     queryFn: () => api.records(startOfMonth(month), addMonths(month, 1)),
+    placeholderData: (previous) => previous,
+  })
+
+/** Records from the first through the last day (`YYYY-MM-DD`, local). */
+export const useRangeRecords = (from: string, to: string) =>
+  useQuery({
+    queryKey: keys.recordRange(from, to),
+    queryFn: () => api.records(parseDateOnly(from), addDays(parseDateOnly(to), 1)),
     placeholderData: (previous) => previous,
   })
 

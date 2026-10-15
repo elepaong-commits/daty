@@ -35,6 +35,20 @@ export const formatMonthDay = (d: Date) => `${pad(d.getMonth() + 1)}.${pad(d.get
 export const formatSlashDay = (d: Date) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
 export const formatDotted = (d: Date) => `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`
 
+/** `MM/DD`, or `MM/DD–MM/DD` for a span of days. */
+export const formatSlashRange = (start: Date, end: Date) =>
+  isSameDay(start, end) ? formatSlashDay(start) : `${formatSlashDay(start)}–${formatSlashDay(end)}`
+
+/** `YYYY.MM.DD`, or `YYYY.MM.DD–MM.DD` for a span (the end keeps its year when it's in another one). */
+export const formatDottedRange = (start: Date, end: Date) => {
+  if (isSameDay(start, end)) return formatDotted(start)
+  const sameYear = start.getFullYear() === end.getFullYear()
+  return `${formatDotted(start)}–${sameYear ? formatMonthDay(end) : formatDotted(end)}`
+}
+
+/** Whether two `YYYY-MM-DD` ranges share a day (the strings sort like the dates). */
+export const rangesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string) => aStart <= bEnd && bStart <= aEnd
+
 /** Korean couple count: the anniversary itself is day 1. */
 export const daysTogether = (anniversary: string, today = new Date()) =>
   daysBetween(parseDateOnly(anniversary), today) + 1

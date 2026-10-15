@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { PHOTO_GRADIENTS } from '../../lib/categories'
-import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { formatDottedRange, formatSlashRange, parseDateOnly } from '../../lib/dates'
 import type { Album, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
@@ -16,7 +16,8 @@ const LAYERS = [
 
 export function AlbumCard({ album, className = '', style }: { album: Album; className?: string; style?: CSSProperties }) {
   const t = useT()
-  const date = parseDateOnly(album.albumDate)
+  const start = parseDateOnly(album.albumDate)
+  const end = parseDateOnly(album.albumEndDate)
   // Cards have room for one place; the rest show as a count.
   const [shownPlace] = album.places
   const morePlaces = album.places.length - 1
@@ -28,11 +29,11 @@ export function AlbumCard({ album, className = '', style }: { album: Album; clas
       style={style}
     >
       <div className="px-1.5 retro:pr-2 retro:pl-0">
-        <PhotoStack album={album} date={formatDotted(date)} />
+        <PhotoStack album={album} date={formatDottedRange(start, end)} />
       </div>
       <div className="flex flex-col px-0.5">
         <h3 className="font-display text-[16px] leading-[1.375] retro:text-[14px]">
-          {formatSlashDay(date)} · {album.title}
+          {formatSlashRange(start, end)} · {album.title}
         </h3>
         {shownPlace && (
           <div className="flex flex-wrap gap-1 pt-1">
