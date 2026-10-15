@@ -72,3 +72,20 @@ test("stretching an album over a taken day is refused, and null shrinks it back 
   const shrunk = await a.ok("PATCH", `/albums/${album.id}`, { albumEndDate: null });
   assert.equal(shrunk.albumEndDate, "2026-09-26");
 });
+
+test("deleting an album frees its days and keeps its visits on the calendar", async () => {
+  const place = await a.ok("POST", "/places", { name: "Trip spot", category: "CAFE" });
+  const record = await a.ok("POST", "/records", {
+    type: "RECORD",
+    scheduledAt: "2026-08-01T12:00:00+09:00",
+    category: "CAFE",
+    placeId: place.id,
+  });
+  const album = await a.ok("POST", "/albums", { title: "Gone", albumDate: "2026-08-01", albumEndDate: "2026-08-02", recordIds: [record.id] });
+  const res = await a.request("DELETE", `/albums/${album.id}`);
+  assert.equal(res.status, 204);
+  assert.equal((await a.request("GET", `/albums/${album.id}`)).status, 404);
+  const kept = await prisma.dateRecord.findUniqueOrThrow({ where: { id: record.id } });
+  assert.equal(kept.albumId, null);
+  await a.ok("POST", "/albums", { title: "Again", albumDate: "2026-08-02" });
+});
