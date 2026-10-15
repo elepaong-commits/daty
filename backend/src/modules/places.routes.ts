@@ -117,6 +117,7 @@ placesRouter.get("/:id", async (req, res) => {
               id: true,
               title: true,
               albumDate: true,
+              albumEndDate: true,
               coverPhotoId: true,
               photos: { orderBy: { displayOrder: "asc" }, take: 3 },
               _count: { select: { photos: true } },
@@ -137,11 +138,12 @@ placesRouter.get("/:id", async (req, res) => {
     latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
     visits: place.records.map((r) => ({ recordId: r.id, scheduledAt: r.scheduledAt, rating: r.rating })),
     albums: await Promise.all(
-      albums.map(async ({ _count, albumDate, photos, ...album }) => {
+      albums.map(async ({ _count, albumDate, albumEndDate, photos, ...album }) => {
         const cover = [...photos, ...covers].find((p) => p.id === album.coverPhotoId) ?? photos[0];
         return {
           ...album,
           albumDate: toDateOnly(albumDate),
+          albumEndDate: toDateOnly(albumEndDate ?? albumDate),
           photoCount: _count.photos,
           coverPhoto: cover ? await serializePhoto(cover) : null,
           photos: await Promise.all(photos.map(serializePhoto)),

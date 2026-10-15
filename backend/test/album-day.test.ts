@@ -41,3 +41,34 @@ test("another couple's album doesn't take the day", async () => {
   await a.ok("POST", "/albums", { title: "A's", albumDate: "2026-09-04" });
   await b.ok("POST", "/albums", { title: "B's", albumDate: "2026-09-04" });
 });
+
+test("a trip album takes every day in its range", async () => {
+  const trip = await a.ok("POST", "/albums", { title: "Trip", albumDate: "2026-09-10", albumEndDate: "2026-09-12" });
+  assert.equal(trip.albumEndDate, "2026-09-12");
+  for (const day of ["2026-09-10", "2026-09-11", "2026-09-12"]) {
+    const res = await a.request("POST", "/albums", { title: "Inside", albumDate: day });
+    assert.equal(res.status, 409, day);
+  }
+  const overlapping = await a.request("POST", "/albums", { title: "Overlap", albumDate: "2026-09-08", albumEndDate: "2026-09-10" });
+  assert.equal(overlapping.status, 409);
+  await a.ok("POST", "/albums", { title: "Before", albumDate: "2026-09-08", albumEndDate: "2026-09-09" });
+  await a.ok("POST", "/albums", { title: "After", albumDate: "2026-09-13" });
+});
+
+test("a one-day album reports its day as both ends, and a range can't run backwards", async () => {
+  const day = await a.ok("POST", "/albums", { title: "Day", albumDate: "2026-09-20", albumEndDate: "2026-09-20" });
+  assert.equal(day.albumEndDate, "2026-09-20");
+  const backwards = await a.request("POST", "/albums", { title: "Back", albumDate: "2026-09-25", albumEndDate: "2026-09-24" });
+  assert.equal(backwards.status, 400);
+});
+
+test("stretching an album over a taken day is refused, and null shrinks it back to one day", async () => {
+  await a.ok("POST", "/albums", { title: "Taken", albumDate: "2026-09-28" });
+  const album = await a.ok("POST", "/albums", { title: "Stretch", albumDate: "2026-09-26" });
+  const res = await a.request("PATCH", `/albums/${album.id}`, { albumEndDate: "2026-09-28" });
+  assert.equal(res.status, 409);
+  const stretched = await a.ok("PATCH", `/albums/${album.id}`, { albumEndDate: "2026-09-27" });
+  assert.equal(stretched.albumEndDate, "2026-09-27");
+  const shrunk = await a.ok("PATCH", `/albums/${album.id}`, { albumEndDate: null });
+  assert.equal(shrunk.albumEndDate, "2026-09-26");
+});

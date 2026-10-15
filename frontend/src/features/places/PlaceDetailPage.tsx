@@ -5,7 +5,7 @@ import { QueryState } from '../../components/Field'
 import { PhotoTile } from '../../components/PhotoTile'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { categoryOf } from '../../lib/categories'
-import { formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { formatSlashRange, parseDateOnly } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
 import type { Place } from '../../lib/types'
 import { useT } from '../../lib/i18n'
@@ -95,7 +95,7 @@ export function PlaceDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">
-                {formatSlashDay(parseDateOnly(album.albumDate))} · {album.title}
+                {formatSlashRange(parseDateOnly(album.albumDate), parseDateOnly(album.albumEndDate))} · {album.title}
               </span>
               <span className="text-[11px] text-muted">{t.common.photoCount(album.photoCount)}</span>
             </div>

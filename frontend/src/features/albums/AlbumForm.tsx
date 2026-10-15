@@ -2,9 +2,9 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Field, inputClass } from '../../components/Field'
 import { categoryOf } from '../../lib/categories'
-import { fromInputs, parseDateOnly, toDateInput, toTimeInput } from '../../lib/dates'
+import { daysBetween, formatSlashDay, fromInputs, parseDateOnly, rangesOverlap, toDateInput, toTimeInput } from '../../lib/dates'
 import { errorMessage } from '../../lib/api'
-import { useAlbums, useMonthRecords, usePlaces } from '../../lib/queries'
+import { useAlbums, usePlaces, useRangeRecords } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import type { Album, PlaceCategory } from '../../lib/types'
 import type { NewAlbumDraft } from './CreateAlbumSheet'
@@ -13,9 +13,10 @@ import { SavedPlacePicker } from '../records/SavedPlacePicker'
 export interface AlbumFormValues {
   title: string
   albumDate: string
+  albumEndDate: string | null // null for a one-day album
   highlightNote: string // trimmed; empty when there is none
   recordIds: number[]
-  placeIds: number[] // saved places to add as visits on that day
+  placeIds: number[] // saved places to add as visits on the first day
   visitAt: string
 }
 
@@ -31,28 +32,30 @@ interface Props {
   onSubmit: (values: AlbumFormValues) => void
 }
 
-/** Album name, day, the visits it bundles and its highlight — shared by the create and edit sheets. */
+/** Album name, its day or span of days, the visits it bundles and its highlight — shared by the create and edit sheets. */
 export function AlbumForm({ album, draft, submitLabel, isPending, error, footer, onSubmit }: Props) {
   const t = useT()
   const [title, setTitle] = useState(album?.title ?? draft?.title ?? '')
   const [date, setDate] = useState(album?.albumDate ?? draft?.albumDate ?? toDateInput(new Date()))
+  const [endDate, setEndDate] = useState(album?.albumEndDate ?? date)
   const [highlight, setHighlight] = useState(album?.highlightNote ?? '')
   const [picked, setPicked] = useState<Set<number>>(new Set(album?.recordIds ?? (draft && [draft.recordId])))
   const [placeIds, setPlaceIds] = useState<number[]>([])
   const [choosingPlaces, setChoosingPlaces] = useState(false)
   const { data: places = [] } = usePlaces()
   const { data: albums = [] } = useAlbums()
-  // One album per day: point at the day's album instead of starting another.
-  const dayAlbum = albums.find((a) => a.albumDate === date && a.id !== album?.id)
+  const multiDay = date !== '' && endDate > date
+  const days = multiDay ? daysBetween(parseDateOnly(date), parseDateOnly(endDate)) + 1 : 1
+  // One album per day: point at the album already holding one of these days instead of starting another.
+  const dayAlbum = date ? albums.find((a) => a.id !== album?.id && rangesOverlap(a.albumDate, a.albumEndDate, date, endDate)) : undefined
 
-  // Offer the visits on the chosen day so the album shows where it was taken.
-  const { data: monthRecords = [] } = useMonthRecords(parseDateOnly(date || toDateInput(new Date())))
-  const dayRecords = monthRecords.filter(
-    (r) =>
-      r.type === 'RECORD' &&
-      (r.albumId === null || r.albumId === album?.id) &&
-      toDateInput(new Date(r.scheduledAt)) === date,
-  )
+  // Offer the visits on the chosen days so the album shows where it was taken.
+  const from = date || toDateInput(new Date())
+  const { data: rangeRecords = [] } = useRangeRecords(from, multiDay ? endDate : from)
+  const dayRecords = rangeRecords.filter((r) => {
+    const day = toDateInput(new Date(r.scheduledAt))
+    return r.type === 'RECORD' && (r.albumId === null || r.albumId === album?.id) && day >= from && day <= (multiDay ? endDate : from)
+  })
 
   // A place already visited in a checked record doesn't need another visit.
   const visitedPlaceIds = new Set(dayRecords.filter((r) => picked.has(r.id)).map((r) => r.placeId))
@@ -80,6 +83,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
     onSubmit({
       title: title.trim(),
       albumDate: date,
+      albumEndDate: multiDay ? endDate : null,
       highlightNote: highlight.trim(),
       recordIds: [...picked].filter((id) => dayRecords.some((r) => r.id === id)),
       placeIds: addedPlaces.map((p) => p.id),
@@ -92,21 +96,45 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       <Field label={t.albums.name}>
         <input required maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.albums.namePlaceholder} className={inputClass} />
       </Field>
-      <Field label={t.common.date}>
-        <input
-          required
-          type="date"
-          value={date}
-          onChange={(e) => {
-            setDate(e.target.value)
-            setPicked(new Set())
-          }}
-          className={inputClass}
-        />
-      </Field>
+      {/* A day, or a span of days for a trip: the end follows the start until it's moved on its own. */}
+      <div className="flex flex-col gap-1">
+        <span className="flex items-center gap-2 text-[12px] leading-normal font-semibold text-muted">
+          {t.albums.period}
+          <span className="ui-badge">{multiDay ? t.albums.tripLength(days - 1, days) : t.albums.oneDay}</span>
+          {multiDay && (
+            <button type="button" onClick={() => setEndDate(date)} className="ml-auto text-[12px] font-semibold text-brand">
+              {t.albums.makeOneDay}
+            </button>
+          )}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            required
+            type="date"
+            aria-label={t.common.date}
+            value={date}
+            onChange={(e) => {
+              const next = e.target.value
+              if (!multiDay || endDate < next) setEndDate(next)
+              setDate(next)
+              setPicked(new Set())
+            }}
+            className={`${inputClass} min-w-0 flex-1`}
+          />
+          <span className="text-muted">~</span>
+          <input
+            type="date"
+            aria-label={t.albums.period}
+            value={endDate}
+            min={date}
+            onChange={(e) => setEndDate(e.target.value && e.target.value >= date ? e.target.value : date)}
+            className={`${inputClass} min-w-0 flex-1`}
+          />
+        </div>
+      </div>
       {dayAlbum && (
         <p className="-mt-2 flex flex-col gap-1 rounded-xl bg-coral-soft px-3 py-2 text-[12px] text-coral-strong">
-          {t.albums.dayTaken}
+          {multiDay ? t.albums.periodTaken : t.albums.dayTaken}
           <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand">
             {t.albums.openDayAlbum(dayAlbum.title)}
           </Link>
@@ -114,12 +142,17 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       )}
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-[12px] leading-normal font-semibold text-muted">{t.albums.dayRecords}</span>
-        {dayRecords.length === 0 && addedPlaces.length === 0 && <p className="text-[12px] text-muted">{t.albums.noDayRecords}</p>}
+        <span className="text-[12px] leading-normal font-semibold text-muted">{multiDay ? t.albums.periodRecords : t.albums.dayRecords}</span>
+        {dayRecords.length === 0 && addedPlaces.length === 0 && (
+          <p className="text-[12px] text-muted">{multiDay ? t.albums.noPeriodRecords : t.albums.noDayRecords}</p>
+        )}
         {dayRecords.map((r) => (
           <label key={r.id} className="flex items-center gap-2 rounded-xl border border-field-border bg-field px-3 py-2.5 text-[14px]">
             <input type="checkbox" checked={picked.has(r.id)} onChange={() => toggle(r.id)} className="accent-brand" />
-            <span className="text-muted">{toTimeInput(new Date(r.scheduledAt))}</span>
+            <span className="text-muted">
+              {multiDay && `${formatSlashDay(new Date(r.scheduledAt))} `}
+              {toTimeInput(new Date(r.scheduledAt))}
+            </span>
             <CategoryIcon category={r.category} />
             {r.place?.name ?? r.title}
           </label>
@@ -145,7 +178,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
         {choosingPlaces && (
           <SavedPlacePicker places={pickable} selectedIds={placeIds} onSelect={(place) => togglePlace(place.id)} />
         )}
-        {addedPlaces.length > 0 && <p className="text-[11px] text-brand">{t.albums.newVisitHint}</p>}
+        {addedPlaces.length > 0 && <p className="text-[11px] text-brand">{multiDay ? t.albums.newVisitHintPeriod : t.albums.newVisitHint}</p>}
       </div>
 
       <Field label={t.common.mustSee}>
