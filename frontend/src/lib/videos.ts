@@ -121,21 +121,72 @@ function waitFor(video: HTMLVideoElement, event: 'loadedmetadata' | 'seeked', ti
 }
 
 // MP4 and QuickTime files record their creation time (seconds since 1904, UTC) in moov › mvhd.
+// iPhones also write com.apple.quicktime.creationdate in moov › meta, and that one survives when iOS
+// re-exports a picked video for upload (which stamps mvhd with the export time), so it goes first.
 // Walking the box headers reads only a few bytes each, wherever moov sits in the file.
 const MAC_EPOCH_OFFSET_SEC = 2_082_844_800
+const MAX_META_BYTES = 1_000_000
 
 async function readVideoTakenAt(file: File) {
   try {
     const moov = await findBox(file, 0, file.size, 'moov')
-    const mvhd = moov && (await findBox(file, moov.body, moov.end, 'mvhd'))
-    if (!mvhd) return null
-    const view = new DataView(await file.slice(mvhd.body, mvhd.body + 16).arrayBuffer())
-    const seconds = view.getUint8(0) === 1 ? Number(view.getBigUint64(4)) : view.getUint32(4)
-    if (seconds === 0) return null
-    return new Date((seconds - MAC_EPOCH_OFFSET_SEC) * 1000).toISOString()
+    if (!moov) return null
+    return (await readCreationDate(file, moov)) ?? (await readMovieHeaderTime(file, moov))
   } catch {
     return null
   }
+}
+
+async function readMovieHeaderTime(file: File, moov: { body: number; end: number }) {
+  const mvhd = await findBox(file, moov.body, moov.end, 'mvhd')
+  if (!mvhd) return null
+  const view = new DataView(await file.slice(mvhd.body, mvhd.body + 16).arrayBuffer())
+  const seconds = view.getUint8(0) === 1 ? Number(view.getBigUint64(4)) : view.getUint32(4)
+  if (seconds === 0) return null
+  return new Date((seconds - MAC_EPOCH_OFFSET_SEC) * 1000).toISOString()
+}
+
+/** com.apple.quicktime.creationdate from moov › meta (keys names the items, ilst holds them by index). */
+async function readCreationDate(file: File, moov: { body: number; end: number }) {
+  const meta = await findBox(file, moov.body, moov.end, 'meta')
+  if (!meta || meta.end - meta.body > MAX_META_BYTES) return null
+  const bytes = new Uint8Array(await file.slice(meta.body, meta.end).arrayBuffer())
+  const view = new DataView(bytes.buffer)
+  const name = (at: number) => String.fromCharCode(...bytes.subarray(at + 4, at + 8))
+  // QuickTime's meta starts straight with its children; the MP4 flavour has version and flags first.
+  const start = name(0) === 'hdlr' ? 0 : 4
+  const children = (from: number, to: number) => {
+    const boxes: { name: string; body: number; end: number }[] = []
+    for (let at = from; at + 8 <= to; ) {
+      const size = view.getUint32(at)
+      if (size < 8 || at + size > to) break
+      boxes.push({ name: name(at), body: at + 8, end: at + size })
+      at += size
+    }
+    return boxes
+  }
+  const boxes = children(start, bytes.length)
+  const keys = boxes.find((b) => b.name === 'keys')
+  const ilst = boxes.find((b) => b.name === 'ilst')
+  if (!keys || !ilst) return null
+
+  // keys: version and flags, a count, then [size, namespace, name] per key; ilst refers to them from 1.
+  let index = 0
+  let at = keys.body + 8
+  for (let i = 1; at + 8 <= keys.end; i++) {
+    const size = view.getUint32(at)
+    if (size < 8) return null
+    if (new TextDecoder().decode(bytes.subarray(at + 8, at + size)) === 'com.apple.quicktime.creationdate') index = i
+    at += size
+  }
+  if (!index) return null
+
+  const item = children(ilst.body, ilst.end).find((b) => view.getUint32(b.body - 4) === index)
+  const data = item && children(item.body, item.end).find((b) => b.name === 'data')
+  // data: type and locale, then the value as text, e.g. "2026-10-03T15:27:40+0900".
+  const value = data && new TextDecoder().decode(bytes.subarray(data.body + 8, data.end)).trim()
+  const date = value ? new Date(value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')) : null
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null
 }
 
 async function findBox(file: File, start: number, end: number, type: string) {
