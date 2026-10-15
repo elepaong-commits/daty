@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+/* Galmuri bitmap fonts (OFL), self-hosted from the npm package: only the cuts the pixel UI uses. */
+@font-face {
+  font-family: Galmuri11;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../node_modules/galmuri/dist/Galmuri11.woff2") format("woff2");
+}
+@font-face {
+  font-family: Galmuri11;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../node_modules/galmuri/dist/Galmuri11-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: Galmuri14;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../node_modules/galmuri/dist/Galmuri14.woff2") format("woff2");
+}
+
 @theme {
   --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
   --font-display: "Jua", "IBM Plex Sans KR", sans-serif;
+  /* Pixel UI: labels and numbers at 11–12px, headings at 15px or 30px (the sizes the bitmaps are drawn for). Long text stays in `font-sans`. */
+  --font-pixel: "Galmuri11", "IBM Plex Sans KR", monospace;
+  --font-pixel-head: "Galmuri14", "Galmuri11", "IBM Plex Sans KR", monospace;
 
   --color-brand: #00a896;
   --color-brand-strong: #00796b;
@@ -29,6 +52,16 @@
   --color-chip-border: #e6e1d0;
   --color-card-border: #f0ede2;
   --color-handle: #e2ddcc;
+  --color-beige: #f1ebd8;
+
+  /* Colours used only inside pixel sprites (mascots, pins, map icons). */
+  --color-pixel-blush: #ffc2bd;
+  --color-pixel-bear: #d19a62;
+  --color-pixel-bear-dark: #8a5a2e;
+  --color-pixel-leaf: #7cc48a;
+  --color-pixel-leaf-dark: #3f8f5a;
+  --color-pixel-water: #8fd3e0;
+  --color-pixel-violet: #9b87e0;
 
   --shadow-card: 0 8px 22px rgba(45, 55, 72, 0.15);
   --shadow-photo: 0 5px 12px rgba(45, 55, 72, 0.25);
@@ -43,12 +76,28 @@
       transform: translateY(10px);
     }
   }
+
+  /* Two-frame hop for the selected pin and the menu cursor, in steps like an old handheld. */
+  --animate-pixel-bob: pixel-bob 0.6s steps(1) infinite;
+  @keyframes pixel-bob {
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+  --animate-pixel-nudge: pixel-nudge 0.6s steps(1) infinite;
+  @keyframes pixel-nudge {
+    50% {
+      transform: translateX(3px);
+    }
+  }
 }
 
 /* Jua and Plex Sans KR have no kana, and shared kanji should use Japanese glyph shapes. */
 :root:lang(ja) {
   --font-sans: "IBM Plex Sans JP", system-ui, sans-serif;
   --font-display: "M PLUS Rounded 1c", "IBM Plex Sans JP", sans-serif;
+  --font-pixel: "Galmuri11", "IBM Plex Sans JP", monospace;
+  --font-pixel-head: "Galmuri14", "Galmuri11", "IBM Plex Sans JP", monospace;
 }
 
 @layer base {
@@ -66,6 +115,76 @@
   button {
     cursor: pointer;
   }
+}
+
+/*
+ * Pixel UI kit. Boxes get square "notched" corners from four outline shadows (no border, no radius)
+ * and a hard drop shadow; `--pixel` is the edge width (3px, or 2px with `pixel-thin`). The shadows sit
+ * outside the box, so scrolling containers need a few px of padding around them.
+ */
+@utility pixel-thin {
+  --pixel: 2px;
+}
+
+@utility pixel-box {
+  --pixel-edge: var(--pixel, 3px);
+  box-shadow:
+    0 calc(-1 * var(--pixel-edge)) 0 0 var(--pixel-border, var(--color-ink)),
+    0 var(--pixel-edge) 0 0 var(--pixel-border, var(--color-ink)),
+    calc(-1 * var(--pixel-edge)) 0 0 0 var(--pixel-border, var(--color-ink)),
+    var(--pixel-edge) 0 0 0 var(--pixel-border, var(--color-ink)),
+    0 calc(var(--pixel-edge) * 2) 0 0 var(--pixel-drop, rgb(45 55 72 / 0.22));
+}
+
+/* Outline only, for boxes inside boxes. */
+@utility pixel-outline {
+  --pixel-edge: var(--pixel, 3px);
+  box-shadow:
+    0 calc(-1 * var(--pixel-edge)) 0 0 var(--pixel-border, var(--color-ink)),
+    0 var(--pixel-edge) 0 0 var(--pixel-border, var(--color-ink)),
+    calc(-1 * var(--pixel-edge)) 0 0 0 var(--pixel-border, var(--color-ink)),
+    var(--pixel-edge) 0 0 0 var(--pixel-border, var(--color-ink));
+}
+
+/* A raised button that presses down. Colour it with `bg-*`; the bevel is light and shade over it. */
+@utility pixel-btn {
+  --pixel-edge: var(--pixel, 3px);
+  box-shadow:
+    inset var(--pixel-edge) var(--pixel-edge) 0 0 rgb(255 255 255 / 0.45),
+    inset calc(-1 * var(--pixel-edge)) calc(-1 * var(--pixel-edge)) 0 0 rgb(0 0 0 / 0.14),
+    0 calc(-1 * var(--pixel-edge)) 0 0 var(--color-ink),
+    0 var(--pixel-edge) 0 0 var(--color-ink),
+    calc(-1 * var(--pixel-edge)) 0 0 0 var(--color-ink),
+    var(--pixel-edge) 0 0 0 var(--color-ink),
+    0 calc(var(--pixel-edge) * 2) 0 0 var(--color-ink);
+  &:active {
+    transform: translateY(var(--pixel-edge));
+    box-shadow:
+      inset var(--pixel-edge) var(--pixel-edge) 0 0 rgb(0 0 0 / 0.14),
+      0 calc(-1 * var(--pixel-edge)) 0 0 var(--color-ink),
+      0 var(--pixel-edge) 0 0 var(--color-ink),
+      calc(-1 * var(--pixel-edge)) 0 0 0 var(--color-ink),
+      var(--pixel-edge) 0 0 0 var(--color-ink);
+  }
+}
+
+/* Sunken text field. */
+@utility pixel-field {
+  box-shadow:
+    inset 2px 2px 0 0 var(--color-handle),
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+  &:focus {
+    background-color: var(--color-amber-soft);
+  }
+}
+
+/* Bitmap glyphs stay sharp instead of being smoothed into blur. */
+@utility pixel-crisp {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
 }
 
 @utility scrollbar-none {

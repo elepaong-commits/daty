@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { MemoText } from '../../components/Memo'
+import { PixelSprite } from '../../components/PixelSprite'
 import { Stars } from '../../components/Stars'
 import { categoryOf } from '../../lib/categories'
 import { formatMonthDay } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
+import { CATEGORY_SPRITES } from '../../lib/sprites'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 
@@ -32,18 +34,18 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
 
   return (
     <section
-      className={`absolute inset-x-0 bottom-0 flex flex-col rounded-t-[26px] bg-white shadow-sheet ${expanded ? 'top-0' : 'h-[238px]'}`}
+      className={`absolute inset-x-0 bottom-0 flex flex-col border-t-3 border-ink bg-white ${expanded ? 'top-0' : 'h-[238px]'}`}
     >
       <button type="button" onClick={() => setExpanded((e) => !e)} className="flex justify-center pt-2.5 pb-1" aria-label={expanded ? t.map.collapseList : t.map.expandList}>
-        <span className="h-1.5 w-10 rounded-full bg-handle" />
+        <span className="h-1.5 w-10 bg-handle" />
       </button>
       <div className="flex items-center justify-between px-5 pb-2.5">
-        <h2 className="font-display text-[18px] leading-normal">
+        <h2 className="font-pixel-head text-[15px] leading-normal pixel-crisp">
           {t.map.sheetHeading[status][0]}
           <span className="text-brand">{places.length}</span>
           {t.map.sheetHeading[status][1]}
         </h2>
-        <button type="button" onClick={() => setExpanded((e) => !e)} className="text-[12px] font-semibold text-brand">
+        <button type="button" onClick={() => setExpanded((e) => !e)} className="font-pixel text-[11px] text-brand-strong pixel-crisp">
           {expanded ? t.map.viewMap : t.map.viewAll}
         </button>
       </div>
@@ -54,8 +56,8 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
         </p>
       ) : (
         <div
-          className={`scrollbar-none flex gap-3 px-4 pt-0.5 pb-4 ${
-            expanded ? 'min-h-0 flex-1 flex-col overflow-y-auto' : 'snap-x snap-mandatory scroll-px-4 overflow-x-auto'
+          className={`scrollbar-none flex gap-3.5 px-5 pt-1.5 pb-4 ${
+            expanded ? 'min-h-0 flex-1 flex-col overflow-y-auto' : 'snap-x snap-mandatory scroll-px-5 overflow-x-auto'
           }`}
         >
           {places.map((place, i) => (
@@ -107,7 +109,7 @@ export function PlaceList({
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">
-      <h2 className="px-5 pt-1 pb-2.5 font-display text-[18px] leading-normal">
+      <h2 className="px-5 pt-1 pb-2.5 font-pixel-head text-[15px] leading-normal pixel-crisp">
         {t.map.sheetHeading[status][0]}
         <span className="text-brand">{places.length}</span>
         {t.map.sheetHeading[status][1]}
@@ -115,7 +117,7 @@ export function PlaceList({
       {places.length === 0 ? (
         <p className="px-5 py-6 text-center text-[13px] text-muted">{t.map.empty[status]}</p>
       ) : (
-        <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pt-0.5 pb-5">
+        <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-1.5 pb-5">
           {places.map((place, i) => (
             <PlaceCard
               key={place.id}
@@ -127,7 +129,7 @@ export function PlaceList({
               place={place}
               selected={place.id === selectedId}
               onClick={() => onOpen(place.id)}
-              className="w-full hover:border-brand/50"
+              className="w-full hover:bg-sand-soft"
             />
           ))}
         </div>
@@ -162,22 +164,22 @@ function PlaceCard({
       onClick={onClick}
       aria-pressed={selected}
       style={riseDelay(index)}
-      className={`flex shrink-0 flex-col gap-2 rounded-2xl border-[1.5px] bg-white p-3.5 text-left ${RISE_IN} ${
-        selected ? 'border-brand' : 'border-card-border'
+      className={`flex shrink-0 flex-col gap-2 bg-white p-3.5 text-left pixel-box ${RISE_IN} ${
+        selected ? '[--pixel-border:var(--color-brand)]' : ''
       } ${className}`}
     >
       <div className="flex w-full items-start justify-between gap-2">
-        <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-          <category.Icon size={12} strokeWidth={1.75} /> {t.categories[category.value]}
+        <span className="flex shrink-0 items-center gap-1 whitespace-nowrap bg-brand-soft px-1.5 py-0.5 font-pixel text-[11px] leading-normal text-brand-strong pixel-crisp">
+          <PixelSprite name={CATEGORY_SPRITES[category.value]} scale={2} /> {t.categories[category.value]}
         </span>
         {place.address && <span className="min-w-0 truncate text-[11px] leading-normal text-muted">{place.address}</span>}
       </div>
-      <h3 className="w-full truncate font-display text-[19px] leading-[1.375]">{place.name}</h3>
+      <h3 className="w-full truncate font-pixel-head text-[15px] leading-[1.5] pixel-crisp">{place.name}</h3>
       <div className="flex items-center gap-1.5 leading-normal">
         {place.rating !== null ? (
           <>
             <Stars value={place.rating} />
-            <span className="text-[13px] font-bold">{place.rating.toFixed(1)}</span>
+            <span className="font-pixel text-[12px] pixel-crisp">{place.rating.toFixed(1)}</span>
           </>
         ) : (
           <span className="text-[12px] text-muted">{place.status === 'WISH' ? t.common.notVisitedYet : t.map.noRating}</span>

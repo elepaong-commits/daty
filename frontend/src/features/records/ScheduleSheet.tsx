@@ -5,9 +5,11 @@ import calendarIcon from '../../assets/icons/calendar.svg'
 import clockOutlineIcon from '../../assets/icons/clock-outline.svg'
 import clockIcon from '../../assets/icons/clock.svg'
 import { BottomSheet } from '../../components/BottomSheet'
+import { PixelSprite } from '../../components/PixelSprite'
 import { Chip, Field, inputClass } from '../../components/Field'
 import { MemoInput, MemoText } from '../../components/Memo'
-import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
+import { FORM_CATEGORY_ORDER } from '../../lib/categories'
+import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { errorMessage } from '../../lib/api'
 import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
 import { decodeMemo, encodeMemo } from '../../lib/memo'
@@ -201,10 +203,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.placeCategory}</span>
             <div className="flex flex-wrap gap-2">
               {FORM_CATEGORY_ORDER.map((value) => {
-                const c = categoryOf(value)
                 return (
                   <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                    <c.Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
+                    <PixelSprite name={CATEGORY_SPRITES[value]} scale={2} /> {t.categories[value]}
                   </Chip>
                 )
               })}

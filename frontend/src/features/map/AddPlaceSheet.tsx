@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { BottomSheet } from '../../components/BottomSheet'
+import { PixelSprite } from '../../components/PixelSprite'
 import { Chip } from '../../components/Field'
 import { MemoInput } from '../../components/Memo'
 import { errorMessage } from '../../lib/api'
-import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
+import { FORM_CATEGORY_ORDER } from '../../lib/categories'
+import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { useT } from '../../lib/i18n'
 import { encodeMemo } from '../../lib/memo'
 import { useCreatePlace, usePlaces } from '../../lib/queries'
@@ -79,10 +81,9 @@ export function AddPlaceSheet({ onClose, onSaved }: Props) {
           <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.placeCategory}</span>
           <div className="flex flex-wrap gap-2">
             {FORM_CATEGORY_ORDER.map((value) => {
-              const { Icon } = categoryOf(value)
               return (
                 <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                  <Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
+                  <PixelSprite name={CATEGORY_SPRITES[value]} scale={2} /> {t.categories[value]}
                 </Chip>
               )
             })}

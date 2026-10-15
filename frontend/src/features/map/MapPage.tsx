@@ -1,13 +1,12 @@
-import { Check, Heart } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router'
-import plusIcon from '../../assets/icons/plus.svg'
-import searchIcon from '../../assets/icons/search.svg'
 import { Chip, QueryState } from '../../components/Field'
+import { PixelSprite } from '../../components/PixelSprite'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { CATEGORIES } from '../../lib/categories'
 import { daysTogether } from '../../lib/dates'
+import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { useMe, usePlaces } from '../../lib/queries'
 import type { Place, PlaceCategory, PlaceStatus } from '../../lib/types'
 import { AddPlaceSheet } from './AddPlaceSheet'
@@ -98,19 +97,19 @@ export function MapPage() {
               setSearchOpen((open) => !open)
               setQuery('')
             }}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white lg:hidden"
+            className="flex size-9 shrink-0 items-center justify-center bg-white pixel-btn pixel-thin lg:hidden"
             aria-label={t.map.search}
             aria-expanded={searchOpen}
           >
-            <img src={searchIcon} alt="" width={18} height={18} />
+            <PixelSprite name="search" scale={2} />
           </button>
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-strong"
+            className="flex size-9 shrink-0 items-center justify-center bg-brand pixel-btn pixel-thin hover:bg-brand-strong"
             aria-label={t.map.addWish}
           >
-            <img src={plusIcon} alt="" width={20} height={20} />
+            <PixelSprite name="plus" scale={2} />
           </button>
         </div>
       }
@@ -122,7 +121,7 @@ export function MapPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t.map.searchPlaceholder}
-          className="mt-3 h-10 w-full rounded-xl border border-sand bg-white px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11"
+          className="mt-3.5 h-10 w-full bg-white px-3 font-pixel text-[12px] outline-none pixel-field pixel-crisp placeholder:text-faint"
         />
       )}
     </ScreenHeader>
@@ -130,7 +129,7 @@ export function MapPage() {
 
   const filters = (
     <>
-      <div className="mx-5 flex h-12 shrink-0 rounded-2xl bg-white p-1" role="tablist">
+      <div className="mx-5 flex shrink-0 gap-3" role="tablist">
         {(['VISITED', 'WISH'] as const).map((value) => (
           <button
             key={value}
@@ -138,21 +137,22 @@ export function MapPage() {
             role="tab"
             aria-selected={status === value}
             onClick={() => changeStatus(value)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl text-[14px] leading-normal font-semibold ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
+            className={`flex h-10 flex-1 items-center justify-center gap-1.5 font-pixel text-[12px] pixel-btn pixel-crisp ${
+              status === value ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-white text-ink hover:bg-sand-soft'
+            }`}
           >
-            {value === 'VISITED' ? <Check size={15} strokeWidth={1.75} /> : <Heart size={15} strokeWidth={1.75} />}
             {t.map.tab[value](counts[value])}
           </button>
         ))}
       </div>
 
-      <div className="scrollbar-none flex shrink-0 gap-2 overflow-x-auto px-5 py-3 lg:flex-wrap lg:overflow-visible">
-        <Chip selected={category === null} onClick={() => setCategory(null)} borderClass="border-sand">
+      <div className="scrollbar-none flex shrink-0 gap-2.5 overflow-x-auto px-5 pt-5 pb-3 lg:flex-wrap lg:overflow-visible">
+        <Chip selected={category === null} onClick={() => setCategory(null)}>
           {t.map.all}
         </Chip>
         {CATEGORIES.map((c) => (
-          <Chip key={c.value} selected={category === c.value} onClick={() => setCategory(c.value)} borderClass="border-sand">
-            <c.Icon size={14} strokeWidth={1.75} /> {t.categories[c.value]}
+          <Chip key={c.value} selected={category === c.value} onClick={() => setCategory(c.value)}>
+            <PixelSprite name={CATEGORY_SPRITES[c.value]} scale={2} /> {t.categories[c.value]}
           </Chip>
         ))}
       </div>
@@ -169,7 +169,7 @@ export function MapPage() {
   if (isDesktop) {
     return (
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-[400px] shrink-0 flex-col border-r border-sand">
+        <div className="flex w-[400px] shrink-0 flex-col border-r-3 border-ink">
           {detailMatch ? (
             <Outlet />
           ) : (
@@ -198,7 +198,7 @@ export function MapPage() {
       <div className="relative min-h-0 flex-1">
         {map}
         {isLoading || error ? (
-          <div className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-white shadow-sheet">
+          <div className="absolute inset-x-0 bottom-0 border-t-3 border-ink bg-white">
             <QueryState isLoading={isLoading} error={error} />
           </div>
         ) : (

@@ -75,8 +75,8 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-brand font-display text-white ${
-        size === 'sm' ? 'size-7 text-[13px]' : 'size-11 text-[18px]'
+      className={`flex shrink-0 items-center justify-center bg-brand font-pixel text-white pixel-outline pixel-thin pixel-crisp ${
+        size === 'sm' ? 'size-6 text-[12px]' : 'size-11 text-[24px]'
       }`}
       aria-hidden="true"
     >

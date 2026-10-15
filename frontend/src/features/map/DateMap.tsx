@@ -1,13 +1,9 @@
-import { Minus, Plus } from 'lucide-react'
 import { AdvancedMarker, Map, useMap } from '@vis.gl/react-google-maps'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Supercluster from 'supercluster'
-import dotVisited from '../../assets/icons/dot-visited.svg'
-import dotWish from '../../assets/icons/dot-wish.svg'
-import locateIcon from '../../assets/icons/locate.svg'
-import selectedHalo from '../../assets/icons/selected-halo.svg'
-import { categoryOf } from '../../lib/categories'
+import { PixelSprite } from '../../components/PixelSprite'
 import { MAP_ID, MAPS_API_KEY } from '../../lib/maps'
+import { CATEGORY_SPRITES } from '../../lib/sprites'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
@@ -150,13 +146,13 @@ function Pins({ places, activeStatus, selectedId, onSelect }: Props) {
   ]
 }
 
-/** Round count bubble for merged pins, coloured like the active tab's pins. */
+/** Square count block for merged pins, coloured like the active tab's pins. */
 function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
-  const size = count < 10 ? 38 : count < 100 ? 44 : 50
+  const size = count < 10 ? 32 : count < 100 ? 38 : 44
   return (
     <div
-      className={`flex items-center justify-center rounded-full font-display text-[15px] leading-none shadow-md ${
-        status === 'VISITED' ? 'border-3 border-white bg-brand text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
+      className={`flex items-center justify-center font-pixel-head text-[15px] leading-none pixel-box pixel-crisp ${
+        status === 'VISITED' ? 'bg-brand text-white' : 'bg-coral-soft text-coral-strong [--pixel-border:var(--color-coral-strong)]'
       }`}
       style={{ width: size, height: size, transform: 'translateY(50%)' }}
     >
@@ -165,24 +161,19 @@ function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
   )
 }
 
-/** Teardrop pin from the design: a square with three rounded corners, rotated so the sharp corner points down. */
+/** Pixel map pin in the status colour with the category drawn inside; the selected one is bigger, hops and shows its name. */
 function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; selected: boolean }) {
-  const size = selected ? 41.5 : 34
-  const visited = place.status === 'VISITED'
-  const { Icon } = categoryOf(place.category)
+  const scale = selected ? 4 : 3
+  const color = place.status === 'VISITED' ? 'var(--color-brand)' : 'var(--color-coral)'
   return (
-    <div className={`relative ${dimmed ? 'opacity-32' : ''}`} style={{ width: size, height: size, marginBottom: size * 0.21 }}>
-      {selected && <img src={selectedHalo} alt="" width={53.5} height={53.5} className="absolute -top-1.5 -left-1.5 max-w-none" />}
-      <div
-        className={`absolute inset-0 -rotate-45 rounded-t-full rounded-br-full ${
-          visited ? 'border-3 border-white bg-brand' : 'border-2 border-coral bg-coral-soft'
-        }`}
-      />
-      <span className={`absolute inset-0 flex items-center justify-center ${visited ? 'text-white' : 'text-coral-strong'}`}>
-        <Icon size={selected ? 18 : 15} strokeWidth={2} />
+    <div className={`relative ${dimmed ? 'opacity-35' : ''} ${selected ? 'motion-safe:animate-pixel-bob' : ''}`}>
+      <PixelSprite name="pin" scale={scale} colors={{ x: color }} />
+      {/* The pin's white face spans columns 2–9 and rows 2–8 of the 12×13 sprite. */}
+      <span className="absolute inset-x-0 flex justify-center" style={{ top: scale * 2, height: scale * 7, alignItems: 'center' }}>
+        <PixelSprite name={CATEGORY_SPRITES[place.category]} scale={selected ? 3 : 2} />
       </span>
       {selected && (
-        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
+        <span className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 bg-white px-2 py-1 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-box pixel-thin pixel-crisp">
           {place.name}
         </span>
       )}
@@ -199,29 +190,29 @@ function MapControls() {
 
   return (
     <>
-      <div className="absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold">
-        <span className="flex items-center gap-1">
-          <img src={dotVisited} alt="" width={10} height={10} /> {t.status.VISITED}
+      <div className="absolute top-3.5 left-3.5 flex gap-3 bg-white px-2.5 py-1 font-pixel text-[11px] leading-normal pixel-box pixel-thin pixel-crisp lg:top-5 lg:left-5">
+        <span className="flex items-center gap-1.5">
+          <span className="size-2 bg-brand" /> {t.status.VISITED}
         </span>
-        <span className="flex items-center gap-1">
-          <img src={dotWish} alt="" width={10} height={10} /> {t.status.WISH}
+        <span className="flex items-center gap-1.5">
+          <span className="size-2 bg-coral" /> {t.status.WISH}
         </span>
       </div>
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white lg:top-4 lg:right-4 lg:shadow-card">
-        <button type="button" onClick={() => zoom(1)} className="flex size-9 items-center justify-center" aria-label={t.map.zoomIn}>
-          <Plus size={18} strokeWidth={1.75} />
+      <div className="absolute top-3.5 right-3.5 flex flex-col gap-3 lg:top-5 lg:right-5">
+        <button type="button" onClick={() => zoom(1)} className="flex size-8 items-center justify-center bg-white pixel-btn pixel-thin" aria-label={t.map.zoomIn}>
+          <PixelSprite name="plus" scale={2} />
         </button>
-        <button type="button" onClick={() => zoom(-1)} className="flex size-9 items-center justify-center" aria-label={t.map.zoomOut}>
-          <Minus size={18} strokeWidth={1.75} />
+        <button type="button" onClick={() => zoom(-1)} className="flex size-8 items-center justify-center bg-white pixel-btn pixel-thin" aria-label={t.map.zoomOut}>
+          <PixelSprite name="minus" scale={2} />
         </button>
       </div>
       <button
         type="button"
         onClick={locate}
-        className="absolute right-3 bottom-[250px] flex size-10 lg:right-4 lg:bottom-5 lg:size-11 lg:shadow-card items-center justify-center rounded-full bg-white"
+        className="absolute right-3.5 bottom-[254px] flex size-9 items-center justify-center bg-white pixel-btn pixel-thin lg:right-5 lg:bottom-6"
         aria-label={t.map.locate}
       >
-        <img src={locateIcon} alt="" width={18} height={18} />
+        <PixelSprite name="locate" scale={2} />
       </button>
     </>
   )

@@ -18,20 +18,18 @@ export function Chip({
   selected,
   onClick,
   children,
-  borderClass = 'border-chip-border',
 }: {
   selected: boolean
   onClick: () => void
   children: ReactNode
-  borderClass?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap ${
-        selected ? 'border-brand bg-brand text-white' : `${borderClass} bg-white text-ink`
+      className={`flex h-8 shrink-0 items-center gap-1.5 px-3 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-outline pixel-thin pixel-crisp ${
+        selected ? 'bg-ink text-white' : 'bg-white text-ink [--pixel-border:var(--color-handle)]'
       }`}
     >
       {children}
