@@ -24,8 +24,8 @@ export interface PreparedVideo {
 }
 
 export async function prepareVideo(file: File): Promise<PreparedVideo> {
-  const [frame, takenAt] = await Promise.all([captureFirstFrame(file).catch(() => null), readVideoTakenAt(file)])
-  return { thumbnail: frame?.thumbnail ?? null, durationSec: frame?.durationSec ?? null, takenAt }
+  const [frame, takenAt] = await Promise.all([captureFirstFrame(file), readVideoTakenAt(file)])
+  return { ...frame, takenAt }
 }
 
 async function captureFirstFrame(file: File) {
@@ -34,13 +34,20 @@ async function captureFirstFrame(file: File) {
   video.muted = true
   video.playsInline = true
   video.preload = 'auto'
+  let durationSec: number | null = null
   try {
     video.src = url
-    await waitFor(video, 'loadeddata')
-    const durationSec = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null
+    // iOS Safari treats preload as "metadata" and never fires loadeddata on its own, so start from metadata.
+    await waitFor(video, 'loadedmetadata')
+    durationSec = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null
     // Frame 0 is often black (fade-in) and iOS doesn't paint it until a seek, so step in a little.
     video.currentTime = Math.min(0.5, (durationSec ?? 0) / 2)
     await waitFor(video, 'seeked')
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      // iOS can finish the seek without decoding a frame; a muted play makes it paint one.
+      await video.play()
+      video.pause()
+    }
     const scale = Math.min(1, THUMBNAIL_EDGE / Math.max(video.videoWidth, video.videoHeight))
     const canvas = document.createElement('canvas')
     canvas.width = Math.round(video.videoWidth * scale)
@@ -48,6 +55,9 @@ async function captureFirstFrame(file: File) {
     canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
     const thumbnail = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', THUMBNAIL_QUALITY))
     return { thumbnail, durationSec }
+  } catch {
+    // Keep the length if only the frame failed.
+    return { thumbnail: null, durationSec }
   } finally {
     video.removeAttribute('src')
     video.load()
@@ -55,7 +65,7 @@ async function captureFirstFrame(file: File) {
   }
 }
 
-function waitFor(video: HTMLVideoElement, event: 'loadeddata' | 'seeked') {
+function waitFor(video: HTMLVideoElement, event: 'loadedmetadata' | 'seeked') {
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => done(new Error('timeout')), LOAD_TIMEOUT_MS)
     const onEvent = () => done()
