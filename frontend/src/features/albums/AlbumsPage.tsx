@@ -26,7 +26,6 @@ export function AlbumsPage() {
     if (location.state) navigate('.', { replace: true, state: null })
   }, [location.state, navigate])
   const photoTotal = albums.reduce((sum, a) => sum + a.photoCount, 0)
-  const [featured, ...rest] = albums
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -53,22 +52,16 @@ export function AlbumsPage() {
 
         <div className="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-5 lg:pb-12">
           <QueryState isLoading={isLoading} error={error} />
-          {/* Phones: the latest album full width, then two columns. Desktop: one grid with the latest album at 2×2. */}
           {!isLoading && !error && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">
-              {featured && (
-                <div className={`col-span-2 lg:row-span-2 ${RISE_IN}`}>
-                  <AlbumCard album={featured} size="large" />
-                </div>
-              )}
-              {rest.map((album, i) => (
-                <AlbumCard key={album.id} album={album} size="small" className={RISE_IN} style={riseDelay(i + 1)} />
+              {albums.map((album, i) => (
+                <AlbumCard key={album.id} album={album} className={RISE_IN} style={riseDelay(i)} />
               ))}
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                style={riseDelay(rest.length + 1)}
-                className={`flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft lg:max-h-[240px] ${RISE_IN}`}
+                style={riseDelay(albums.length)}
+                className={`flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft ui-box-thin retro:m-0.5 retro:bg-cream retro:bg-[repeating-linear-gradient(45deg,transparent_0_6px,rgb(0_168_150/0.07)_6px_12px)] retro:hover:bg-brand-soft ${RISE_IN}`}
               >
                 <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white retro:size-10 retro:pixel-outline retro:pixel-thin">
                   {retro ? <PixelSprite name="plus" scale={3} /> : '+'}
