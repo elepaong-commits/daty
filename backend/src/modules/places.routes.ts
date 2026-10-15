@@ -97,7 +97,7 @@ placesRouter.post("/", async (req, res) => {
   }
 });
 
-// Detail screen: the place, its latest visit, its memos, and the albums its visits were saved in.
+// Detail screen: the place, its visits (newest first), its memos, and the albums its visits were saved in.
 placesRouter.get("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
   const place = await prisma.place.findFirstOrThrow({
@@ -135,6 +135,7 @@ placesRouter.get("/:id", async (req, res) => {
     ...serializePlace(place),
     notes: place.notes,
     latestVisit: latest ? { recordId: latest.id, scheduledAt: latest.scheduledAt, rating: latest.rating } : null,
+    visits: place.records.map((r) => ({ recordId: r.id, scheduledAt: r.scheduledAt, rating: r.rating })),
     albums: await Promise.all(
       albums.map(async ({ _count, albumDate, photos, ...album }) => {
         const cover = [...photos, ...covers].find((p) => p.id === album.coverPhotoId) ?? photos[0];

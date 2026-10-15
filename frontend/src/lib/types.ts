@@ -134,6 +134,7 @@ export interface CreateAlbumInput {
 export interface PlaceDetail extends Place {
   notes: PlaceNote[] // newest first
   latestVisit: { recordId: number; scheduledAt: string; rating: number | null } | null
+  visits: { recordId: number; scheduledAt: string; rating: number | null }[] // newest first
   albums: {
     id: number
     title: string
