@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { BottomSheet } from '../../components/BottomSheet'
+import { CategoryIcon } from '../../components/CategoryIcon'
 import { Chip } from '../../components/Field'
 import { MemoInput } from '../../components/Memo'
 import { errorMessage } from '../../lib/api'
-import { categoryOf, FORM_CATEGORY_ORDER } from '../../lib/categories'
+import { FORM_CATEGORY_ORDER } from '../../lib/categories'
 import { useT } from '../../lib/i18n'
 import { encodeMemo } from '../../lib/memo'
 import { useCreatePlace, usePlaces } from '../../lib/queries'
@@ -79,10 +80,9 @@ export function AddPlaceSheet({ onClose, onSaved }: Props) {
           <span className="text-[12px] leading-normal font-semibold text-muted">{t.common.placeCategory}</span>
           <div className="flex flex-wrap gap-2">
             {FORM_CATEGORY_ORDER.map((value) => {
-              const { Icon } = categoryOf(value)
               return (
                 <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                  <Icon size={14} strokeWidth={1.75} /> {t.categories[value]}
+                  <CategoryIcon category={value} /> {t.categories[value]}
                 </Chip>
               )
             })}
@@ -108,7 +108,7 @@ export function AddPlaceSheet({ onClose, onSaved }: Props) {
           <button
             type="submit"
             disabled={!canSave}
-            className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+            className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
           >
             {createPlace.isPending ? t.common.saving : t.addPlace.save}
           </button>

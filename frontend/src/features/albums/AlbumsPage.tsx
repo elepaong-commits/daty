@@ -3,15 +3,18 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
 import { QueryState } from '../../components/Field'
+import { PixelSprite } from '../../components/PixelSprite'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbums } from '../../lib/queries'
 import { AlbumCard } from './AlbumCard'
 import { CreateAlbumSheet, type NewAlbumDraft } from './CreateAlbumSheet'
 import { useT } from '../../lib/i18n'
+import { useIsRetro } from '../../lib/theme'
 
 export function AlbumsPage() {
   const t = useT()
+  const retro = useIsRetro()
   const { data: albums = [], isLoading, error } = useAlbums()
   // A date finished on the calendar arrives with its album already filled in.
   const location = useLocation()
@@ -36,9 +39,10 @@ export function AlbumsPage() {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong"
+              className="ui-btn-thin flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong retro:h-9 retro:px-3 retro:text-[12px]"
             >
-              <img src={plusIcon} alt="" width={16} height={16} />{t.albums.newAlbum}
+              {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={16} height={16} />}
+              {t.albums.newAlbum}
             </button>
           }
         >
@@ -66,7 +70,9 @@ export function AlbumsPage() {
                 style={riseDelay(rest.length + 1)}
                 className={`flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft lg:max-h-[240px] ${RISE_IN}`}
               >
-                <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white">+</span>
+                <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white retro:size-10 retro:pixel-outline retro:pixel-thin">
+                  {retro ? <PixelSprite name="plus" scale={3} /> : '+'}
+                </span>
                 <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>
                 <span className="text-center text-[11px] leading-[1.375] text-muted">
                   {t.albums.createCardHint[0]}

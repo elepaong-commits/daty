@@ -65,7 +65,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
       <button
         type="submit"
         disabled={!canSubmit || reset.isPending}
-        className="mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+        className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
       >
         {reset.isPending ? t.common.wait : t.auth.resetSubmit}
       </button>

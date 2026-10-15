@@ -169,11 +169,11 @@ export function AlbumDetailPage() {
         </div>
 
         {album.highlightNote && (
-          <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
+          <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3 retro:mx-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
             <span className="flex items-center gap-1 text-[12px] font-bold text-amber-strong">
               <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
             </span>
-            <p className="text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
+            <p className="ui-prose text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
           </div>
         )}
 
@@ -197,7 +197,7 @@ export function AlbumDetailPage() {
               <button
                 type="button"
                 onClick={toggleSelecting}
-                className="h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand"
+                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand retro:text-brand-strong"
               >
                 {selecting ? t.albums.done : t.albums.select}
               </button>
@@ -206,7 +206,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={uploadPhotos.isPending || selecting}
-              className="h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+              className="ui-btn-thin h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
             >
               {uploadPhotos.progress
                 ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total, uploadPhotos.progress.percent)
@@ -222,7 +222,7 @@ export function AlbumDetailPage() {
         )}
 
         {album.photos.length > 0 && (
-          <div className="flex h-10 shrink-0 rounded-2xl bg-white p-1" role="tablist">
+          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-white p-1 retro:mt-1" role="tablist">
             {FILTERS.map((value) => (
               <button
                 key={value}
@@ -233,7 +233,9 @@ export function AlbumDetailPage() {
                   setFilter(value)
                   setSelected(new Set()) // don't keep hidden items selected for deletion
                 }}
-                className={`flex-1 rounded-xl text-[13px] leading-normal font-semibold ${filter === value ? 'bg-brand text-white' : 'text-ink'}`}
+                className={`ui-seg-option flex-1 rounded-xl text-[13px] leading-normal font-semibold retro:text-[12px] ${
+                  filter === value ? 'bg-brand text-white' : 'text-ink'
+                }`}
               >
                 {t.albums.filter[value](counts[value])}
               </button>
@@ -249,7 +251,7 @@ export function AlbumDetailPage() {
                 type="button"
                 aria-pressed={sort === value}
                 onClick={() => changeSort(value)}
-                className={`h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
+                className={`ui-pop h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
               >
                 {t.albums.sort[value]}
               </button>
@@ -267,7 +269,7 @@ export function AlbumDetailPage() {
         )}
 
         {shown.length === 0 ? (
-          <p className="rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
+          <p className="ui-empty rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
             {filter === 'ALL' ? t.albums.empty : t.albums.emptyFilter[filter]}
             <br />
             <span className="text-[11px]">{t.albums.emptyHint}</span>
@@ -316,7 +318,7 @@ export function AlbumDetailPage() {
       </div>
 
       {selecting && (
-        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3 retro:border-t-3 retro:border-ink">
           {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError, t)}</p>}
           {album.coverPhotoId === null && <p className="text-[11px] text-muted">{t.albums.bestCutHint}</p>}
           <div className="flex gap-3">
@@ -324,7 +326,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={toggleBestCut}
               disabled={selected.size !== 1 || updateAlbum.isPending}
-              className="h-11 flex-1 rounded-2xl bg-amber-soft text-[14px] font-semibold text-amber-strong disabled:opacity-40"
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-amber-soft text-[14px] font-semibold text-amber-strong disabled:opacity-40 retro:text-[13px]"
             >
               {selectedIsCover ? t.albums.unsetBestCut : t.albums.makeBestCut}
             </button>
@@ -332,7 +334,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={removeSelected}
               disabled={selected.size === 0 || deletePhotos.isPending}
-              className="h-11 flex-1 rounded-2xl bg-coral-soft text-[14px] font-semibold text-coral-strong disabled:opacity-40"
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-coral-soft text-[14px] font-semibold text-coral-strong disabled:opacity-40 retro:text-[13px]"
             >
               {t.albums.delete}
               {selected.size > 0 && ` (${selected.size})`}

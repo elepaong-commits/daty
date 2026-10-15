@@ -7,14 +7,16 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { Sidebar } from './components/Sidebar'
 import { I18nProvider } from './components/I18nProvider'
 import { MotionProvider } from './components/MotionProvider'
+import { ThemeProvider } from './components/ThemeProvider'
 import { QueryState } from './components/Field'
 import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
-import { screenEnter } from './lib/motion'
+import { useMotionPreset } from './lib/motion'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
+import { useTheme } from './lib/theme'
 
 // The map (and the place column inside it) is the home screen and loads up front; the other
 // screens, and login/setup that a signed-in user never sees, load when first opened.
@@ -23,6 +25,7 @@ const CoupleSetupPage = lazy(() => import('./features/auth/CoupleSetupPage').the
 const CalendarPage = lazy(() => import('./features/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })))
 const AlbumsPage = lazy(() => import('./features/albums/AlbumsPage').then((m) => ({ default: m.AlbumsPage })))
 const AlbumDetailPage = lazy(() => import('./features/albums/AlbumDetailPage').then((m) => ({ default: m.AlbumDetailPage })))
+const ThemePickerPage = lazy(() => import('./features/theme/ThemePickerPage').then((m) => ({ default: m.ThemePickerPage })))
 const PlaceEditPage = lazy(() => import('./features/places/PlaceEditPage').then((m) => ({ default: m.PlaceEditPage })))
 
 // An expired session on any screen sends the user back to login; a lost couple back to setup.
@@ -66,9 +69,10 @@ function Frame({ children, wide = false }: { children: ReactNode; wide?: boolean
 function Screen() {
   const { pathname } = useLocation()
   const isDesktop = useIsDesktop()
+  const { screen } = useMotionPreset()
   const key = isDesktop && /^\/(places\/[^/]+)?$/.test(pathname) ? '/' : pathname
   return (
-    <m.div key={key} {...screenEnter} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <m.div key={key} {...screen} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <Outlet />
     </m.div>
   )
@@ -123,18 +127,33 @@ function AuthGate() {
   )
 }
 
+/** A device that hasn't picked a design yet starts on the design picker, before login. */
+function ThemeGate({ children }: { children: ReactNode }) {
+  const { chosen } = useTheme()
+  if (chosen) return children
+  return (
+    <Suspense fallback={null}>
+      <ThemePickerPage />
+    </Suspense>
+  )
+}
+
 export default function App() {
   return (
     <I18nProvider>
-      <QueryClientProvider client={queryClient}>
-        <MotionProvider>
-          <BrowserRouter>
-            <ErrorBoundary>
-              <AuthGate />
-            </ErrorBoundary>
-          </BrowserRouter>
-        </MotionProvider>
-      </QueryClientProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <MotionProvider>
+            <BrowserRouter>
+              <ErrorBoundary>
+                <ThemeGate>
+                  <AuthGate />
+                </ThemeGate>
+              </ErrorBoundary>
+            </BrowserRouter>
+          </MotionProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </I18nProvider>
   )
 }

@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react'
 import { useState } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
+import { ThemeToggle } from '../../components/SettingToggles'
 import { useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { ChangePassword, PartnerResetCode } from './PasswordSettings'
@@ -55,6 +56,11 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
+          <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
+          <ThemeToggle />
+        </div>
+
         <ProfileSettings me={me} />
         <ChangePassword />
         {partner && <PartnerResetCode partnerName={partner.nickname} />}
@@ -75,7 +81,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-brand font-display text-white ${
+      className={`flex shrink-0 items-center justify-center rounded-full bg-brand font-display text-white retro:rounded-none retro:font-pixel retro:pixel-outline retro:pixel-thin retro:pixel-crisp ${
         size === 'sm' ? 'size-7 text-[13px]' : 'size-11 text-[18px]'
       }`}
       aria-hidden="true"

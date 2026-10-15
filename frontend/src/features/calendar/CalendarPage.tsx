@@ -6,6 +6,7 @@ import chevronRight from '../../assets/icons/chevron-right.svg'
 import markerPlan from '../../assets/icons/marker-plan.svg'
 import markerRecord from '../../assets/icons/marker-record.svg'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { PixelSprite } from '../../components/PixelSprite'
 import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
@@ -17,12 +18,14 @@ import { ScheduleSheet } from '../records/ScheduleSheet'
 import { DayTimeline } from './DayTimeline'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
+import { useIsRetro } from '../../lib/theme'
 
 const MAX_BARS = 2
 const MAX_BARS_DESKTOP = 3
 
 export function CalendarPage() {
   const t = useT()
+  const retro = useIsRetro()
   const today = startOfDay(new Date())
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
@@ -86,14 +89,14 @@ export function CalendarPage() {
           title={t.dates.yearMonth(month)}
           actions={
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => goToMonth(today)} className="h-9 rounded-full bg-white px-3 text-[12px] font-semibold">
+              <button type="button" onClick={() => goToMonth(today)} className="ui-btn-thin h-9 rounded-full bg-white px-3 text-[12px] font-semibold retro:mr-1.5 retro:font-normal">
                 {t.calendar.today}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label={t.calendar.prevMonth}>
-                <img src={chevronLeft} alt="" width={16} height={16} />
+              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="ui-icon-button size-9 bg-white retro:mr-1.5" aria-label={t.calendar.prevMonth}>
+                {retro ? <PixelSprite name="left" scale={2} /> : <img src={chevronLeft} alt="" width={16} height={16} />}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="flex size-9 items-center justify-center rounded-full bg-white" aria-label={t.calendar.nextMonth}>
-                <img src={chevronRight} alt="" width={16} height={16} />
+              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="ui-icon-button size-9 bg-white" aria-label={t.calendar.nextMonth}>
+                {retro ? <PixelSprite name="right" scale={2} /> : <img src={chevronRight} alt="" width={16} height={16} />}
               </button>
             </div>
           }
@@ -101,13 +104,13 @@ export function CalendarPage() {
 
         {/* The day panel sits beside the month from xl; below it on narrower desktops so the cells keep their width. */}
         <div className="lg:px-5 xl:flex xl:items-start xl:gap-6">
-        <section className="mx-4 rounded-3xl bg-white p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
+        <section className="ui-box mx-4 rounded-3xl bg-white p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
-              <img src={markerRecord} alt="" width={8} height={8} /> {t.calendar.legendRecord}
+              {retro ? <span className="size-2 bg-brand" /> : <img src={markerRecord} alt="" width={8} height={8} />} {t.calendar.legendRecord}
             </span>
             <span className="flex items-center gap-1.5 font-semibold">
-              <img src={markerPlan} alt="" width={8} height={8} /> {t.calendar.legendPlan}
+              {retro ? <span className="size-2 border-2 border-coral" /> : <img src={markerPlan} alt="" width={8} height={8} />} {t.calendar.legendPlan}
             </span>
             <span className="flex-1 text-right font-medium text-muted">
               {t.calendar.summary(recordCount, planCount)}
@@ -141,7 +144,7 @@ export function CalendarPage() {
           </div>
         </section>
 
-        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-white lg:p-5 lg:shadow-card xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
+        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-white lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
@@ -155,10 +158,10 @@ export function CalendarPage() {
       <button
         type="button"
         onClick={() => setSheetOpen(true)}
-        className="absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta lg:hidden"
+        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
       >
-        <span className="text-[24px] leading-none">+</span>
-        <span className="text-[16px] font-semibold">{t.calendar.addSchedule}</span>
+        {retro ? <PixelSprite name="plus" scale={2} /> : <span className="text-[24px] leading-none">+</span>}
+        <span className="text-[16px] font-semibold retro:text-[13px]">{t.calendar.addSchedule}</span>
       </button>
 
       <AnimatePresence>
@@ -250,7 +253,7 @@ function DayCell({
       disabled={!inMonth}
       aria-pressed={isSelected}
       aria-label={t.calendar.dayLabel(t.dates.monthDay(day), records.length)}
-      className={`flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
+      className={`ui-pop flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
         isSelected ? 'bg-brand-soft lg:border-brand' : 'lg:border-card-border'
       } ${inMonth && !isSelected ? 'lg:hover:bg-cream' : ''}`}
     >

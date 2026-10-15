@@ -2,7 +2,9 @@ import { X } from 'lucide-react'
 import { m, useDragControls, useIsPresent, type PanInfo } from 'motion/react'
 import { useEffect, type PointerEvent, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
-import { backdropMotion, enterSpring, exitTween } from '../lib/motion'
+import { useMotionPreset } from '../lib/motion'
+import { useIsRetro } from '../lib/theme'
+import { PixelSprite } from './PixelSprite'
 import { useIsDesktop } from '../lib/useIsDesktop'
 
 interface Props {
@@ -25,6 +27,8 @@ export function BottomSheet({ title, onClose, children }: Props) {
   const isDesktop = useIsDesktop()
   const isPresent = useIsPresent()
   const dragControls = useDragControls()
+  const motion = useMotionPreset()
+  const retro = useIsRetro()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -40,17 +44,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
     if (info.offset.y > CLOSE_DISTANCE || info.velocity.y > CLOSE_VELOCITY) onClose()
   }
 
-  const panel = isDesktop
-    ? {
-        initial: { opacity: 0, scale: 0.96, y: 12 },
-        animate: { opacity: 1, scale: 1, y: 0, transition: enterSpring },
-        exit: { opacity: 0, scale: 0.97, y: 8, transition: exitTween },
-      }
-    : {
-        initial: { y: '100%' },
-        animate: { y: 0, transition: enterSpring },
-        exit: { y: '100%', transition: { ...exitTween, duration: 0.24 } },
-      }
+  const panel = isDesktop ? motion.dialog : motion.sheet
 
   return (
     <div
@@ -61,7 +55,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
       aria-modal="true"
       aria-label={title}
     >
-      <m.div className="absolute inset-0 bg-ink/42" onClick={onClose} {...backdropMotion} />
+      <m.div className="ui-backdrop absolute inset-0" onClick={onClose} {...motion.backdrop} />
       <m.div
         {...panel}
         drag={isDesktop ? false : 'y'}
@@ -70,25 +64,26 @@ export function BottomSheet({ title, onClose, children }: Props) {
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0.04, bottom: 1 }}
         onDragEnd={endDrag}
-        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card"
+        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] retro:border-t-3 retro:border-ink lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card lg:retro:border-t-0 lg:retro:pixel-box"
       >
         <div onPointerDown={startDrag} className="touch-none lg:touch-auto">
           <div className="flex justify-center pb-2 lg:hidden">
             <div className="h-1.5 w-10 rounded-full bg-handle" />
           </div>
           <div className="flex items-center justify-between pb-4">
-            <h2 className="font-display text-[20px] leading-normal lg:text-[24px]">{title}</h2>
+            <h2 className="font-display text-[20px] leading-normal lg:text-[24px] retro:text-[15px] retro:pixel-crisp lg:retro:text-[15px]">{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="flex size-8 items-center justify-center rounded-full bg-sand-soft"
+              className="ui-btn-thin flex size-8 items-center justify-center rounded-full bg-sand-soft retro:size-7 retro:bg-white"
               aria-label={t.common.close}
             >
-              <X size={16} strokeWidth={1.75} />
+              {retro ? <PixelSprite name="close" scale={2} /> : <X size={16} strokeWidth={1.75} />}
             </button>
           </div>
         </div>
-        <div className="scrollbar-none -mx-5 overflow-y-auto px-5 lg:-mx-7 lg:px-7">{children}</div>
+        {/* A little room at the top so pixel outlines of the first fields aren't cut off. */}
+        <div className="scrollbar-none -mx-5 overflow-y-auto px-5 retro:pt-1 lg:-mx-7 lg:px-7">{children}</div>
       </m.div>
     </div>
   )

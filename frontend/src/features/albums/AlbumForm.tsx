@@ -159,7 +159,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       <button
         type="submit"
         disabled={!canSave}
-        className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+        className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
       >
         {isPending ? t.common.saving : submitLabel}
       </button>

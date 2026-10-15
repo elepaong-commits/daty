@@ -1,7 +1,7 @@
 import { Heart, MapPin } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/ScreenHeader'
+import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { useLogin, useSignup } from '../../lib/queries'
@@ -112,7 +112,7 @@ export function AuthPage() {
             <button
               type="submit"
               disabled={!canSubmit || active.isPending}
-              className="mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+              className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
             >
               {active.isPending ? t.common.wait : mode === 'login' ? t.auth.login : t.auth.signupSubmit}
             </button>

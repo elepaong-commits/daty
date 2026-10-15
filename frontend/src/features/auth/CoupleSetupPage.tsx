@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/ScreenHeader'
+import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { toDateInput } from '../../lib/dates'
 import { useCreateCouple, useJoinCouple, useLogout, useMe } from '../../lib/queries'
@@ -89,7 +89,7 @@ export function CoupleSetupPage() {
         <button
           type="submit"
           disabled={!canSubmit || active.isPending}
-          className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+          className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {active.isPending ? t.common.wait : mode === 'create' ? t.couple.create : t.couple.join}
         </button>
