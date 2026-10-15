@@ -118,7 +118,14 @@ export function AlbumDetailPage() {
       eyebrow={t.albums.detailEyebrow}
       title={t.albums.detailTitle}
       fallback="/albums"
-      action={album && <HeaderAction onClick={() => setEditing(true)}>{t.common.edit}</HeaderAction>}
+      action={
+        album && (
+          // Desktop puts the edit button in the album card instead.
+          <div className="lg:hidden">
+            <HeaderAction onClick={() => setEditing(true)}>{t.common.edit}</HeaderAction>
+          </div>
+        )
+      }
     />
   )
 
@@ -145,50 +152,57 @@ export function AlbumDetailPage() {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
       {header}
-      {/* Desktop: album info in a sticky left column, photos on the right. */}
-      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:flex-row lg:items-start lg:gap-8 lg:pb-10">
-        <div className="flex flex-col gap-3 lg:sticky lg:top-0 lg:w-[260px] lg:shrink-0 xl:w-[320px]">
-        <div className="flex flex-col gap-[5px]">
-          <h2 className="font-display text-[20px] leading-[1.38] lg:text-[26px]">
-            {formatSlashDay(date)} · {album.title}
-          </h2>
-          <p className="text-[12px] leading-normal text-muted">
-            {formatDotted(date)} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
-          </p>
-          {album.places.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
-              {album.places.map((place) => (
-                <span key={place.id} className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-[3px] text-brand-strong">
-                  <MapPin size={12} strokeWidth={1.75} /> {place.name}
+      {/* Album info first (on desktop a wide card with the best cut beside it), then the photos below. */}
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:gap-4 lg:pb-10">
+        <section className="flex gap-6 ui-box retro:m-1 retro:bg-white retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-white lg:p-5">
+          {album.coverPhoto?.thumbnailUrl && (
+            <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline lg:block xl:w-[300px]">
+              <img src={album.coverPhoto.thumbnailUrl} alt={t.albums.bestCut} className="size-full object-cover" />
+              {album.coverPhotoId !== null && (
+                <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
+                  <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                 </span>
-              ))}
-              {/* One place: show where it is. Several: the names are enough. */}
-              {onlyPlace?.address && <span className="rounded-md bg-sand-soft px-2 py-[3px]">{onlyPlace.address}</span>}
+              )}
             </div>
           )}
-        </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-col gap-[5px]">
+              <div className="flex items-start gap-3">
+                <h2 className="min-w-0 flex-1 font-display text-[20px] leading-[1.38] lg:text-[26px]">
+                  {formatSlashDay(date)} · {album.title}
+                </h2>
+                <div className="hidden shrink-0 lg:block">
+                  <HeaderAction onClick={() => setEditing(true)}>{t.albums.editAlbum}</HeaderAction>
+                </div>
+              </div>
+              <p className="text-[12px] leading-normal text-muted">
+                {t.calendar.dayHeading(formatDotted(date), t.weekdays[date.getDay()]!)} · {t.albums.mediaCount(counts.PHOTO, counts.VIDEO)}
+              </p>
+              {album.places.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {album.places.map((place) => (
+                    <span key={place.id} className="ui-badge flex items-center gap-1 py-[3px]">
+                      <MapPin size={12} strokeWidth={1.75} /> {place.name}
+                    </span>
+                  ))}
+                  {/* One place: show where it is. Several: the names are enough. */}
+                  {onlyPlace?.address && <span className="ui-badge bg-sand-soft py-[3px] text-ink retro:bg-amber-soft retro:text-amber-ink">{onlyPlace.address}</span>}
+                </div>
+              )}
+            </div>
 
-        {album.highlightNote && (
-          <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3 retro:mx-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
-            <span className="flex items-center gap-1 text-[12px] font-bold text-amber-strong">
-              <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
-            </span>
-            <p className="ui-prose text-[13px] leading-normal text-amber-ink">{album.highlightNote}</p>
+            {album.highlightNote && (
+              <div className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3 retro:bg-coral-soft retro:px-2.5 retro:py-2">
+                <span className="flex items-center gap-1 text-[12px] font-bold text-amber-strong retro:text-[11px] retro:font-normal retro:text-coral-strong">
+                  <Star size={12} strokeWidth={1.75} className="retro:hidden" /> {t.common.mustSee}
+                </span>
+                <p className="ui-prose text-[13px] leading-normal text-amber-ink retro:text-ink">{album.highlightNote}</p>
+              </div>
+            )}
           </div>
-        )}
+        </section>
 
-        {album.coverPhoto?.thumbnailUrl && (
-          <div className="hidden px-3 py-2 lg:block">
-            <img
-              src={album.coverPhoto.thumbnailUrl}
-              alt={t.albums.bestCut}
-              className="aspect-[4/5] w-full -rotate-2 rounded-2xl border-4 border-white object-cover shadow-photo"
-            />
-          </div>
-        )}
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-3 lg:flex-1">
+        <div className="flex min-w-0 flex-col gap-3 lg:pt-3">
 
         <div className="flex items-center justify-between">
           <h3 className="font-display text-[18px]">{t.albums.moments}</h3>
@@ -221,8 +235,9 @@ export function AlbumDetailPage() {
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}
 
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {album.photos.length > 0 && (
-          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-white p-1 retro:mt-1" role="tablist">
+          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-white p-1 retro:mt-1 lg:w-[380px]" role="tablist">
             {FILTERS.map((value) => (
               <button
                 key={value}
@@ -267,6 +282,7 @@ export function AlbumDetailPage() {
             </button>
           </div>
         )}
+        </div>
 
         {shown.length === 0 ? (
           <p className="ui-empty rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
@@ -275,7 +291,7 @@ export function AlbumDetailPage() {
             <span className="text-[11px]">{t.albums.emptyHint}</span>
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 retro:p-0.5 lg:grid-cols-5 xl:grid-cols-7">
             {shown.map((photo, i) => {
               const isSelected = selected.has(photo.id)
               return (
@@ -286,7 +302,9 @@ export function AlbumDetailPage() {
                   onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
                   style={riseDelay(i)}
-                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft lg:aspect-square lg:h-auto lg:hover:opacity-90 ${RISE_IN} ${isSelected ? 'ring-3 ring-brand ring-offset-1' : ''}`}
+                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline retro:pixel-thin lg:aspect-square lg:h-auto lg:hover:opacity-90 ${RISE_IN} ${
+                    isSelected ? 'ring-3 ring-brand ring-offset-1 retro:z-10 retro:[--pixel-border:var(--color-brand)] retro:[--pixel:3px]' : 'retro:[--pixel-border:var(--color-handle)]'
+                  }`}
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
@@ -296,7 +314,7 @@ export function AlbumDetailPage() {
                     </span>
                   )}
                   {photo.id === album.coverPhotoId && (
-                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong">
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
                       <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                     </span>
                   )}

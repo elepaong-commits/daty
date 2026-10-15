@@ -8,49 +8,47 @@ import type { Album, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
 
-const LAYER_TILTS = ['-rotate-6', 'rotate-5'] as const
+// Classic: two prints tilted under the cover. Pixel: one print set off up and to the right, untilted.
+const LAYERS = [
+  '-rotate-6 retro:rotate-0 retro:translate-x-[5px] retro:-translate-y-1',
+  'rotate-5 retro:hidden',
+] as const
 
-export function AlbumCard({ album, size, className = '', style }: { album: Album; size: 'large' | 'small'; className?: string; style?: CSSProperties }) {
+export function AlbumCard({ album, className = '', style }: { album: Album; className?: string; style?: CSSProperties }) {
   const t = useT()
   const date = parseDateOnly(album.albumDate)
-  const large = size === 'large'
-  // Small cards have room for one place; the rest show as a count.
-  const shownPlaces = large ? album.places : album.places.slice(0, 1)
-  const morePlaces = album.places.length - shownPlaces.length
-  const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
+  // Cards have room for one place; the rest show as a count.
+  const [shownPlace] = album.places
+  const morePlaces = album.places.length - 1
 
   return (
-    <Link to={`/albums/${album.id}`} className={`group flex min-w-0 flex-col gap-2.5 pt-1.5 ${className}`} style={style}>
-      {/* The tilted prints spread further on the big desktop card, so it gets more room around them. */}
-      <div className={large ? 'px-1.5 lg:px-5 lg:py-7' : 'px-1.5'}>
-        <PhotoStack album={album} heightClass={large ? 'h-60 lg:h-[440px]' : 'h-[225px] lg:h-[200px]'} date={formatDotted(date)} />
+    <Link
+      to={`/albums/${album.id}`}
+      className={`group flex min-w-0 flex-col gap-2.5 pt-1.5 ui-box-thin retro:m-0.5 retro:gap-2 retro:bg-white retro:p-2 retro:pt-2.5 ${className}`}
+      style={style}
+    >
+      <div className="px-1.5 retro:pr-2 retro:pl-0">
+        <PhotoStack album={album} date={formatDotted(date)} />
       </div>
       <div className="flex flex-col px-0.5">
-        <h3 className={`font-display leading-[1.375] ${large ? 'text-[20px] lg:text-[22px]' : 'text-[16px]'}`}>
+        <h3 className="font-display text-[16px] leading-[1.375] retro:text-[14px]">
           {formatSlashDay(date)} · {album.title}
         </h3>
-        {shownPlaces.length > 0 && (
+        {shownPlace && (
           <div className="flex flex-wrap gap-1 pt-1">
-            {shownPlaces.map((place) => (
-              <span key={place.id} className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">
-                <MapPin size={12} strokeWidth={1.75} /> {place.name}
-              </span>
-            ))}
-            {morePlaces > 0 && (
-              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong">+{morePlaces}</span>
-            )}
-            {large && onlyPlace?.address && (
-              <span className="rounded-md bg-sand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold">{onlyPlace.address}</span>
-            )}
+            <span className="ui-badge flex min-w-0 items-center gap-1">
+              <MapPin size={12} strokeWidth={1.75} className="shrink-0" /> <span className="truncate">{shownPlace.name}</span>
+            </span>
+            {morePlaces > 0 && <span className="ui-badge">+{morePlaces}</span>}
           </div>
         )}
         {album.highlightNote && (
           <div className="pt-2">
-            <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375] retro:mt-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
-              <span className="flex items-center gap-1 font-bold text-amber-strong">
-                <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
+            <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375] retro:bg-coral-soft retro:px-2 retro:py-1.5 retro:text-[11px]">
+              <span className="flex items-center gap-1 font-bold text-amber-strong retro:font-normal retro:text-coral-strong">
+                <Star size={12} strokeWidth={1.75} className="retro:hidden" /> {t.common.mustSee}
               </span>
-              <span className="ui-prose text-amber-ink">{album.highlightNote}</span>
+              <span className="ui-prose text-amber-ink retro:text-ink">{album.highlightNote}</span>
             </div>
           </div>
         )}
@@ -59,8 +57,9 @@ export function AlbumCard({ album, size, className = '', style }: { album: Album
   )
 }
 
-/** Three tilted layers like a pile of prints. Real photos replace the gradient placeholders once uploaded. */
-function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: string; date: string }) {
+/** A pile of prints. Real photos replace the gradient placeholders once uploaded. */
+function PhotoStack({ album, date }: { album: Album; date: string }) {
+  const t = useT()
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
@@ -71,31 +70,36 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
   const layer = (i: number) => (
     <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} category={i === 0 ? category : null} />
   )
+  const print = 'absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo retro:border-0 retro:bg-white retro:pixel-outline retro:pixel-thin'
 
   return (
-    <div className={`relative w-full transition-transform duration-200 lg:group-hover:-translate-y-1 ${heightClass}`}>
-      {LAYER_TILTS.map((tilt, i) => (
-        <div
-          key={tilt}
-          className={`absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo ${tilt}`}
-          aria-hidden="true"
-        >
+    <div className="relative h-[225px] w-full transition-transform duration-200 lg:h-[200px] lg:group-hover:-translate-y-1 retro:h-[120px] retro:lg:h-[160px]">
+      {LAYERS.map((placement, i) => (
+        <div key={placement} className={`${print} ${placement}`} aria-hidden="true">
           {layer(i + 1)}
         </div>
       ))}
-      <div className="absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo">
+      <div className={print}>
         {layer(0)}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))]" />
-        <span className="absolute top-2 left-2 rounded-lg bg-white/95 px-2 py-1 text-[11px] leading-normal font-bold">{date}</span>
-        <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-ink/70 px-2 py-0.5 text-[11px] leading-normal font-semibold text-white">
-          <Camera size={12} strokeWidth={1.75} /> {album.photoCount - videoCount}
-          {videoCount > 0 && (
-            <>
-              <span className="pl-1">·</span>
-              <Video size={12} strokeWidth={1.75} /> {videoCount}
-            </>
-          )}
-        </span>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))] retro:hidden" />
+        {/* Classic: date top left, counts bottom right. Pixel: both as dark tags along the bottom left. */}
+        <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[10px] retro:leading-[14px]">
+          <span className="rounded-lg bg-white/95 px-2 py-1 font-bold retro:bg-ink/85 retro:px-1 retro:py-0 retro:font-normal retro:text-white">{date}</span>
+          <span className="flex items-center gap-1 self-end rounded-full bg-ink/70 px-2 py-0.5 font-semibold text-white retro:bg-ink/85 retro:px-1 retro:py-0 retro:font-normal">
+            <Camera size={12} strokeWidth={1.75} className="retro:hidden" /> {album.photoCount - videoCount}
+            {videoCount > 0 && (
+              <>
+                <span className="pl-1">·</span>
+                <Video size={12} strokeWidth={1.75} /> {videoCount}
+              </>
+            )}
+          </span>
+        </div>
+        {album.coverPhotoId !== null && (
+          <span className="absolute top-1 right-1 hidden items-center gap-0.5 bg-amber px-1 text-[10px] leading-[14px] text-ink retro:flex">
+            <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
+          </span>
+        )}
       </div>
     </div>
   )
