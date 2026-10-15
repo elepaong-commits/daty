@@ -3,14 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { QueryState } from '../../components/Field'
 import { PhotoTile } from '../../components/PhotoTile'
-import { Stars } from '../../components/Stars'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { categoryOf } from '../../lib/categories'
-import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
+import { formatSlashDay, parseDateOnly } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
 import type { Place } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { PlaceHero } from './PlaceHero'
+import { PlaceVisits } from './PlaceVisits'
 import { PlaceNotes } from './PlaceNotes'
 
 export function PlaceDetailPage() {
@@ -70,25 +70,7 @@ export function PlaceDetailPage() {
           </div>
         </div>
 
-        <div className="ui-box-thin flex gap-4 rounded-2xl bg-white p-3">
-          <div className="flex flex-1 flex-col gap-[3px]">
-            <span className="text-[11px] text-muted">{t.place.visitedDate}</span>
-            <span className="text-[14px] font-semibold">
-              {place.lastVisitedAt ? formatDotted(new Date(place.lastVisitedAt)) : t.common.notVisitedYet}
-            </span>
-          </div>
-          <div className="flex flex-1 flex-col gap-[3px]">
-            <span className="text-[11px] text-muted">{t.common.ourRating}</span>
-            {place.rating !== null ? (
-              <span className="flex items-center gap-2 text-[14px]">
-                <Stars value={place.rating} />
-                <span className="font-semibold">{place.rating.toFixed(1)}</span>
-              </span>
-            ) : (
-              <span className="text-[14px] font-semibold text-muted">-</span>
-            )}
-          </div>
-        </div>
+        <PlaceVisits place={place} />
 
         <PlaceNotes placeId={place.id} notes={place.notes} />
 
