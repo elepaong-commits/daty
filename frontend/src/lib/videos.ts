@@ -4,6 +4,8 @@
 const THUMBNAIL_EDGE = 800
 const THUMBNAIL_QUALITY = 0.8
 const LOAD_TIMEOUT_MS = 15_000
+const SEEK_TIMEOUT_MS = 5_000
+const FRAME_TIMEOUT_MS = 1_000
 
 /** Upload type for a picked video; some pickers leave `type` empty, so the extension decides then. */
 export function videoContentType(file: File) {
@@ -33,7 +35,13 @@ async function captureFirstFrame(file: File) {
   const video = document.createElement('video')
   video.muted = true
   video.playsInline = true
+  // iOS (every browser there is WebKit) reads these as attributes before it allows an inline muted play.
+  video.setAttribute('muted', '')
+  video.setAttribute('playsinline', '')
   video.preload = 'auto'
+  // WebKit may never decode frames for a video outside the document, so keep it in, just invisible.
+  Object.assign(video.style, { position: 'fixed', left: '0', top: '0', width: '2px', height: '2px', opacity: '0', pointerEvents: 'none' })
+  document.body.append(video)
   let durationSec: number | null = null
   try {
     video.src = url
@@ -41,33 +49,63 @@ async function captureFirstFrame(file: File) {
     await waitFor(video, 'loadedmetadata')
     durationSec = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : null
     // Frame 0 is often black (fade-in) and iOS doesn't paint it until a seek, so step in a little.
+    const seekPainted = nextFrame(video)
     video.currentTime = Math.min(0.5, (durationSec ?? 0) / 2)
-    await waitFor(video, 'seeked')
-    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    // iOS sometimes drops the seek; the play below still gets a frame out.
+    await waitFor(video, 'seeked', SEEK_TIMEOUT_MS).catch(() => {})
+    await seekPainted
+    let canvas = drawFrame(video)
+    if (!canvas) {
       // iOS can finish the seek without decoding a frame; a muted play makes it paint one.
-      await video.play()
+      // Low Power Mode refuses even that, but the frame may have arrived meanwhile.
+      const playPainted = nextFrame(video)
+      await video.play().catch(() => {})
+      await playPainted
       video.pause()
+      canvas = drawFrame(video)
     }
-    const scale = Math.min(1, THUMBNAIL_EDGE / Math.max(video.videoWidth, video.videoHeight))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(video.videoWidth * scale)
-    canvas.height = Math.round(video.videoHeight * scale)
-    canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
-    const thumbnail = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', THUMBNAIL_QUALITY))
+    const thumbnail = canvas && (await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', THUMBNAIL_QUALITY)))
     return { thumbnail, durationSec }
   } catch {
     // Keep the length if only the frame failed.
     return { thumbnail: null, durationSec }
   } finally {
+    video.remove()
     video.removeAttribute('src')
     video.load()
     URL.revokeObjectURL(url)
   }
 }
 
-function waitFor(video: HTMLVideoElement, event: 'loadedmetadata' | 'seeked') {
+/** The current frame on a canvas, or `null` if the video has none decoded yet (iOS then draws nothing). */
+function drawFrame(video: HTMLVideoElement) {
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return null
+  const scale = Math.min(1, THUMBNAIL_EDGE / Math.max(video.videoWidth, video.videoHeight))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(video.videoWidth * scale)
+  canvas.height = Math.round(video.videoHeight * scale)
+  const context = canvas.getContext('2d', { willReadFrequently: true })!
+  context.drawImage(video, 0, 0, canvas.width, canvas.height)
+  // A drawn frame is opaque; a canvas still fully transparent means nothing was painted.
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+  for (let i = 3; i < pixels.length; i += 4) if (pixels[i] !== 0) return canvas
+  return null
+}
+
+/** Resolves once the video presents a new frame, or after a short wait where that can't be observed. */
+function nextFrame(video: HTMLVideoElement) {
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, FRAME_TIMEOUT_MS)
+    video.requestVideoFrameCallback?.(() => {
+      clearTimeout(timer)
+      resolve()
+    })
+  })
+}
+
+function waitFor(video: HTMLVideoElement, event: 'loadedmetadata' | 'seeked', timeoutMs = LOAD_TIMEOUT_MS) {
   return new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => done(new Error('timeout')), LOAD_TIMEOUT_MS)
+    const timer = setTimeout(() => done(new Error('timeout')), timeoutMs)
     const onEvent = () => done()
     const onError = () => done(new Error('unreadable'))
     function done(error?: Error) {
