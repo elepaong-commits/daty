@@ -83,6 +83,7 @@ export const api = {
   albums: () => request<Album[]>('/api/albums'),
   album: (id: number) => request<Album>(`/api/albums/${id}`),
   updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
+  deleteAlbum: (id: number) => del<void>(`/api/albums/${id}`),
   deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
   photoUploads: (albumId: number, files: { contentType: string }[]) =>

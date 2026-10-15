@@ -171,6 +171,21 @@ export function useUpdateAlbum(id: number) {
   return useMutation({ mutationFn: (input: UpdateAlbumInput) => api.updateAlbum(id, input), onSuccess: invalidate })
 }
 
+/** Photos go with the album; its visits stay on the calendar, just no longer in an album. */
+export function useDeleteAlbum(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.deleteAlbum(id),
+    onSuccess: () =>
+      // Skip the deleted album's own detail query: refetching it would only 404 while the page leaves.
+      queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          ['records', keys.places[0], keys.albums[0]].includes(queryKey[0] as string) &&
+          !(queryKey[0] === keys.albums[0] && queryKey[1] === id),
+      }),
+  })
+}
+
 export function useDeletePhotos(albumId: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({
