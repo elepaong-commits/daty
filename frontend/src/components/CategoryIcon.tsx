@@ -5,9 +5,22 @@ import type { PlaceCategory } from '../lib/types'
 import { PixelSprite } from './PixelSprite'
 
 /** The category's line icon, or its pixel sprite in the pixel design. */
-export function CategoryIcon({ category, size = 14, spriteScale = 2 }: { category: PlaceCategory; size?: number; spriteScale?: number }) {
+export function CategoryIcon({
+  category,
+  size = 14,
+  spriteScale = 2,
+  strokeWidth = 1.75,
+  className,
+}: {
+  category: PlaceCategory
+  size?: number
+  spriteScale?: number
+  strokeWidth?: number
+  /** For the line icon (e.g. its colour); the sprite keeps its own colours. */
+  className?: string
+}) {
   const retro = useIsRetro()
   if (retro) return <PixelSprite name={CATEGORY_SPRITES[category]} scale={spriteScale} />
   const { Icon } = categoryOf(category)
-  return <Icon size={size} strokeWidth={1.75} />
+  return <Icon size={size} strokeWidth={strokeWidth} className={className} />
 }

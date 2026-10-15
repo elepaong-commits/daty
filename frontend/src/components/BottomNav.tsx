@@ -1,7 +1,7 @@
 import { m } from 'motion/react'
 import { NavLink } from 'react-router'
 import { useT } from '../lib/i18n'
-import { enterSpring } from '../lib/motion'
+import { useMotionPreset } from '../lib/motion'
 import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 import { useIsRetro } from '../lib/theme'
 import { PixelSprite } from './PixelSprite'
@@ -11,6 +11,7 @@ export function BottomNav() {
   const isUnder = useIsUnder()
   const t = useT()
   const retro = useIsRetro()
+  const { highlight } = useMotionPreset()
 
   // Pixel design: three tiles on dark grid lines, the open one filled.
   if (retro) {
@@ -26,7 +27,7 @@ export function BottomNav() {
                 isActive ? 'text-white' : 'text-ink'
               }`}
             >
-              {isActive && <m.span layoutId="bottom-nav-highlight" transition={enterSpring} className="absolute inset-0 -z-10 bg-brand" />}
+              {isActive && <m.span layoutId="bottom-nav-highlight" transition={highlight} className="absolute inset-0 -z-10 bg-brand" />}
               <PixelSprite name={sprite} scale={2} />
               {t.nav[key]}
             </NavLink>
@@ -50,7 +51,7 @@ export function BottomNav() {
                 }`}
               >
                 {isActive && (
-                  <m.span layoutId="bottom-nav-highlight" transition={enterSpring} className="absolute inset-0 rounded-full bg-brand-soft" />
+                  <m.span layoutId="bottom-nav-highlight" transition={highlight} className="absolute inset-0 rounded-full bg-brand-soft" />
                 )}
                 <Icon size={20} strokeWidth={1.75} className="relative" />
               </span>

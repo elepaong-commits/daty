@@ -1,6 +1,6 @@
 import { Check, Heart } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { categoryOf } from '../../lib/categories'
+import { CategoryIcon } from '../../components/CategoryIcon'
 import { useT } from '../../lib/i18n'
 import type { Place } from '../../lib/types'
 
@@ -31,13 +31,12 @@ export function SavedPlacePicker({ places, selectedIds, onSelect }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t.schedule.savedSearch}
         aria-label={t.schedule.savedSearch}
-        className="h-9 w-full rounded-xl border border-field-border bg-field px-3 text-[13px] outline-none placeholder:text-placeholder focus:border-brand"
+        className="h-9 w-full rounded-xl border border-field-border bg-field px-3 text-[13px] outline-none placeholder:text-placeholder focus:border-brand retro:border-0 retro:bg-white retro:pixel-field retro:placeholder:text-faint"
       />
       <ul className="scrollbar-none flex max-h-[188px] flex-col gap-1.5 overflow-y-auto" role="listbox" aria-label={t.schedule.place}>
         {listed.length === 0 && <li className="py-3 text-center text-[12px] text-muted">{t.schedule.noMatch}</li>}
         {listed.map((place) => {
           const selected = selectedIds.includes(place.id)
-          const category = categoryOf(place.category)
           return (
             <li key={place.id} role="option" aria-selected={selected}>
               <button
@@ -47,7 +46,9 @@ export function SavedPlacePicker({ places, selectedIds, onSelect }: Props) {
                   selected ? 'border-brand bg-brand-soft' : 'border-field-border bg-white'
                 }`}
               >
-                <category.Icon size={18} strokeWidth={1.75} className="shrink-0 text-brand-strong" />
+                <span className="shrink-0 text-brand-strong">
+                  <CategoryIcon category={place.category} size={18} />
+                </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[14px] font-semibold">{place.name}</span>
                   {place.address && <span className="truncate text-[11px] text-muted">{place.address}</span>}

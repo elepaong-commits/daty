@@ -6,7 +6,7 @@ import { AccountSheet } from '../features/auth/AccountSheet'
 import { ScheduleSheet } from '../features/records/ScheduleSheet'
 import { daysTogether, formatDotted, parseDateOnly, toDateInput } from '../lib/dates'
 import { useT } from '../lib/i18n'
-import { enterSpring } from '../lib/motion'
+import { useMotionPreset } from '../lib/motion'
 import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 import { useIsRetro } from '../lib/theme'
 import { useMe } from '../lib/queries'
@@ -20,6 +20,7 @@ export function Sidebar() {
   const isUnder = useIsUnder()
   const navigate = useNavigate()
   const retro = useIsRetro()
+  const { highlight } = useMotionPreset()
   const [scheduling, setScheduling] = useState(false)
   const [account, setAccount] = useState(false)
   if (!me?.couple) return null
@@ -41,7 +42,7 @@ export function Sidebar() {
           <>
             <div className="flex items-end gap-1.5">
               <PixelSprite name="rabbit" scale={2} />
-              <PixelSprite name="heart" scale={2} className="mb-2" />
+              <PixelSprite name="heart" scale={2} className="mb-2 motion-safe:animate-pixel-beat" />
               <PixelSprite name="bear" scale={2} />
             </div>
             <span className="truncate pt-3 font-pixel text-[12px] leading-normal pixel-crisp">
@@ -83,7 +84,7 @@ export function Sidebar() {
               {active && (
                 <m.span
                   layoutId="sidebar-highlight"
-                  transition={enterSpring}
+                  transition={highlight}
                   className="absolute inset-0 -z-10 rounded-[14px] bg-brand-soft retro:rounded-none retro:pixel-outline retro:pixel-thin"
                 >
                   {retro && (

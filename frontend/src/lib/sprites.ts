@@ -125,6 +125,14 @@ export const SPRITES = {
   cursor: ['k....', 'kk...', 'kgk..', 'kggk.', 'kgggk', 'kggk.', 'kgk..', 'kk...', 'k....'],
   search: ['.kkkk...', 'kwwwwk..', 'kwmmwk..', 'kwmmwk..', 'kwwwwk..', '.kkkkkk.', '.....kkk', '......kk'],
   locate: ['...k...', '..kkk..', '.k.t.k.', 'kkttTkk', '.k.t.k.', '..kkk..', '...k...'],
+  close: ['kk...kk', 'kkk.kkk', '.kkkkk.', '..kkk..', '.kkkkk.', 'kkk.kkk', 'kk...kk'],
+  left: ['...kk', '..kk.', '.kk..', 'kk...', '.kk..', '..kk.', '...kk'],
+  right: ['kk...', '.kk..', '..kk.', '...kk', '..kk.', '.kk..', 'kk...'],
+  check: ['......k', '.....kk', 'k...kk.', 'kk.kk..', '.kkk...', '..k....'],
+  play: ['kk....', 'kwkk..', 'kwwwkk', 'kwwwwk', 'kwwwkk', 'kwkk..', 'kk....'],
+  trash: ['..kkkk..', 'kkkkkkkk', '.kwwwwk.', '.kwkwkk.', '.kwkwkk.', '.kwkwkk.', '.kwwwwk.', '..kkkk..'],
+  pencil: ['......kk', '.....kgk', '....kgk.', '...kgk..', '..kgk...', '.kgk....', 'kpk.....', 'kk......'],
+  camera: ['..kkk...', 'kkkkkkkk', 'kwwwwwwk', 'kwwkkwwk', 'kwkuukwk', 'kwwkkwwk', 'kkkkkkkk'],
 } satisfies Record<string, string[]>
 
 export type SpriteName = keyof typeof SPRITES

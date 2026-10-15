@@ -1,9 +1,11 @@
 import { TriangleAlert, X } from 'lucide-react'
 import { useAnimate, usePresence, useReducedMotion } from 'motion/react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { formatDotted, toTimeInput } from '../../lib/dates'
 import { useT } from '../../lib/i18n'
-import { enterSpring, exitTween, settleTween } from '../../lib/motion'
+import { PixelSprite } from '../../components/PixelSprite'
+import { useMotionPreset } from '../../lib/motion'
+import { useIsRetro } from '../../lib/theme'
 import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -30,6 +32,8 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
   const [scope, animate] = useAnimate<HTMLDivElement>()
   const [isPresent, safeToRemove] = usePresence()
   const reduceMotion = useReducedMotion()
+  const motion = useMotionPreset()
+  const retro = useIsRetro()
   const [index, setIndex] = useState(startIndex)
   const photo = photos[Math.min(index, photos.length - 1)]
 
@@ -41,14 +45,14 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
     animate('[data-viewer-fade]', { opacity: [0, 1] }, { duration: 0.2 })
     const tile = reduceMotion ? null : tileFor(photos[startIndex])
     if (!tile || !el || !stage.current || !flyer.current) {
-      animate(stage.current!, { opacity: [0, 1], scale: [0.96, 1] }, enterSpring)
+      animate(stage.current!, { opacity: [0, 1], scale: [0.96, 1] }, motion.enter)
       return
     }
     const target = containRect(el.getBoundingClientRect(), tile.aspect)
     stage.current.style.opacity = '0'
     tile.img.style.visibility = 'hidden'
     flyer.current.style.display = 'block'
-    animate(flyer.current, { ...between(tile.img.getBoundingClientRect(), target), borderRadius: [TILE_RADIUS, 0] }, enterSpring).then(() => {
+    animate(flyer.current, { ...between(tile.img.getBoundingClientRect(), target), borderRadius: [motion.tileRadius, 0] }, motion.enter).then(() => {
       stage.current?.style.removeProperty('opacity')
       tile.img.style.removeProperty('visibility')
       if (flyer.current) flyer.current.style.display = 'none'
@@ -58,18 +62,18 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
   // Closing: shrink the photo on screen back into its tile, or just fade when that tile isn't showing.
   useEffect(() => {
     if (isPresent) return
-    const fade = animate('[data-viewer-fade]', { opacity: 0 }, exitTween)
+    const fade = animate('[data-viewer-fade]', { opacity: 0 }, motion.exit)
     const tile = reduceMotion ? null : tileFor(photo)
     const el = strip.current
     if (!tile || !el || !stage.current || !flyer.current) {
-      Promise.all([fade, animate(stage.current!, { opacity: 0, scale: 0.96 }, exitTween)]).then(safeToRemove)
+      Promise.all([fade, animate(stage.current!, { opacity: 0, scale: 0.96 }, motion.exit)]).then(safeToRemove)
       return
     }
     const from = containRect(el.getBoundingClientRect(), tile.aspect)
     stage.current.style.opacity = '0'
     tile.img.style.visibility = 'hidden'
     flyer.current.style.display = 'block'
-    const shrink = animate(flyer.current, { ...between(from, tile.img.getBoundingClientRect()), borderRadius: [0, TILE_RADIUS] }, settleTween)
+    const shrink = animate(flyer.current, { ...between(from, tile.img.getBoundingClientRect()), borderRadius: [0, motion.tileRadius] }, motion.settle)
     Promise.all([fade, shrink]).then(() => {
       tile.img.style.removeProperty('visibility')
       safeToRemove()
@@ -112,10 +116,10 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         <button
           type="button"
           onClick={onClose}
-          className="flex size-9 items-center justify-center rounded-full bg-white/15"
+          className="flex size-9 items-center justify-center rounded-full bg-white/15 retro:size-8 retro:bg-white retro:pixel-btn retro:pixel-thin"
           aria-label={t.common.close}
         >
-          <X size={18} strokeWidth={1.75} />
+          {retro ? <PixelSprite name="close" scale={2} /> : <X size={18} strokeWidth={1.75} />}
         </button>
       </div>
 
@@ -138,12 +142,12 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         </div>
         {index > 0 && (
           <NavButton side="left" label={t.albums.prevPhoto} onClick={() => go(index - 1)}>
-            ‹
+            {retro ? <PixelSprite name="left" scale={3} /> : '‹'}
           </NavButton>
         )}
         {index < photos.length - 1 && (
           <NavButton side="right" label={t.albums.nextPhoto} onClick={() => go(index + 1)}>
-            ›
+            {retro ? <PixelSprite name="right" scale={3} /> : '›'}
           </NavButton>
         )}
       </div>
@@ -161,7 +165,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
             onClick={() => onSetCover(isCover ? null : photo.id)}
             disabled={coverPending}
             aria-pressed={isCover}
-            className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold disabled:opacity-50 ${
+            className={`ui-pop h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold disabled:opacity-50 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-white)] ${
               isCover ? 'bg-amber-soft text-amber-strong' : 'bg-white/15 text-white'
             }`}
           >
@@ -172,9 +176,6 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
     </div>
   )
 }
-
-// Grid tiles are `rounded-xl`.
-const TILE_RADIUS = 12
 
 /** A photo's grid image and its aspect ratio, when that tile is on screen with its thumbnail loaded. */
 function tileFor(photo: Photo | undefined) {
@@ -203,13 +204,13 @@ function scrollToPhoto(strip: HTMLDivElement | null, index: number, count: numbe
   if (strip && index >= 0 && index < count) strip.scrollTo({ left: index * strip.clientWidth, behavior: 'smooth' })
 }
 
-function NavButton({ side, label, onClick, children }: { side: 'left' | 'right'; label: string; onClick: () => void; children: string }) {
+function NavButton({ side, label, onClick, children }: { side: 'left' | 'right'; label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] ${
+      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] retro:bg-white retro:pb-0 retro:pixel-btn retro:pixel-thin ${
         side === 'left' ? 'left-3' : 'right-3'
       }`}
     >

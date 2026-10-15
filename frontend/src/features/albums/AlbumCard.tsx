@@ -1,9 +1,10 @@
-import { Camera, type LucideIcon, MapPin, Star, Video } from 'lucide-react'
+import { Camera, MapPin, Star, Video } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
-import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
+import { CategoryIcon } from '../../components/CategoryIcon'
+import { PHOTO_GRADIENTS } from '../../lib/categories'
 import { formatDotted, formatSlashDay, parseDateOnly } from '../../lib/dates'
-import type { Album } from '../../lib/types'
+import type { Album, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -45,11 +46,11 @@ export function AlbumCard({ album, size, className = '', style }: { album: Album
         )}
         {album.highlightNote && (
           <div className="pt-2">
-            <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375]">
+            <div className="flex flex-col rounded-xl bg-amber-soft px-2.5 py-2 text-[12px] leading-[1.375] retro:mt-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
               <span className="flex items-center gap-1 font-bold text-amber-strong">
                 <Star size={12} strokeWidth={1.75} /> {t.common.mustSee}
               </span>
-              <span className="text-amber-ink">{album.highlightNote}</span>
+              <span className="ui-prose text-amber-ink">{album.highlightNote}</span>
             </div>
           </div>
         )}
@@ -62,14 +63,13 @@ export function AlbumCard({ album, size, className = '', style }: { album: Album
 function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: string; date: string }) {
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
-  const { Icon } = categoryOf(category)
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
   const { coverPhoto } = album
   const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
   const videoCount = album.photos.filter((p) => p.mediaType === 'VIDEO').length
 
   const layer = (i: number) => (
-    <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} Icon={i === 0 ? Icon : null} />
+    <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} category={i === 0 ? category : null} />
   )
 
   return (
@@ -105,17 +105,18 @@ function PhotoStack({ album, heightClass, date }: { album: Album; heightClass: s
 function StackLayer({
   src,
   gradient: [from, to],
-  Icon,
+  category,
 }: {
   src: string | null | undefined
   gradient: [string, string]
-  Icon: LucideIcon | null
+  /** Drawn on the top print only. */
+  category: PlaceCategory | null
 }) {
   const { failed, onError } = useImageFailed(src)
   if (src && !failed) return <img src={src} alt="" onError={onError} className="size-full object-cover" />
   return (
     <div className="flex size-full items-center justify-center" style={{ background: `linear-gradient(${from}, ${to})` }}>
-      {Icon && <Icon size={40} strokeWidth={1.5} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]" />}
+      {category && <CategoryIcon category={category} size={40} spriteScale={4} strokeWidth={1.5} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]" />}
     </div>
   )
 }

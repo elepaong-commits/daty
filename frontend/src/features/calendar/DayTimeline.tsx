@@ -1,14 +1,16 @@
 import { Check, MapPin } from 'lucide-react'
 import timelineConnector from '../../assets/icons/timeline-connector.svg'
+import { CategoryIcon } from '../../components/CategoryIcon'
 import { MemoText } from '../../components/Memo'
+import { PixelSprite } from '../../components/PixelSprite'
 import { Stars } from '../../components/Stars'
-import { categoryOf } from '../../lib/categories'
 import { errorMessage } from '../../lib/api'
 import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useUpdateRecord } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import { useT } from '../../lib/i18n'
+import { useIsRetro } from '../../lib/theme'
 
 export function DayTimeline({
   day,
@@ -36,7 +38,7 @@ export function DayTimeline({
       </div>
 
       {records.length === 0 ? (
-        <p className="rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
+        <p className="ui-empty rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
       ) : (
         records.map((r, i) => (
           <TimelineEntry key={r.id} index={i} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />
@@ -61,10 +63,10 @@ function TimelineEntry({
   onComplete: (record: DateRecord) => void
 }) {
   const t = useT()
+  const retro = useIsRetro()
   const complete = useUpdateRecord(record.id)
   const at = new Date(record.scheduledAt)
   const isPlan = record.type === 'PLAN'
-  const category = categoryOf(record.category)
   const dDay = daysBetween(today, at)
   const mapUrl = record.place?.googleMapsUrl
   // A plan can be finished once its day has come.
@@ -87,11 +89,13 @@ function TimelineEntry({
         aria-label={t.calendar.editSchedule(record.place?.name ?? record.title)}
         onClick={onEdit}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEdit())}
-        className={`flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left ${isPlan ? 'border-coral/30' : 'border-card-border'}`}
+        className={`ui-box-thin flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left retro:mt-1 ${
+          isPlan ? 'border-coral/30 retro:[--pixel-border:var(--color-coral)]' : 'border-card-border'
+        }`}
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1 text-[11px] leading-normal font-semibold text-brand-strong">
-            <category.Icon size={12} strokeWidth={1.75} /> {t.categories[category.value]}
+            <CategoryIcon category={record.category} size={12} /> {t.categories[record.category]}
           </span>
           {isPlan ? (
             <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[11px] leading-normal font-bold text-coral">
@@ -124,9 +128,9 @@ function TimelineEntry({
               complete.mutate({ type: 'RECORD' }, { onSuccess: onComplete })
             }}
             onKeyDown={(e) => e.stopPropagation()}
-            className="mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+            className="ui-btn-thin mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50 retro:text-[13px]"
           >
-            {!complete.isPending && <Check size={16} strokeWidth={1.75} />}
+            {!complete.isPending && (retro ? <PixelSprite name="check" scale={2} colors={{ k: 'var(--color-white)' }} /> : <Check size={16} strokeWidth={1.75} />)}
             {complete.isPending ? t.calendar.completing : t.calendar.complete}
           </button>
         )}

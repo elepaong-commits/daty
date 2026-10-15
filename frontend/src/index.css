@@ -30,7 +30,9 @@
 @theme {
   --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
   --font-display: "Jua", "IBM Plex Sans KR", sans-serif;
-  /* Pixel design: labels and numbers at 11–12px, headings at 15px or 30px (the sizes the bitmaps are drawn for). Long text stays in `font-sans`. */
+  /* Long text (memos, notes) in the pixel design, where `font-sans` becomes the bitmap font; see `ui-prose`. */
+  --font-reading: "IBM Plex Sans KR", system-ui, sans-serif;
+  /* Pixel design: labels and numbers at 11–12px, headings at 15px or 30px (the sizes the bitmaps are drawn for). */
   --font-pixel: "Galmuri11", "IBM Plex Sans KR", monospace;
   --font-pixel-head: "Galmuri14", "Galmuri11", "IBM Plex Sans KR", monospace;
 
@@ -97,6 +99,50 @@
       transform: translateX(3px);
     }
   }
+
+  /* List items in the pixel design: up in three hops instead of a glide. */
+  --animate-pixel-rise: pixel-rise 0.27s steps(3, jump-end) backwards;
+  @keyframes pixel-rise {
+    from {
+      opacity: 0;
+      transform: translateY(9px);
+    }
+  }
+
+  /* Something just picked: squashes and springs back in two frames. */
+  --animate-pixel-pop: pixel-pop 0.2s steps(2, jump-none);
+  @keyframes pixel-pop {
+    0% {
+      transform: scale(0.9);
+    }
+    50% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* The couple's heart, beating twice and resting. */
+  --animate-pixel-beat: pixel-beat 1.4s steps(1) infinite;
+  @keyframes pixel-beat {
+    0%,
+    30% {
+      transform: scale(1.2);
+    }
+    15%,
+    45%,
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  --animate-pixel-blink: pixel-blink 0.9s steps(1) infinite;
+  @keyframes pixel-blink {
+    50% {
+      opacity: 0.15;
+    }
+  }
 }
 
 /* Jua and Plex Sans KR have no kana, and shared kanji should use Japanese glyph shapes. */
@@ -105,6 +151,37 @@
   --font-display: "M PLUS Rounded 1c", "IBM Plex Sans JP", sans-serif;
   --font-pixel: "Galmuri11", "IBM Plex Sans JP", monospace;
   --font-pixel-head: "Galmuri14", "Galmuri11", "IBM Plex Sans JP", monospace;
+  --font-reading: "IBM Plex Sans JP", system-ui, sans-serif;
+}
+
+/*
+ * The pixel design restyles every screen at once: bitmap fonts for all UI text (long text opts back
+ * out with `ui-prose`), square corners and hard offset shadows instead of soft ones. Components then
+ * only add what is particular to it (pixel outlines, sprites).
+ */
+[data-theme="retro"] {
+  --font-sans: "Galmuri11", "IBM Plex Sans KR", monospace;
+  --font-display: "Galmuri14", "Galmuri11", "IBM Plex Sans KR", monospace;
+  /* Re-read here so a preview marked retro inside a classic page picks up the bitmap font too. */
+  font-family: var(--font-sans);
+}
+[data-theme="retro"]:lang(ja),
+:lang(ja) > [data-theme="retro"] {
+  --font-sans: "Galmuri11", "IBM Plex Sans JP", monospace;
+  --font-display: "Galmuri14", "Galmuri11", "IBM Plex Sans JP", monospace;
+}
+[data-theme="retro"],
+[data-theme="retro"] *,
+[data-theme="retro"] ::before,
+[data-theme="retro"] ::after {
+  border-radius: 0 !important;
+}
+/* Unlayered, so it would beat the pixel outlines: leave anything wearing those alone. */
+[data-theme="retro"] :is(.shadow-card, .shadow-photo, .shadow-sheet, .shadow-md, .shadow-lg):not([class*="ui-"], [class*="pixel-"]) {
+  box-shadow: 0 4px 0 0 rgb(45 55 72 / 0.22);
+}
+[data-theme="retro"] .shadow-cta:not([class*="ui-"], [class*="pixel-"]) {
+  box-shadow: 0 4px 0 0 var(--color-brand-strong);
 }
 
 @layer base {
@@ -183,7 +260,8 @@
     0 2px 0 0 var(--color-ink),
     -2px 0 0 0 var(--color-ink),
     2px 0 0 0 var(--color-ink);
-  &:focus {
+  &:focus,
+  &:focus-within {
     background-color: var(--color-amber-soft);
   }
 }
@@ -258,9 +336,10 @@
   @variant retro {
     @apply h-8 rounded-none border-0 px-3 font-pixel text-[11px] font-normal pixel-outline pixel-thin pixel-crisp;
     --pixel-border: var(--color-handle);
+    /* A light fill, so the sprites' dark outlines still show on the picked chip. */
     &[aria-pressed="true"] {
-      @apply bg-ink;
-      --pixel-border: var(--color-ink);
+      @apply bg-brand-soft text-brand-strong motion-safe:animate-pixel-pop;
+      --pixel-border: var(--color-brand);
     }
   }
 }
@@ -281,7 +360,7 @@
   @variant retro {
     @apply h-10 rounded-none bg-white font-pixel text-[12px] font-normal pixel-btn pixel-crisp hover:bg-sand-soft;
     &[aria-selected="true"] {
-      @apply bg-brand hover:bg-brand-strong;
+      @apply bg-brand hover:bg-brand-strong motion-safe:animate-pixel-pop;
     }
   }
 }
@@ -370,5 +449,110 @@
   @apply bg-white;
   @variant retro {
     @apply rounded-none pixel-btn pixel-thin;
+  }
+}
+
+/* ---- Pixel-design-only touches: nothing in the classic design, so they can sit next to its classes. ---- */
+
+/* Memos, notes and other long text keep a smooth font in the pixel design. */
+@utility ui-prose {
+  @variant retro {
+    font-family: var(--font-reading);
+  }
+}
+
+/* Panels and cards: a notched ink outline with a hard drop shadow. */
+@utility ui-box {
+  @variant retro {
+    @apply border-0 pixel-box;
+  }
+}
+
+@utility ui-box-thin {
+  @variant retro {
+    @apply border-0 pixel-box pixel-thin;
+  }
+}
+
+/* Softer container (settings rows, empty states): a light outline, no shadow. */
+@utility ui-outline {
+  @variant retro {
+    @apply border-0 pixel-outline pixel-thin;
+    --pixel-border: var(--color-handle);
+  }
+}
+
+/* Any button: raised and pressing down. */
+@utility ui-btn {
+  @variant retro {
+    @apply border-0 pixel-btn;
+  }
+}
+
+@utility ui-btn-thin {
+  @variant retro {
+    @apply border-0 pixel-btn pixel-thin;
+  }
+}
+
+/* Text fields (`inputClass`): a sunken field. */
+@utility ui-input {
+  @apply h-11 w-full rounded-xl border border-field-border bg-field px-3 text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-brand;
+  @variant retro {
+    @apply border-0 bg-white pixel-field placeholder:text-faint;
+  }
+}
+
+/* Dimmed backdrop behind sheets and dialogs; a dithered screen in the pixel design. */
+@utility ui-backdrop {
+  @apply bg-ink/42;
+  @variant retro {
+    background-color: rgb(45 55 72 / 0.18);
+    background-image: conic-gradient(rgb(30 42 51 / 0.55) 25%, transparent 0 50%, rgb(30 42 51 / 0.55) 0 75%, transparent 0);
+    background-size: 4px 4px;
+  }
+}
+
+/* Pops when it becomes the picked one (`aria-pressed` / `aria-selected`). */
+@utility ui-pop {
+  @variant retro {
+    @media (prefers-reduced-motion: no-preference) {
+      &:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
+        animation: var(--animate-pixel-pop);
+      }
+    }
+  }
+}
+
+/* Empty-state message as a game's text box, with the blinking "more" arrow. */
+@utility ui-empty {
+  @variant retro {
+    @apply relative border-0 bg-white pixel-outline pixel-thin;
+    &::after {
+      content: "▼";
+      position: absolute;
+      right: 8px;
+      bottom: 4px;
+      font-size: 8px;
+      line-height: 1;
+      color: var(--color-coral);
+      animation: var(--animate-pixel-blink);
+    }
+  }
+}
+
+/* Segmented choice (record/plan, visited/wish, photo filters): its own track in the classic design, separate pixel buttons here. */
+@utility ui-seg {
+  @variant retro {
+    @apply h-auto gap-3 bg-transparent p-0;
+  }
+}
+
+@utility ui-seg-option {
+  @variant retro {
+    @apply h-9 bg-white font-normal text-ink pixel-btn pixel-thin;
+    &:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
+      @apply bg-brand text-white motion-safe:animate-pixel-pop;
+    }
   }
 }

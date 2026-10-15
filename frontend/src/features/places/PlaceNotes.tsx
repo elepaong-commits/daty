@@ -28,7 +28,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
   }
 
   return (
-    <section className="flex flex-col gap-2.5 rounded-2xl bg-white p-3">
+    <section className="ui-box-thin flex flex-col gap-2.5 rounded-2xl bg-white p-3">
       <h3 className="font-display text-[18px]">{t.place.notes}</h3>
 
       {notes.length === 0 ? (
@@ -36,7 +36,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
       ) : (
         <ul className="flex flex-col gap-2">
           {notes.map((note) => (
-            <li key={note.id} className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
+            <li key={note.id} className="flex flex-col gap-1 rounded-xl bg-amber-soft p-3 retro:mx-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
               <MemoText content={note.content} className="text-[13px] leading-[1.75] whitespace-pre-line text-amber-ink" />
               <div className="flex items-center justify-between text-[11px] text-muted">
                 <span>
@@ -64,7 +64,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
         <button
           type="submit"
           disabled={!content || addNote.isPending}
-          className="h-10 rounded-xl bg-brand-soft text-[13px] font-semibold text-brand-strong disabled:opacity-50"
+          className="ui-btn-thin h-10 rounded-xl bg-brand-soft text-[13px] font-semibold text-brand-strong disabled:opacity-50 retro:mb-1"
         >
           {addNote.isPending ? t.common.saving : t.place.addNote}
         </button>

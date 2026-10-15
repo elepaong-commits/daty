@@ -8,10 +8,10 @@ import { inputClass } from './Field'
 export function MemoText({ content, className = '' }: { content: string; className?: string }) {
   const t = useT()
   return (
-    <p className={className}>
+    <p className={`ui-prose ${className}`}>
       {parseMemo(content).map((part, i) =>
         'tag' in part ? (
-          <span key={i} className={`mr-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-bold ${TIP_CLASSES[part.tag]}`}>
+          <span key={i} className={`mr-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-bold retro:font-pixel ${TIP_CLASSES[part.tag]}`}>
             {t.tips[part.tag]}
           </span>
         ) : (
@@ -65,7 +65,7 @@ export function MemoInput({ label, value, onChange, placeholder, maxLength, clas
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${inputClass} h-[85px] resize-none py-2.5 leading-normal`}
+        className={`${inputClass} ui-prose h-[85px] resize-none py-2.5 leading-normal`}
       />
       <div className="flex flex-wrap items-center gap-1.5 pt-0.5" role="group" aria-label={t.memo.addTag}>
         <span className="text-[11px] text-muted">{t.memo.addTag}</span>

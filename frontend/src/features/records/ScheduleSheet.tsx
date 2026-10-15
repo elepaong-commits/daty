@@ -6,6 +6,7 @@ import clockOutlineIcon from '../../assets/icons/clock-outline.svg'
 import clockIcon from '../../assets/icons/clock.svg'
 import { BottomSheet } from '../../components/BottomSheet'
 import { CategoryIcon } from '../../components/CategoryIcon'
+import { PixelSprite } from '../../components/PixelSprite'
 import { Chip, Field, inputClass } from '../../components/Field'
 import { MemoInput, MemoText } from '../../components/Memo'
 import { FORM_CATEGORY_ORDER } from '../../lib/categories'
@@ -18,6 +19,7 @@ import { NewPlaceFields } from './NewPlaceFields'
 import { type PickedPlace } from './PlaceSearch'
 import { SavedPlacePicker } from './SavedPlacePicker'
 import { useT } from '../../lib/i18n'
+import { useIsRetro } from '../../lib/theme'
 
 interface Props {
   /** Editing an existing record; without it the sheet creates a new one on `initialDate`. */
@@ -37,6 +39,7 @@ type PlaceSource = 'saved' | 'new'
 
 export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSaved }: Props) {
   const t = useT()
+  const retro = useIsRetro()
   const editing = record !== undefined
   const createRecord = useCreateRecord()
   const updateRecord = useUpdateRecord(record?.id ?? 0)
@@ -125,7 +128,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   return (
     <BottomSheet title={editing ? t.schedule.titleEdit : t.schedule.titleNew} onClose={onClose}>
       <form onSubmit={submit}>
-        <div className="flex h-11 gap-2 rounded-2xl bg-segment p-1" role="radiogroup" aria-label={t.schedule.kind}>
+        <div className="ui-seg flex h-11 gap-2 rounded-2xl bg-segment p-1" role="radiogroup" aria-label={t.schedule.kind}>
           {TYPE_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -133,7 +136,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               role="radio"
               aria-checked={type === option.value}
               onClick={() => setType(option.value)}
-              className={`flex-1 rounded-xl text-[14px] leading-normal font-semibold ${
+              className={`ui-seg-option flex-1 rounded-xl text-[14px] leading-normal font-semibold retro:text-[13px] ${
                 type === option.value ? `bg-white ${option.activeClass}` : 'text-ink'
               }`}
             >
@@ -153,7 +156,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[12px] leading-normal font-semibold text-muted">{t.schedule.place}</span>
-          <div className="flex h-10 gap-2 rounded-xl bg-segment p-1" role="radiogroup" aria-label={t.schedule.place}>
+          <div className="ui-seg flex h-10 gap-2 rounded-xl bg-segment p-1" role="radiogroup" aria-label={t.schedule.place}>
             {(['saved', 'new'] as const).map((value) => (
               <button
                 key={value}
@@ -161,7 +164,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                 role="radio"
                 aria-checked={placeSource === value}
                 onClick={() => setSource(value)}
-                className={`flex-1 rounded-lg text-[13px] leading-normal font-semibold ${placeSource === value ? 'bg-white text-brand' : 'text-ink'}`}
+                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-white text-brand' : 'text-ink'}`}
               >
                 {t.schedule.placeSource[value]}
               </button>
@@ -214,7 +217,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
 
         <div className="pt-4">
           {latestPlaceNote && (
-            <div className="mb-2 flex flex-col gap-1 rounded-xl bg-amber-soft p-3">
+            <div className="mb-2 flex flex-col gap-1 rounded-xl bg-amber-soft p-3 retro:mx-0.5 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-amber)]">
               <span className="text-[11px] leading-normal font-semibold text-amber-ink/70">{t.schedule.latestPlaceMemo}</span>
               <MemoText content={latestPlaceNote} className="text-[13px] leading-[1.75] whitespace-pre-line text-amber-ink" />
             </div>
@@ -241,9 +244,13 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                   aria-checked={rating === n}
                   aria-label={t.common.points(n)}
                   onClick={() => setRating(n)}
-                  className={n <= rating ? 'text-amber' : 'text-chip-border'}
+                  className={`ui-pop ${n <= rating ? 'text-amber' : 'text-chip-border'}`}
                 >
-                  <Star size={26} strokeWidth={1.5} fill={n <= rating ? 'currentColor' : 'none'} />
+                  {retro ? (
+                    <PixelSprite name={n <= rating ? 'star' : 'starOff'} scale={3} />
+                  ) : (
+                    <Star size={26} strokeWidth={1.5} fill={n <= rating ? 'currentColor' : 'none'} />
+                  )}
                 </button>
               ))}
             </div>
@@ -264,13 +271,13 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         {editing ? (
           <>
             <div className="flex gap-3 pt-5">
-              <button type="button" onClick={onClose} className="h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted">
+              <button type="button" onClick={onClose} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-white retro:text-[14px]">
                 {t.common.cancel}
               </button>
               <button
                 type="submit"
                 disabled={!canSave}
-                className="h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50"
+                className="ui-btn h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
               >
                 {updateRecord.isPending ? t.common.saving : t.common.saveChanges}
               </button>
@@ -284,7 +291,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             <button
               type="submit"
               disabled={!canSave}
-              className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+              className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
             >
               {createRecord.isPending ? t.common.saving : t.schedule.save}
             </button>

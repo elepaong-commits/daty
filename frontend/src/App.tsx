@@ -13,7 +13,7 @@ import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
-import { screenEnter } from './lib/motion'
+import { useMotionPreset } from './lib/motion'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
 import { useTheme } from './lib/theme'
@@ -69,9 +69,10 @@ function Frame({ children, wide = false }: { children: ReactNode; wide?: boolean
 function Screen() {
   const { pathname } = useLocation()
   const isDesktop = useIsDesktop()
+  const { screen } = useMotionPreset()
   const key = isDesktop && /^\/(places\/[^/]+)?$/.test(pathname) ? '/' : pathname
   return (
-    <m.div key={key} {...screenEnter} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <m.div key={key} {...screen} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <Outlet />
     </m.div>
   )

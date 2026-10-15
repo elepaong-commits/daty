@@ -53,7 +53,7 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
       </div>
 
       {places.length === 0 ? (
-        <p className="px-5 py-6 text-center text-[13px] text-muted">
+        <p className="ui-empty px-5 py-6 text-center text-[13px] text-muted retro:mx-5 retro:mb-4">
           {t.map.empty[status]}
         </p>
       ) : (
@@ -117,7 +117,7 @@ export function PlaceList({
         {t.map.sheetHeading[status][1]}
       </h2>
       {places.length === 0 ? (
-        <p className="px-5 py-6 text-center text-[13px] text-muted">{t.map.empty[status]}</p>
+        <p className="ui-empty px-5 py-6 text-center text-[13px] text-muted retro:mx-5">{t.map.empty[status]}</p>
       ) : (
         <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pt-0.5 pb-5 retro:gap-4 retro:pt-1.5">
           {places.map((place, i) => (

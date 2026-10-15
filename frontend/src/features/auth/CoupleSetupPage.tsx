@@ -89,7 +89,7 @@ export function CoupleSetupPage() {
         <button
           type="submit"
           disabled={!canSubmit || active.isPending}
-          className="h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none"
+          className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {active.isPending ? t.common.wait : mode === 'create' ? t.couple.create : t.couple.join}
         </button>
