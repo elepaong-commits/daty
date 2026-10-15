@@ -9,6 +9,7 @@
   - 1024px(`lg`) 미만은 폰 폭 한 열 + 하단 탭, 이상은 왼쪽 `Sidebar` + 넓은 화면(`useIsDesktop`, 나머지는 `lg:` 클래스). 데스크톱에서 `/places/:id`는 지도 탭 왼쪽 열에 열리고(지도는 그대로), 바텀시트는 가운데 모달이 된다
   - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다. 장소 상세 위쪽 사진도 `googlePlaceId`로 Google 장소 사진을 받아 쓰고(`PlaceHero`, 작성자 표시 필수), 없으면 앨범 표지 → 카테고리 타일
   - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand`, `text-muted`, `font-display` 등)
+  - 디자인이 두 벌이다: 기본(classic)과 도트(retro). 기기마다 처음 화면(`ThemePickerPage`)에서 고르고 사이드바·내 정보에서 바꾼다(localStorage, `<html data-theme>`, `src/lib/theme.ts`). 여러 곳에 쓰는 모양은 두 디자인을 함께 담은 `ui-*` 클래스(`ui-card`, `ui-chip`, `ui-title` 등, `index.css` 아래쪽)를 쓰고, 한 곳만 다른 건 `retro:` 변형으로 쓴다. 코드에서 디자인을 가르는 건 아이콘·핀·마스코트처럼 그림이 다른 곳뿐이다(`useIsRetro`, `PixelSprite`). 도트 디자인은 아직 지도 탭과 공통 셸에만 적용돼 있다
   - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
   - 한국어/일본어 지원. 화면 문구는 하드코딩하지 않고 `src/lib/messages.ts`의 `ko`와 `ja` 양쪽에 넣은 뒤 `useT()`로 쓴다(`ja`는 `Messages` 타입이라 키가 빠지면 빌드가 깨진다). 언어는 헤더 오른쪽 위 토글로 바꾸고 기기(localStorage)에 기억한다. Google 지도 타일 언어는 페이지를 처음 열 때 언어로 고정된다
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
