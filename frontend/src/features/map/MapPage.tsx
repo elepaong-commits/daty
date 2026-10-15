@@ -1,12 +1,15 @@
+import { Check, Heart } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router'
+import plusIcon from '../../assets/icons/plus.svg'
+import searchIcon from '../../assets/icons/search.svg'
+import { CategoryIcon } from '../../components/CategoryIcon'
 import { Chip, QueryState } from '../../components/Field'
 import { PixelSprite } from '../../components/PixelSprite'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { CATEGORIES } from '../../lib/categories'
 import { daysTogether } from '../../lib/dates'
-import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { useMe, usePlaces } from '../../lib/queries'
 import type { Place, PlaceCategory, PlaceStatus } from '../../lib/types'
 import { AddPlaceSheet } from './AddPlaceSheet'
@@ -14,6 +17,7 @@ import { DateMap } from './DateMap'
 import { PlaceList, PlaceSheet } from './PlaceSheet'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
+import { useIsRetro } from '../../lib/theme'
 
 /** Router state for opening the map on one place, e.g. after editing it. */
 export interface MapFocus {
@@ -29,6 +33,7 @@ export function MapPage() {
   const couple = useMe().data?.couple
   const t = useT()
   const isDesktop = useIsDesktop()
+  const retro = useIsRetro()
   const navigate = useNavigate()
   const detailMatch = useMatch('/places/:id')
   const detailId = detailMatch ? Number(detailMatch.params.id) : null
@@ -97,19 +102,19 @@ export function MapPage() {
               setSearchOpen((open) => !open)
               setQuery('')
             }}
-            className="flex size-9 shrink-0 items-center justify-center bg-white pixel-btn pixel-thin lg:hidden"
+            className="ui-icon-button bg-white lg:hidden"
             aria-label={t.map.search}
             aria-expanded={searchOpen}
           >
-            <PixelSprite name="search" scale={2} />
+            {retro ? <PixelSprite name="search" scale={2} /> : <img src={searchIcon} alt="" width={18} height={18} />}
           </button>
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex size-9 shrink-0 items-center justify-center bg-brand pixel-btn pixel-thin hover:bg-brand-strong"
+            className="ui-icon-button bg-brand shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-strong"
             aria-label={t.map.addWish}
           >
-            <PixelSprite name="plus" scale={2} />
+            {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={20} height={20} />}
           </button>
         </div>
       }
@@ -121,7 +126,7 @@ export function MapPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t.map.searchPlaceholder}
-          className="mt-3.5 h-10 w-full bg-white px-3 font-pixel text-[12px] outline-none pixel-field pixel-crisp placeholder:text-faint"
+          className="ui-search"
         />
       )}
     </ScreenHeader>
@@ -129,7 +134,7 @@ export function MapPage() {
 
   const filters = (
     <>
-      <div className="mx-5 flex shrink-0 gap-3" role="tablist">
+      <div className="ui-tabs mx-5 shrink-0" role="tablist">
         {(['VISITED', 'WISH'] as const).map((value) => (
           <button
             key={value}
@@ -137,22 +142,22 @@ export function MapPage() {
             role="tab"
             aria-selected={status === value}
             onClick={() => changeStatus(value)}
-            className={`flex h-10 flex-1 items-center justify-center gap-1.5 font-pixel text-[12px] pixel-btn pixel-crisp ${
-              status === value ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-white text-ink hover:bg-sand-soft'
-            }`}
+            className="ui-tab"
           >
+            {!retro && (value === 'VISITED' ? <Check size={15} strokeWidth={1.75} /> : <Heart size={15} strokeWidth={1.75} />)}
             {t.map.tab[value](counts[value])}
           </button>
         ))}
       </div>
 
-      <div className="scrollbar-none flex shrink-0 gap-2.5 overflow-x-auto px-5 pt-5 pb-3 lg:flex-wrap lg:overflow-visible">
+      {/* The pixel chips' outlines sit outside them, so the row gets a little more room there. */}
+      <div className="scrollbar-none flex shrink-0 gap-2 overflow-x-auto px-5 py-3 [--chip-border:var(--color-sand)] retro:gap-2.5 retro:pt-5 lg:flex-wrap lg:overflow-visible">
         <Chip selected={category === null} onClick={() => setCategory(null)}>
           {t.map.all}
         </Chip>
         {CATEGORIES.map((c) => (
           <Chip key={c.value} selected={category === c.value} onClick={() => setCategory(c.value)}>
-            <PixelSprite name={CATEGORY_SPRITES[c.value]} scale={2} /> {t.categories[c.value]}
+            <CategoryIcon category={c.value} /> {t.categories[c.value]}
           </Chip>
         ))}
       </div>
@@ -169,7 +174,7 @@ export function MapPage() {
   if (isDesktop) {
     return (
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-[400px] shrink-0 flex-col border-r-3 border-ink">
+        <div className="flex w-[400px] shrink-0 flex-col border-r border-sand retro:border-r-3 retro:border-ink">
           {detailMatch ? (
             <Outlet />
           ) : (
@@ -198,7 +203,7 @@ export function MapPage() {
       <div className="relative min-h-0 flex-1">
         {map}
         {isLoading || error ? (
-          <div className="absolute inset-x-0 bottom-0 border-t-3 border-ink bg-white">
+          <div className="ui-sheet absolute inset-x-0 bottom-0">
             <QueryState isLoading={isLoading} error={error} />
           </div>
         ) : (

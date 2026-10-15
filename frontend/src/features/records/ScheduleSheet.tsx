@@ -5,11 +5,10 @@ import calendarIcon from '../../assets/icons/calendar.svg'
 import clockOutlineIcon from '../../assets/icons/clock-outline.svg'
 import clockIcon from '../../assets/icons/clock.svg'
 import { BottomSheet } from '../../components/BottomSheet'
-import { PixelSprite } from '../../components/PixelSprite'
+import { CategoryIcon } from '../../components/CategoryIcon'
 import { Chip, Field, inputClass } from '../../components/Field'
 import { MemoInput, MemoText } from '../../components/Memo'
 import { FORM_CATEGORY_ORDER } from '../../lib/categories'
-import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { errorMessage } from '../../lib/api'
 import { fromInputs, toDateInput, toTimeInput } from '../../lib/dates'
 import { decodeMemo, encodeMemo } from '../../lib/memo'
@@ -205,7 +204,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               {FORM_CATEGORY_ORDER.map((value) => {
                 return (
                   <Chip key={value} selected={category === value} onClick={() => setCategory(value)}>
-                    <PixelSprite name={CATEGORY_SPRITES[value]} scale={2} /> {t.categories[value]}
+                    <CategoryIcon category={value} /> {t.categories[value]}
                   </Chip>
                 )
               })}

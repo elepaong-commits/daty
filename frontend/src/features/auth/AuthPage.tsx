@@ -1,7 +1,7 @@
 import { Heart, MapPin } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/ScreenHeader'
+import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { useLogin, useSignup } from '../../lib/queries'

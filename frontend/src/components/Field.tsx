@@ -24,14 +24,7 @@ export function Chip({
   children: ReactNode
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={`flex h-8 shrink-0 items-center gap-1.5 px-3 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-outline pixel-thin pixel-crisp ${
-        selected ? 'bg-ink text-white' : 'bg-white text-ink [--pixel-border:var(--color-handle)]'
-      }`}
-    >
+    <button type="button" onClick={onClick} aria-pressed={selected} className="ui-chip">
       {children}
     </button>
   )

@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
-/* Galmuri bitmap fonts (OFL), self-hosted from the npm package: only the cuts the pixel UI uses. */
+/*
+ * Two designs: the default ("classic") and the pixel one, chosen per device (`lib/theme.ts`) and
+ * marked as `data-theme="retro"` on <html>. One-off differences use the `retro:` variant in class
+ * lists; shapes used in many places are the `ui-*` classes at the bottom, which carry both looks.
+ */
+@custom-variant retro (&:is([data-theme="retro"], [data-theme="retro"] *));
+
+/* Galmuri bitmap fonts (OFL) for the pixel design, self-hosted from the npm package: only the cuts it uses. */
 @font-face {
   font-family: Galmuri11;
   font-weight: 400;
@@ -23,7 +30,7 @@
 @theme {
   --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
   --font-display: "Jua", "IBM Plex Sans KR", sans-serif;
-  /* Pixel UI: labels and numbers at 11–12px, headings at 15px or 30px (the sizes the bitmaps are drawn for). Long text stays in `font-sans`. */
+  /* Pixel design: labels and numbers at 11–12px, headings at 15px or 30px (the sizes the bitmaps are drawn for). Long text stays in `font-sans`. */
   --font-pixel: "Galmuri11", "IBM Plex Sans KR", monospace;
   --font-pixel-head: "Galmuri14", "Galmuri11", "IBM Plex Sans KR", monospace;
 
@@ -118,7 +125,7 @@
 }
 
 /*
- * Pixel UI kit. Boxes get square "notched" corners from four outline shadows (no border, no radius)
+ * Pixel design kit. Boxes get square "notched" corners from four outline shadows (no border, no radius)
  * and a hard drop shadow; `--pixel` is the edge width (3px, or 2px with `pixel-thin`). The shadows sit
  * outside the box, so scrolling containers need a few px of padding around them.
  */
@@ -191,5 +198,177 @@
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ---- Shared shapes in both designs. The classic look first, then the pixel one. ---- */
+
+@utility ui-eyebrow {
+  @apply text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand;
+  @variant retro {
+    @apply font-pixel font-normal tracking-normal pixel-crisp;
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-right: 6px;
+      vertical-align: 1px;
+      background: var(--color-brand);
+    }
+  }
+}
+
+/* Screen title. Galmuri11 at 2× on phones so long Japanese titles still fit beside the buttons. */
+@utility ui-title {
+  @apply font-display text-[26px] leading-[1.25] lg:text-[28px];
+  @variant retro {
+    @apply font-pixel text-[24px] pixel-crisp lg:font-pixel-head lg:text-[30px];
+  }
+}
+
+@utility ui-heading {
+  @apply font-display text-[18px] leading-normal;
+  @variant retro {
+    @apply font-pixel-head text-[15px] pixel-crisp;
+  }
+}
+
+@utility ui-card-title {
+  @apply font-display text-[19px] leading-[1.375];
+  @variant retro {
+    @apply font-pixel-head text-[15px] leading-[1.5] pixel-crisp;
+  }
+}
+
+/* Small UI text (numbers, links, labels) that turns into the pixel font; sizes stay with the element. */
+@utility ui-label {
+  @variant retro {
+    @apply font-pixel font-normal pixel-crisp;
+  }
+}
+
+/* Filter and form chips; `aria-pressed` marks the picked one. `--chip-border` tints the classic outline. */
+@utility ui-chip {
+  @apply flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-white px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap text-ink;
+  border-color: var(--chip-border, var(--color-chip-border));
+  &[aria-pressed="true"] {
+    @apply border-brand bg-brand text-white;
+  }
+  @variant retro {
+    @apply h-8 rounded-none border-0 px-3 font-pixel text-[11px] font-normal pixel-outline pixel-thin pixel-crisp;
+    --pixel-border: var(--color-handle);
+    &[aria-pressed="true"] {
+      @apply bg-ink;
+      --pixel-border: var(--color-ink);
+    }
+  }
+}
+
+/* Two-way switch (visited / wish): a white track with the picked tab filled, or two pixel buttons. */
+@utility ui-tabs {
+  @apply flex h-12 rounded-2xl bg-white p-1;
+  @variant retro {
+    @apply h-auto gap-3 rounded-none bg-transparent p-0;
+  }
+}
+
+@utility ui-tab {
+  @apply flex flex-1 items-center justify-center gap-1.5 rounded-xl text-[14px] leading-normal font-semibold text-ink;
+  &[aria-selected="true"] {
+    @apply bg-brand text-white;
+  }
+  @variant retro {
+    @apply h-10 rounded-none bg-white font-pixel text-[12px] font-normal pixel-btn pixel-crisp hover:bg-sand-soft;
+    &[aria-selected="true"] {
+      @apply bg-brand hover:bg-brand-strong;
+    }
+  }
+}
+
+/* Small language / design switch; `aria-pressed` marks the current one. */
+@utility ui-segment {
+  @apply flex h-7 items-center gap-0.5 rounded-full bg-white p-0.5;
+  @variant retro {
+    @apply h-6 gap-0 rounded-none p-0 pixel-outline pixel-thin;
+  }
+}
+
+@utility ui-segment-option {
+  @apply flex h-6 min-w-7 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-muted;
+  &[aria-pressed="true"] {
+    @apply bg-brand text-white;
+  }
+  @variant retro {
+    @apply min-w-8 rounded-none px-2 font-pixel font-normal text-ink pixel-crisp;
+    &[aria-pressed="true"] {
+      @apply bg-ink text-white;
+    }
+  }
+}
+
+/* Round icon button in screen headers; colour it with `bg-*`. */
+@utility ui-icon-button {
+  @apply flex size-10 shrink-0 items-center justify-center rounded-full;
+  @variant retro {
+    @apply size-9 rounded-none pixel-btn pixel-thin;
+  }
+}
+
+/* The big call to action (sidebar "add schedule"). */
+@utility ui-cta {
+  @apply h-[50px] rounded-full bg-brand text-[15px] font-bold text-white shadow-cta hover:bg-brand-strong;
+  @variant retro {
+    @apply h-11 rounded-none font-pixel text-[12px] font-normal pixel-btn pixel-crisp;
+  }
+}
+
+@utility ui-search {
+  @apply mt-3 h-10 w-full rounded-xl border border-sand bg-white px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11;
+  @variant retro {
+    @apply mt-3.5 rounded-none border-0 font-pixel text-[12px] pixel-field pixel-crisp placeholder:text-faint lg:h-10;
+  }
+}
+
+/* List card; `aria-pressed` marks the selected one. The pixel shadows sit outside, so keep ~6px room around it. */
+@utility ui-card {
+  @apply rounded-2xl border-[1.5px] border-card-border bg-white;
+  &[aria-pressed="true"] {
+    @apply border-brand;
+  }
+  @variant retro {
+    @apply rounded-none border-0 pixel-box;
+    &[aria-pressed="true"] {
+      --pixel-border: var(--color-brand);
+    }
+  }
+}
+
+@utility ui-badge {
+  @apply rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong;
+  @variant retro {
+    @apply rounded-none px-1.5 font-pixel font-normal pixel-crisp;
+  }
+}
+
+/* Panel rising over the bottom of the map. */
+@utility ui-sheet {
+  @apply rounded-t-[26px] bg-white shadow-sheet;
+  @variant retro {
+    @apply rounded-none border-t-3 border-ink shadow-none;
+  }
+}
+
+/* Small panels and buttons floating on the map (the classic look comes from their own classes). */
+@utility ui-float {
+  @variant retro {
+    @apply rounded-none pixel-box pixel-thin;
+  }
+}
+
+@utility ui-float-button {
+  @apply bg-white;
+  @variant retro {
+    @apply rounded-none pixel-btn pixel-thin;
   }
 }

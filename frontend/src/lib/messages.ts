@@ -40,6 +40,16 @@ const ko = {
   sidebar: {
     since: (date: string) => `${date}부터 함께`,
   },
+  theme: {
+    label: '디자인',
+    names: { classic: '기본', retro: '도트' },
+    pickerEyebrow: '시작하기 전에',
+    pickerTitle: '어떤 디자인으로 쓸까요?',
+    pickerHint: '나중에 내 정보에서 언제든 바꿀 수 있어요',
+    descriptions: { classic: '부드럽고 깔끔한 기본 디자인', retro: '휴대용 게임기 감성의 픽셀 디자인' },
+    start: '이 디자인으로 시작',
+    samplePlace: '성수동 소금빵 카페',
+  },
   weekdays: ['일', '월', '화', '수', '목', '금', '토'],
   dates: {
     monthDay: (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`,
@@ -335,6 +345,16 @@ const ja: Messages = {
   nav: { map: 'メイン', calendar: 'カレンダー', albums: 'アルバム' },
   sidebar: {
     since: (date: string) => `${date}から一緒に`,
+  },
+  theme: {
+    label: 'デザイン',
+    names: { classic: 'ベーシック', retro: 'ドット' },
+    pickerEyebrow: 'はじめる前に',
+    pickerTitle: 'どのデザインで使いますか？',
+    pickerHint: 'あとからマイページでいつでも変えられます',
+    descriptions: { classic: 'やわらかくてすっきりした基本デザイン', retro: '携帯ゲーム機みたいなピクセルデザイン' },
+    start: 'このデザインではじめる',
+    samplePlace: '浅草の塩パン屋さん',
   },
   weekdays: ['日', '月', '火', '水', '木', '金', '土'],
   dates: {

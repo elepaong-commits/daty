@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/ScreenHeader'
+import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { toDateInput } from '../../lib/dates'
 import { useCreateCouple, useJoinCouple, useLogout, useMe } from '../../lib/queries'
