@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Field, inputClass } from '../../components/Field'
+import { Field, PasswordInput } from '../../components/Field'
 import { errorMessage } from '../../lib/api'
 import { formatDotted, toTimeInput } from '../../lib/dates'
 import { useChangePassword, useIssueResetCode } from '../../lib/queries'
@@ -52,26 +52,22 @@ export function ChangePassword() {
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-card-border p-4">
       <p className="text-[14px] font-semibold">{t.account.changePassword}</p>
       <Field label={t.account.currentPassword}>
-        <input
+        <PasswordInput
           required
-          type="password"
           maxLength={72}
           autoComplete="current-password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
-          className={inputClass}
         />
       </Field>
       <Field label={t.account.newPassword}>
-        <input
+        <PasswordInput
           required
-          type="password"
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className={inputClass}
         />
       </Field>
       {change.error && <p className="text-[12px] text-coral-strong">{errorMessage(change.error, t)}</p>}

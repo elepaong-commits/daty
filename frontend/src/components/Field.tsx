@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useState, type ComponentProps, type ReactNode } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { errorMessage } from '../lib/api'
 import { useT } from '../lib/i18n'
 
@@ -11,6 +12,27 @@ export function Field({ label, children, className = '' }: { label: string; chil
       <span className="text-[12px] leading-normal font-semibold text-muted">{label}</span>
       {children}
     </label>
+  )
+}
+
+/** Password field with a button that shows or hides what was typed. */
+export function PasswordInput({ className = '', ...props }: Omit<ComponentProps<'input'>, 'type'>) {
+  const t = useT()
+  const [visible, setVisible] = useState(false)
+  const Icon = visible ? EyeOff : Eye
+  return (
+    <span className="relative flex">
+      <input {...props} type={visible ? 'text' : 'password'} className={`${inputClass} pr-11 ${className}`} />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? t.common.hidePassword : t.common.showPassword}
+        aria-pressed={visible}
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted"
+      >
+        <Icon className="size-4.5" aria-hidden="true" />
+      </button>
+    </span>
   )
 }
 
