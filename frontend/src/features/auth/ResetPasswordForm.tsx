@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Field, inputClass } from '../../components/Field'
+import { Field, inputClass, PasswordInput } from '../../components/Field'
 import { errorMessage } from '../../lib/api'
 import { useResetPassword } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
@@ -48,15 +48,13 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
         />
       </Field>
       <Field label={t.auth.newPassword}>
-        <input
+        <PasswordInput
           required
-          type="password"
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className={inputClass}
         />
       </Field>
 

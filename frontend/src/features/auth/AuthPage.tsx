@@ -1,6 +1,6 @@
 import { Heart, MapPin } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
-import { Field, inputClass } from '../../components/Field'
+import { Field, inputClass, PasswordInput } from '../../components/Field'
 import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
@@ -95,15 +95,13 @@ export function AuthPage() {
               />
             </Field>
             <Field label={mode === 'signup' ? t.auth.newPassword : t.auth.password}>
-              <input
+              <PasswordInput
                 required
-                type="password"
                 minLength={mode === 'signup' ? 8 : undefined}
                 maxLength={72}
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
               />
             </Field>
 
