@@ -1,6 +1,6 @@
 // Mirrors backend/src/modules/*.routes.ts responses. Dates arrive as ISO strings.
 
-export type PlaceCategory = 'FOOD' | 'CAFE' | 'EXHIBIT' | 'TOUR' | 'ACTIVITY'
+export type PlaceCategory = 'FOOD' | 'CAFE' | 'DESSERT' | 'EXHIBIT' | 'TOUR' | 'ACTIVITY' | 'HOTEL'
 export type PlaceStatus = 'WISH' | 'VISITED'
 export type RecordType = 'PLAN' | 'RECORD'
 /** Tags a memo can carry, stored inline as `{{EAT}}` tokens (see `lib/memo.ts`). */
@@ -94,6 +94,7 @@ export interface Album {
   title: string
   albumDate: string // YYYY-MM-DD, the first day
   albumEndDate: string // the last day; same as albumDate for a one-day album
+  monthly: boolean // a month of everyday photos: spans the month but doesn't hold its days
   highlightNote: string | null
   coverPhotoId: number | null // the "best cut"
   photoCount: number
@@ -124,8 +125,9 @@ export interface CreateRecordInput {
 
 export interface CreateAlbumInput {
   title: string
-  albumDate: string
+  albumDate?: string // give this or albumMonth
   albumEndDate?: string | null // null for one day
+  albumMonth?: string // YYYY-MM, for a monthly album
   highlightNote?: string
   recordIds?: number[]
   placeIds?: number[] // saved places visited that day; each becomes a visit record in the album
@@ -142,6 +144,7 @@ export interface PlaceDetail extends Place {
     title: string
     albumDate: string
     albumEndDate: string
+    monthly: boolean
     coverPhotoId: number | null
     photoCount: number
     coverPhoto: Photo | null // the best cut, or the first photo when none is picked
@@ -183,8 +186,9 @@ export interface PhotoUpload {
 
 export interface UpdateAlbumInput {
   title?: string
-  albumDate?: string
+  albumDate?: string // turns a monthly album back into a dated one
   albumEndDate?: string | null // null makes it one day again
+  albumMonth?: string // YYYY-MM, makes it a monthly album
   highlightNote?: string | null
   coverPhotoId?: number | null
   recordIds?: number[]

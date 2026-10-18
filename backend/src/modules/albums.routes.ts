@@ -43,15 +43,22 @@ const placeVisits = {
   visitAt: z.iso.datetime({ offset: true }).optional(),
 };
 
-const albumBody = z.object({
-  title: z.string().trim().min(1).max(100),
-  albumDate: z.iso.date(),
-  // Last day of a trip; leave out (or same as albumDate) for a one-day album.
-  albumEndDate: z.iso.date().nullish(),
-  highlightNote: z.string().trim().max(300).nullish(),
-  recordIds: z.array(z.number().int().positive()).max(50).optional(),
-  ...placeVisits,
-});
+// `YYYY-MM`: a monthly album covers that whole month.
+const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+
+const albumBody = z
+  .object({
+    title: z.string().trim().min(1).max(100),
+    albumDate: z.iso.date().optional(),
+    // Last day of a trip; leave out (or same as albumDate) for a one-day album.
+    albumEndDate: z.iso.date().nullish(),
+    // In place of the dates, for a month of everyday photos (home, usual spots).
+    albumMonth: month.optional(),
+    highlightNote: z.string().trim().max(300).nullish(),
+    recordIds: z.array(z.number().int().positive()).max(50).optional(),
+    ...placeVisits,
+  })
+  .refine((b) => (b.albumMonth === undefined) !== (b.albumDate === undefined), "Give albumDate or albumMonth");
 
 /** Records a visit to each picked place not already in the album, promoting wish places to visited. */
 async function addPlaceVisits(
@@ -85,7 +92,7 @@ albumsRouter.get("/", async (req, res) => {
   const albums = await prisma.album.findMany({
     where: { coupleId: req.coupleId },
     include: albumInclude,
-    orderBy: { albumDate: "desc" },
+    orderBy: [{ albumDate: "desc" }, { createdAt: "desc" }],
   });
   res.json(await Promise.all(albums.map(serializeAlbum)));
 });
@@ -102,20 +109,31 @@ albumsRouter.get("/:id", async (req, res) => {
 /** An album covers albumDate..albumEndDate; a one-day album stores no end. */
 function albumRange(start: Date, end: Date | null) {
   if (end && end < start) throw new HttpError(400, "albumEndDate must not be before albumDate");
-  return { albumDate: start, albumEndDate: end && end > start ? end : null };
+  return { albumDate: start, albumEndDate: end && end > start ? end : null, monthly: false };
 }
 
-/** One album per day: a day's dates and photos all go into the album that already holds that day. */
+/** A monthly album spans its month's first to last day. */
+function monthRange(albumMonth: string) {
+  const [year, monthIndex] = albumMonth.split("-").map(Number) as [number, number];
+  return { albumDate: new Date(Date.UTC(year, monthIndex - 1, 1)), albumEndDate: new Date(Date.UTC(year, monthIndex, 0)), monthly: true };
+}
+
+/**
+ * One album per day: a day's dates and photos all go into the album that already holds that day.
+ * Monthly albums keep everyday photos beside those, so they neither hold days nor clash with each other.
+ */
 async function assertDaysFree(
   tx: Prisma.TransactionClient,
   coupleId: number,
-  { albumDate, albumEndDate }: { albumDate: Date; albumEndDate: Date | null },
+  { albumDate, albumEndDate, monthly }: { albumDate: Date; albumEndDate: Date | null; monthly: boolean },
   exceptId?: number,
 ) {
+  if (monthly) return;
   const end = albumEndDate ?? albumDate;
   const taken = await tx.album.findFirst({
     where: {
       coupleId,
+      monthly: false,
       ...(exceptId && { id: { not: exceptId } }),
       albumDate: { lte: end },
       OR: [{ albumEndDate: null, albumDate: { gte: albumDate } }, { albumEndDate: { gte: albumDate } }],
@@ -126,9 +144,11 @@ async function assertDaysFree(
 }
 
 albumsRouter.post("/", async (req, res) => {
-  const { recordIds = [], placeIds = [], visitAt, albumDate, albumEndDate, ...data } = albumBody.parse(req.body);
+  const { recordIds = [], placeIds = [], visitAt, albumDate, albumEndDate, albumMonth, ...data } = albumBody.parse(req.body);
   const { coupleId } = req;
-  const range = albumRange(new Date(albumDate), albumEndDate ? new Date(albumEndDate) : null);
+  const range = albumMonth
+    ? monthRange(albumMonth)
+    : albumRange(new Date(albumDate!), albumEndDate ? new Date(albumEndDate) : null);
   const album = await prisma.$transaction(async (tx) => {
     const owned = await tx.dateRecord.count({ where: { id: { in: recordIds }, coupleId } });
     if (owned !== new Set(recordIds).size) throw new HttpError(404, "Record not found");
@@ -152,6 +172,8 @@ const updateBody = z.object({
   albumDate: z.iso.date().optional(),
   // null makes it a one-day album again.
   albumEndDate: z.iso.date().nullable().optional(),
+  // Makes it a monthly album for that month; dates turn it back into a dated one.
+  albumMonth: month.optional(),
   highlightNote: z.string().trim().max(300).nullable().optional(),
   // The "best cut" shown on the album card; must be one of this album's photos.
   coverPhotoId: z.number().int().positive().nullable().optional(),
@@ -162,18 +184,24 @@ const updateBody = z.object({
 
 albumsRouter.patch("/:id", async (req, res) => {
   const { id } = idParam.parse(req.params);
-  const { recordIds, placeIds = [], visitAt, albumDate, albumEndDate, ...data } = updateBody.parse(req.body);
+  const { recordIds, placeIds = [], visitAt, albumDate, albumEndDate, albumMonth, ...data } = updateBody.parse(req.body);
   const { coupleId } = req;
   const current = await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
   const moving = albumDate !== undefined || albumEndDate !== undefined;
+  if (albumMonth && moving) throw new HttpError(400, "Give albumDate or albumMonth, not both");
+  // A month's span isn't a trip, so leaving it takes a start day.
+  if (current.monthly && moving && !albumDate) throw new HttpError(400, "albumDate is required to leave a monthly album");
   let range: ReturnType<typeof albumRange> | undefined;
-  if (moving) {
+  if (albumMonth) {
+    range = monthRange(albumMonth);
+  } else if (moving) {
     const start = albumDate ? new Date(albumDate) : current.albumDate;
     // A new start alone keeps the old end when it still comes after it, otherwise the album shrinks to that day.
+    // A month's last day isn't a trip's end, so a monthly album becomes one day.
     const end =
       albumEndDate !== undefined
         ? albumEndDate ? new Date(albumEndDate) : null
-        : current.albumEndDate && current.albumEndDate > start
+        : !current.monthly && current.albumEndDate && current.albumEndDate > start
           ? current.albumEndDate
           : null;
     range = albumRange(start, end);

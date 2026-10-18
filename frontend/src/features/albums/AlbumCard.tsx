@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { PHOTO_GRADIENTS } from '../../lib/categories'
-import { formatDottedRange, formatSlashRange, parseDateOnly } from '../../lib/dates'
+import { albumHeading, formatDottedRange, parseDateOnly } from '../../lib/dates'
 import type { Album, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
@@ -29,11 +29,11 @@ export function AlbumCard({ album, className = '', style }: { album: Album; clas
       style={style}
     >
       <div className="px-1.5 retro:pr-2 retro:pl-0">
-        <PhotoStack album={album} date={formatDottedRange(start, end)} />
+        <PhotoStack album={album} date={album.monthly ? t.dates.yearMonth(start) : formatDottedRange(start, end)} />
       </div>
       <div className="flex flex-col px-0.5">
         <h3 className="font-display text-[16px] leading-[1.375] retro:text-[14px]">
-          {formatSlashRange(start, end)} · {album.title}
+          {albumHeading(album, t.dates.yearMonth)}
         </h3>
         {shownPlace && (
           <div className="flex flex-wrap gap-1 pt-1">
