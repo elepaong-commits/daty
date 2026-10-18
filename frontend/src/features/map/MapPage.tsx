@@ -1,6 +1,7 @@
 import { Check, Heart } from 'lucide-react'
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { AnimatePresence } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
 import searchIcon from '../../assets/icons/search.svg'
@@ -15,7 +16,8 @@ import type { Place, PlaceCategory, PlaceStatus } from '../../lib/types'
 import { AddPlaceSheet } from './AddPlaceSheet'
 import { DateMap } from './DateMap'
 import { PlaceList, PlaceSheet } from './PlaceSheet'
-import { useT } from '../../lib/i18n'
+import { lookUpPlace, type PickedPlace } from '../../lib/places'
+import { useI18n } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
 import { useIsRetro } from '../../lib/theme'
 
@@ -31,7 +33,8 @@ export interface MapFocus {
  */
 export function MapPage() {
   const couple = useMe().data?.couple
-  const t = useT()
+  const { lang, t } = useI18n()
+  const placesLibrary = useMapsLibrary('places')
   const isDesktop = useIsDesktop()
   const retro = useIsRetro()
   const navigate = useNavigate()
@@ -45,6 +48,9 @@ export function MapPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(focus?.placeId ?? null)
   const [adding, setAdding] = useState(false)
+  // A Google place tapped on the map, to start the add sheet from.
+  const [tapped, setTapped] = useState<PickedPlace | null>(null)
+  const lastTap = useRef('')
 
   // Category and search narrow both the pins and the cards; status only dims the other pins.
   const filtered = useMemo(
@@ -78,14 +84,42 @@ export function MapPage() {
     setSelectedId(null)
   }
 
-  // Show the new place: its tab, no filter hiding it, its card selected.
-  function showAdded(place: Place) {
-    setAdding(false)
+  // Show a place: its tab, no filter hiding it, its card selected.
+  function showPlace(place: Place) {
     setStatus(place.status)
     setCategory(null)
     setQuery('')
     setSearchOpen(false)
+  }
+
+  function showAdded(place: Place) {
+    setAdding(false)
+    showPlace(place)
     setSelectedId(place.id)
+  }
+
+  function startAdding(initial: PickedPlace | null) {
+    setTapped(initial)
+    setAdding(true)
+  }
+
+  // A place already saved shows as our pin; any other opens the add sheet filled in from Google.
+  async function tapPoi(googlePlaceId: string) {
+    lastTap.current = googlePlaceId
+    const saved = places.find((p) => p.googlePlaceId === googlePlaceId)
+    if (saved) {
+      showPlace(saved)
+      selectOnMap(saved.id)
+      return
+    }
+    if (!placesLibrary) return
+    try {
+      const found = await lookUpPlace(placesLibrary, new placesLibrary.Place({ id: googlePlaceId }), lang)
+      // Ignore a slow lookup once another place has been tapped.
+      if (found && lastTap.current === googlePlaceId) startAdding(found)
+    } catch {
+      // The place couldn't be looked up; the tap does nothing.
+    }
   }
 
   if (!isDesktop && detailMatch) return <Outlet />
@@ -110,7 +144,7 @@ export function MapPage() {
           </button>
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={() => startAdding(null)}
             className="ui-icon-button bg-brand shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-strong"
             aria-label={t.map.addWish}
           >
@@ -165,10 +199,12 @@ export function MapPage() {
   )
 
   const map = (
-    <DateMap places={filtered} activeStatus={status} selectedId={highlightedId} onSelect={selectOnMap} />
+    <DateMap places={filtered} activeStatus={status} selectedId={highlightedId} onSelect={selectOnMap} onPoiClick={tapPoi} />
   )
   const addSheet = (
-    <AnimatePresence>{adding && <AddPlaceSheet onClose={() => setAdding(false)} onSaved={showAdded} />}</AnimatePresence>
+    <AnimatePresence>
+      {adding && <AddPlaceSheet initial={tapped ?? undefined} onClose={() => setAdding(false)} onSaved={showAdded} />}
+    </AnimatePresence>
   )
 
   if (isDesktop) {
