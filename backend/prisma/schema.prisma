@@ -11,9 +11,11 @@ generator client {
 enum PlaceCategory {
   FOOD
   CAFE
+  DESSERT
   EXHIBIT
   TOUR
   ACTIVITY
+  HOTEL
 }
 
 enum PlaceStatus {
@@ -148,6 +150,8 @@ model Album {
   title         String
   albumDate     DateTime     @map("album_date") @db.Date // first day
   albumEndDate  DateTime?    @map("album_end_date") @db.Date // last day of a trip; null when the album is one day
+  // A month of everyday photos (home, usual spots): covers the whole month without holding its days for date albums.
+  monthly       Boolean      @default(false)
   highlightNote String?      @map("highlight_note") // 꼭 봐야 할 포인트
   coverPhotoId  Int?         @map("cover_photo_id")
   createdAt     DateTime     @default(now()) @map("created_at")

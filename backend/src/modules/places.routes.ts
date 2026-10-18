@@ -118,6 +118,7 @@ placesRouter.get("/:id", async (req, res) => {
               title: true,
               albumDate: true,
               albumEndDate: true,
+              monthly: true,
               coverPhotoId: true,
               photos: { orderBy: { displayOrder: "asc" }, take: 3 },
               _count: { select: { photos: true } },

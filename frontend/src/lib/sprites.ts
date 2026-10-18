@@ -78,6 +78,8 @@ export const SPRITES = {
   cafe: ['.g.g....', '..g.g...', 'kkkkkk..', 'kwwwwkkk', 'kwwwwk.k', 'kwwwwkkk', '.kkkk...'],
   exhibit: ['kkkkkkkk', 'kmmmmgmk', 'kmmmmmmk', 'kmmvmmmk', 'kvvvvemk', 'kkkkkkkk'],
   tour: ['....k....', '...kwk...', '..kwwek..', '.keeeeek.', 'keeEeeeek', 'kkkkkkkkk'],
+  dessert: ['...cc...', '..kcck..', '.kwwwwk.', 'kccccccC', 'kwwwwwwk', 'khhhhhhk', 'kkkkkkkk'],
+  hotel: ['k.......', 'kwwk....', 'kwwkkkkk', 'kccccccC', 'kccccccC', 'kkkkkkkk', 'k......k'],
   activity: ['kcccccc.', 'kccccccc', 'kcccccc.', 'k.......', 'k.......', 'k.......'],
   star: ['....k....', '...kgk...', 'kkkkgkkkk', 'kgggggggk', '.kgggggk.', '..kgggk..', '.kggkggk.', '.kgk.kgk.', '.kk...kk.'],
   starOff: ['....k....', '...klk...', 'kkkklkkkk', 'klllllllk', '.klllllk.', '..klllk..', '.kllkllk.', '.klk.klk.', '.kk...kk.'],
@@ -140,7 +142,9 @@ export type SpriteName = keyof typeof SPRITES
 export const CATEGORY_SPRITES: Record<PlaceCategory, SpriteName> = {
   FOOD: 'food',
   CAFE: 'cafe',
+  DESSERT: 'dessert',
   EXHIBIT: 'exhibit',
   TOUR: 'tour',
   ACTIVITY: 'activity',
+  HOTEL: 'hotel',
 }

@@ -46,6 +46,12 @@ export const formatDottedRange = (start: Date, end: Date) => {
   return `${formatDotted(start)}–${sameYear ? formatMonthDay(end) : formatDotted(end)}`
 }
 
+/** `M/D · title` (or `M/D–M/D · title`); a monthly album shows its month instead, e.g. `2026년 10월 · title`. */
+export const albumHeading = (
+  { title, albumDate, albumEndDate, monthly }: { title: string; albumDate: string; albumEndDate: string; monthly: boolean },
+  formatYearMonth: (d: Date) => string,
+) => `${monthly ? formatYearMonth(parseDateOnly(albumDate)) : formatSlashRange(parseDateOnly(albumDate), parseDateOnly(albumEndDate))} · ${title}`
+
 /** Whether two `YYYY-MM-DD` ranges share a day (the strings sort like the dates). */
 export const rangesOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string) => aStart <= bEnd && bStart <= aEnd
 

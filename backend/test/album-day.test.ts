@@ -72,3 +72,29 @@ test("stretching an album over a taken day is refused, and null shrinks it back 
   const shrunk = await a.ok("PATCH", `/albums/${album.id}`, { albumEndDate: null });
   assert.equal(shrunk.albumEndDate, "2026-09-26");
 });
+
+test("monthly albums cover their month without taking its days", async () => {
+  await a.ok("POST", "/albums", { title: "Date in Nov", albumDate: "2026-11-05" });
+  const home = await a.ok("POST", "/albums", { title: "Home, November", albumMonth: "2026-11" });
+  assert.equal(home.monthly, true);
+  assert.equal(home.albumDate, "2026-11-01");
+  assert.equal(home.albumEndDate, "2026-11-30");
+  // Another monthly album and another date in the same month still fit.
+  await a.ok("POST", "/albums", { title: "Usual cafe, November", albumMonth: "2026-11" });
+  await a.ok("POST", "/albums", { title: "Date later in Nov", albumDate: "2026-11-20" });
+  const both = await a.request("POST", "/albums", { title: "Both", albumDate: "2026-11-21", albumMonth: "2026-11" });
+  assert.equal(both.status, 400);
+  const neither = await a.request("POST", "/albums", { title: "Neither" });
+  assert.equal(neither.status, 400);
+
+  const feb = await a.ok("PATCH", `/albums/${home.id}`, { albumMonth: "2027-02" });
+  assert.equal(feb.albumEndDate, "2027-02-28");
+  const endOnly = await a.request("PATCH", `/albums/${home.id}`, { albumEndDate: "2027-02-10" });
+  assert.equal(endOnly.status, 400);
+  // Back to a dated album, which takes its day again.
+  const taken = await a.request("PATCH", `/albums/${home.id}`, { albumDate: "2026-11-05" });
+  assert.equal(taken.status, 409);
+  const dated = await a.ok("PATCH", `/albums/${home.id}`, { albumDate: "2027-02-14" });
+  assert.equal(dated.monthly, false);
+  assert.equal(dated.albumEndDate, "2027-02-14");
+});

@@ -222,8 +222,11 @@ function shortAddress(place: google.maps.places.Place) {
   return find('locality') || find('administrative_area_level_2') || find('administrative_area_level_1') || find('country') || null
 }
 
+// Checked in order: a hotel's restaurant types don't make it a restaurant, and dessert comes before `_restaurant`.
 const TYPE_TO_CATEGORY: [string[], PlaceCategory][] = [
-  [['cafe', 'coffee_shop', 'bakery', 'dessert_shop', 'tea_house'], 'CAFE'],
+  [['lodging', 'hotel', 'motel', 'hostel', 'inn', 'guest_house', 'bed_and_breakfast', 'resort_hotel', 'japanese_inn'], 'HOTEL'],
+  [['cafe', 'coffee_shop', 'tea_house'], 'CAFE'],
+  [['bakery', 'dessert_shop', 'dessert_restaurant', 'ice_cream_shop', 'confectionery', 'chocolate_shop', 'candy_store', 'donut_shop', 'cake_shop'], 'DESSERT'],
   [['museum', 'art_gallery', 'cultural_center'], 'EXHIBIT'],
   [['restaurant', 'food', 'meal_takeaway', 'bar', 'pub', 'wine_bar'], 'FOOD'],
   [['amusement_park', 'bowling_alley', 'gym', 'movie_theater', 'spa', 'zoo', 'aquarium'], 'ACTIVITY'],

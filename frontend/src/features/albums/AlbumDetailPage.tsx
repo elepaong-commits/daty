@@ -5,7 +5,7 @@ import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { errorMessage } from '../../lib/api'
-import { daysBetween, formatDotted, formatDuration, formatMonthDay, formatSlashRange, parseDateOnly } from '../../lib/dates'
+import { albumHeading, daysBetween, formatDotted, formatDuration, formatMonthDay, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
@@ -149,9 +149,10 @@ export function AlbumDetailPage() {
   const end = parseDateOnly(album.albumEndDate)
   const days = daysBetween(start, end) + 1
   const dayHeading = (d: Date, label: string) => t.calendar.dayHeading(label, t.weekdays[d.getDay()]!)
-  // One day: `2026.09.10 (목)`. A trip: `2026.09.10 (목) ~ 09.12 (토) · 2박 3일`.
-  const period =
-    days === 1
+  // One day: `2026.09.10 (목)`. A trip: `2026.09.10 (목) ~ 09.12 (토) · 2박 3일`. A month: `2026년 10월 · 한 달`.
+  const period = album.monthly
+    ? `${t.dates.yearMonth(start)} · ${t.albums.wholeMonth}`
+    : days === 1
       ? dayHeading(start, formatDotted(start))
       : `${dayHeading(start, formatDotted(start))} ~ ${dayHeading(end, start.getFullYear() === end.getFullYear() ? formatMonthDay(end) : formatDotted(end))} · ${t.albums.tripLength(days - 1, days)}`
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
@@ -177,7 +178,7 @@ export function AlbumDetailPage() {
             <div className="flex flex-col gap-[5px]">
               <div className="flex items-start gap-3">
                 <h2 className="min-w-0 flex-1 font-display text-[20px] leading-[1.38] lg:text-[26px]">
-                  {formatSlashRange(start, end)} · {album.title}
+                  {albumHeading(album, t.dates.yearMonth)}
                 </h2>
                 <div className="hidden shrink-0 lg:block">
                   <HeaderAction onClick={() => setEditing(true)}>{t.albums.editAlbum}</HeaderAction>
@@ -213,7 +214,7 @@ export function AlbumDetailPage() {
         <div className="flex min-w-0 flex-col gap-3 lg:pt-3">
 
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-[18px]">{t.albums.moments}</h3>
+          <h3 className="font-display text-[18px]">{album.monthly ? t.albums.momentsMonthly : t.albums.moments}</h3>
           <div className="flex gap-2">
             {album.photos.length > 0 && (
               <button
