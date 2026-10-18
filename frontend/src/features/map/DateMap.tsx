@@ -27,6 +27,8 @@ interface Props {
   activeStatus: PlaceStatus
   selectedId: number | null
   onSelect: (id: number | null) => void
+  /** A Google place icon (shop, sight, …) on the map was tapped. */
+  onPoiClick: (googlePlaceId: string) => void
 }
 
 export function DateMap(props: Props) {
@@ -51,9 +53,13 @@ export function DateMap(props: Props) {
         defaultCenter={SEOUL}
         defaultZoom={DEFAULT_ZOOM}
         disableDefaultUI
-        clickableIcons={false}
         gestureHandling="greedy"
-        onClick={() => props.onSelect(null)}
+        onClick={(e) => {
+          if (!e.detail.placeId) return props.onSelect(null)
+          // Our own sheet takes the place of Google's info window.
+          e.stop()
+          props.onPoiClick(e.detail.placeId)
+        }}
         className="size-full"
       >
         <Pins {...props} />

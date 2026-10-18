@@ -2,18 +2,8 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useEffect, useId, useRef, useState } from 'react'
 import { inputClass } from '../../components/Field'
 import { MAPS_API_KEY } from '../../lib/maps'
-import type { PlaceCategory } from '../../lib/types'
+import { lookUpPlace, type PickedPlace } from '../../lib/places'
 import { useI18n, useT } from '../../lib/i18n'
-
-export interface PickedPlace {
-  googlePlaceId: string
-  name: string
-  address?: string
-  latitude: number
-  longitude: number
-  googleMapsUrl?: string
-  category?: PlaceCategory
-}
 
 interface Props {
   name: string
@@ -23,9 +13,6 @@ interface Props {
 }
 
 const DEBOUNCE_MS = 250
-
-/** Countries whose places keep their own name: a place in Japan is saved in Japanese whatever the app language. */
-const LOCAL_LANGUAGE: Record<string, string> = { KR: 'ko', JP: 'ja' }
 
 /** Place name field that suggests real places from Google; picking one gives the place a map pin. */
 export function PlaceSearch(props: Props) {
@@ -96,24 +83,11 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
     setOpen(false)
     setLoadingPick(true)
     try {
-      const place = prediction.toPlace()
-      await place.fetchFields({
-        fields: ['displayName', 'formattedAddress', 'location', 'googleMapsURI', 'addressComponents', 'primaryType', 'types'],
-      })
+      const found = await lookUpPlace(places!, prediction.toPlace(), lang, prediction.mainText?.text ?? name)
       sessionToken.current = null
-      if (!place.location) return
-      const named = (await inLocalLanguage(places!, place, lang)) ?? place
-      const placeName = named.displayName ?? prediction.mainText?.text ?? name
-      onNameChange(placeName)
-      onPick({
-        googlePlaceId: place.id,
-        name: placeName,
-        address: shortAddress(named) ?? undefined,
-        latitude: place.location.lat(),
-        longitude: place.location.lng(),
-        googleMapsUrl: place.googleMapsURI ?? undefined,
-        category: categoryFromTypes([place.primaryType, ...(place.types ?? [])]),
-      })
+      if (!found) return
+      onNameChange(found.name)
+      onPick(found)
     } finally {
       setLoadingPick(false)
     }
@@ -190,52 +164,4 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
       </p>
     </div>
   )
-}
-
-/**
- * The same place looked up again in its country's language (Japanese for Japan), for its name and address.
- * Null when it is already in that language, the country has no local language set, or the lookup fails.
- */
-async function inLocalLanguage(places: google.maps.PlacesLibrary, place: google.maps.places.Place, lang: string) {
-  const country = place.addressComponents?.find((c) => c.types.includes('country'))?.shortText
-  const local = country && LOCAL_LANGUAGE[country]
-  if (!local || local === lang) return null
-  try {
-    const localPlace = new places.Place({ id: place.id, requestedLanguage: local })
-    await localPlace.fetchFields({ fields: ['displayName', 'formattedAddress', 'addressComponents'] })
-    return localPlace
-  } catch {
-    return null
-  }
-}
-
-/** Neighborhood like the design's "성수동" in Korea, or the city abroad. */
-function shortAddress(place: google.maps.places.Place) {
-  const components = place.addressComponents ?? []
-  const find = (type: string) => components.find((c) => c.types.includes(type))?.longText
-  const country = components.find((c) => c.types.includes('country'))?.shortText
-  if (country === 'KR') {
-    const dong = find('sublocality_level_2')?.replace(/\d+가$/, '')
-    return dong || find('sublocality_level_1') || find('locality') || place.formattedAddress || null
-  }
-  // Abroad, Korean-style 동 levels don't exist (Japan's sublocalities are block numbers), so use the city.
-  return find('locality') || find('administrative_area_level_2') || find('administrative_area_level_1') || find('country') || null
-}
-
-// Checked in order: a hotel's restaurant types don't make it a restaurant, and dessert comes before `_restaurant`.
-const TYPE_TO_CATEGORY: [string[], PlaceCategory][] = [
-  [['lodging', 'hotel', 'motel', 'hostel', 'inn', 'guest_house', 'bed_and_breakfast', 'resort_hotel', 'japanese_inn'], 'HOTEL'],
-  [['cafe', 'coffee_shop', 'tea_house'], 'CAFE'],
-  [['bakery', 'dessert_shop', 'dessert_restaurant', 'ice_cream_shop', 'confectionery', 'chocolate_shop', 'candy_store', 'donut_shop', 'cake_shop'], 'DESSERT'],
-  [['museum', 'art_gallery', 'cultural_center'], 'EXHIBIT'],
-  [['restaurant', 'food', 'meal_takeaway', 'bar', 'pub', 'wine_bar'], 'FOOD'],
-  [['amusement_park', 'bowling_alley', 'gym', 'movie_theater', 'spa', 'zoo', 'aquarium'], 'ACTIVITY'],
-  [['tourist_attraction', 'park', 'natural_feature', 'hiking_area', 'observation_deck', 'historical_landmark', 'historical_place', 'cultural_landmark', 'monument', 'neighborhood', 'plaza', 'garden'], 'TOUR'],
-]
-
-function categoryFromTypes(types: (string | null | undefined)[]) {
-  for (const [keys, category] of TYPE_TO_CATEGORY) {
-    if (types.some((t) => t && (keys.includes(t) || keys.some((k) => t.endsWith(`_${k}`))))) return category
-  }
-  return undefined
 }

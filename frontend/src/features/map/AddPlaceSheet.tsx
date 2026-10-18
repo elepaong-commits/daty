@@ -11,22 +11,24 @@ import { encodeMemo } from '../../lib/memo'
 import { useCreatePlace, usePlaces } from '../../lib/queries'
 import type { Place, PlaceCategory } from '../../lib/types'
 import { NewPlaceFields } from '../records/NewPlaceFields'
-import type { PickedPlace } from '../records/PlaceSearch'
+import type { PickedPlace } from '../../lib/places'
 
 interface Props {
   onClose: () => void
   onSaved: (place: Place) => void
+  /** A place tapped on the map, already looked up on Google. */
+  initial?: PickedPlace
 }
 
 /** Save a place the couple wants to go to, straight onto the map, with an optional tagged memo. */
-export function AddPlaceSheet({ onClose, onSaved }: Props) {
+export function AddPlaceSheet({ onClose, onSaved, initial }: Props) {
   const t = useT()
   const createPlace = useCreatePlace()
   const { data: places = [] } = usePlaces()
-  const [mapUrl, setMapUrl] = useState('')
-  const [name, setName] = useState('')
-  const [picked, setPicked] = useState<PickedPlace | null>(null)
-  const [category, setCategory] = useState<PlaceCategory>('CAFE')
+  const [mapUrl, setMapUrl] = useState(initial?.googleMapsUrl ?? '')
+  const [name, setName] = useState(initial?.name ?? '')
+  const [picked, setPicked] = useState<PickedPlace | null>(initial ?? null)
+  const [category, setCategory] = useState<PlaceCategory>(initial?.category ?? 'CAFE')
   const [memo, setMemo] = useState('')
 
   // The backend refuses the same Google place twice, so point to the saved one up front.
@@ -63,6 +65,8 @@ export function AddPlaceSheet({ onClose, onSaved }: Props) {
           onNameChange={setName}
           picked={picked}
           onPick={(place) => {
+            // Fill in Google's link, and swap it when another place is picked, but keep one pasted by hand.
+            if (mapUrl.trim() === '' || mapUrl === picked?.googleMapsUrl) setMapUrl(place?.googleMapsUrl ?? '')
             setPicked(place)
             if (place?.category) setCategory(place.category)
           }}

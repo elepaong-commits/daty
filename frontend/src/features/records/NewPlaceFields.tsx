@@ -2,7 +2,8 @@ import { MapPin } from 'lucide-react'
 import mapPinIcon from '../../assets/icons/map-pin.svg'
 import { Field, inputClass } from '../../components/Field'
 import { useT } from '../../lib/i18n'
-import { PlaceSearch, type PickedPlace } from './PlaceSearch'
+import type { PickedPlace } from '../../lib/places'
+import { PlaceSearch } from './PlaceSearch'
 
 interface Props {
   mapUrl: string
