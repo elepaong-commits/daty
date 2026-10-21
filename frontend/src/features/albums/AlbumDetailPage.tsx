@@ -243,6 +243,9 @@ export function AlbumDetailPage() {
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}
+        {uploadPhotos.data && uploadPhotos.data.skipped > 0 && (
+          <p className="text-[12px] text-muted">{t.albums.uploadSkipped(uploadPhotos.data.skipped)}</p>
+        )}
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {album.photos.length > 0 && (

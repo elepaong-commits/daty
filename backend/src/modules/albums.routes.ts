@@ -291,6 +291,8 @@ const addPhotosBody = z.object({
         thumbnailKey: z.string().max(200).nullish(),
         takenAt: z.iso.datetime({ offset: true }).nullish(),
         durationSec: z.number().positive().max(86_400).nullish(), // videos only
+        // SHA-256 of the original file, so picking the same shot again doesn't add it twice.
+        fingerprint: z.string().regex(/^[0-9a-f]{64}$/).nullish(),
       }),
     )
     .min(1)
@@ -306,8 +308,26 @@ albumsRouter.post("/:id/photos", async (req, res) => {
   if (!knownKeys) throw new HttpError(400, "Unknown photo key", "INVALID_UPLOAD");
   await prisma.album.findFirstOrThrow({ where: { id, coupleId } });
 
+  // Files already in the album (or twice in this request) are dropped along with their uploads.
+  // The same key coming back is a retried confirm, not a duplicate, so it isn't deleted.
+  const fingerprints = photos.flatMap((p) => (p.fingerprint ? [p.fingerprint] : []));
+  const existing = await prisma.photo.findMany({
+    where: { albumId: id, fingerprint: { in: fingerprints } },
+    select: { fingerprint: true, storageKey: true },
+  });
+  const keyByFingerprint = new Map(existing.map((p) => [p.fingerprint, p.storageKey]));
+  const fresh = photos.filter((p) => {
+    if (!p.fingerprint) return true;
+    const known = keyByFingerprint.get(p.fingerprint);
+    if (known !== undefined) return known === p.key;
+    keyByFingerprint.set(p.fingerprint, p.key);
+    return true;
+  });
+  const duplicates = photos.filter((p) => !fresh.includes(p));
+  if (duplicates.length > 0) await deleteObjects(duplicates.flatMap((p) => [p.key, ...(p.thumbnailKey ? [p.thumbnailKey] : [])]));
+
   // The presigned PUT can't cap size or type, so check what actually landed before recording it.
-  const items = photos.map((p) => ({ ...p, isVideo: videoExtension.test(p.key) }));
+  const items = fresh.map((p) => ({ ...p, isVideo: videoExtension.test(p.key) }));
   const objects = items.flatMap((p) => [
     p.isVideo ? { key: p.key, maxBytes: MAX_VIDEO_BYTES, type: "video/" } : { key: p.key, maxBytes: MAX_PHOTO_BYTES, type: "image/" },
     ...(p.thumbnailKey ? [{ key: p.thumbnailKey, maxBytes: MAX_THUMBNAIL_BYTES, type: "image/" }] : []),
@@ -331,6 +351,7 @@ albumsRouter.post("/:id/photos", async (req, res) => {
         takenAt: p.takenAt ? new Date(p.takenAt) : null,
         mediaType: p.isVideo ? ("VIDEO" as const) : ("PHOTO" as const),
         durationSec: p.isVideo ? (p.durationSec ?? null) : null,
+        fingerprint: p.fingerprint ?? null,
       })),
       skipDuplicates: true, // a retried confirm shouldn't fail on keys it already recorded
     });

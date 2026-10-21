@@ -87,6 +87,7 @@ export interface Photo {
   displayOrder: number
   takenAt: string | null
   durationSec: number | null // videos only
+  fingerprint: string | null // hash of the original file, to skip it if picked again
 }
 
 export interface Album {

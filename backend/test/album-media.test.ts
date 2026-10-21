@@ -45,3 +45,17 @@ test("video upload keys are checked like photo keys", async () => {
   assert.equal(res.status, 400);
   assert.equal(res.body.code, "INVALID_UPLOAD");
 });
+
+test("a file already in the album isn't recorded again", async () => {
+  const album = await a.ok("POST", "/albums", { title: "Again", albumDate: "2026-10-03" });
+  const { coupleId } = await prisma.album.findUniqueOrThrow({ where: { id: album.id } });
+  const fingerprint = "a".repeat(64);
+  await prisma.photo.create({
+    data: { albumId: album.id, storageKey: `couples/${coupleId}/albums/${album.id}/11111111-1111-1111-1111-111111111111.jpg`, fingerprint },
+  });
+  const key = `couples/${coupleId}/albums/${album.id}/22222222-2222-2222-2222-222222222222.jpg`;
+  const res = await a.request("POST", `/albums/${album.id}/photos`, { photos: [{ key, fingerprint }] });
+  assert.equal(res.status, 201);
+  assert.equal(res.body.photos.length, 1);
+  assert.equal(res.body.photos[0].fingerprint, fingerprint);
+});

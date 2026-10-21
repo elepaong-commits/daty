@@ -65,7 +65,7 @@
   - `memo`는 그 데이트에 대한 메모(`DateRecord.memo`), `placeNote`는 장소에 대한 메모로 연결된 장소의 `PlaceNote`를 하나 새로 만든다(생성·수정 모두, 수정에서 장소를 옮기면 새 장소에). 일정 폼에 두 칸이 따로 있다
 - `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — 앨범은 하루(`albumDate`) 또는 기간(`albumDate`~`albumEndDate`, 여행 등)을 덮는다. DB의 `albumEndDate`는 하루짜리면 `null`이고 응답에서는 항상 마지막 날(하루면 `albumDate`와 같음)을 준다. 하루에는 앨범 하나뿐이라 기간이 겹치면 `409 ALBUM_EXISTS`. 월별 앨범(`monthly`, 한 달 동안 집이나 자주 가는 곳에서 찍은 사진)은 날짜 대신 `albumMonth`(`YYYY-MM`)로 만들고 그 달 1일~말일을 덮지만, 날짜를 차지하지 않아 겹침 검사에서 빠진다(같은 달에 여러 개 가능). 폼에서는 방문 기록·장소 고르기를 숨긴다. `coverPhotoId`가 "베스트 컷"(앨범 표지). 고르지 않으면(`null`) 응답의 `coverPhoto`는 첫 번째 사진. 사진이나 앨범을 지우면 원본·썸네일 R2 객체도 지운다(실패해도 로그만 남김)
   - `POST /api/albums/:id/photos/uploads` (`{ files: [{ contentType }] }`, 최대 30개. 이미지 jpeg/png/webp, 동영상 mp4/quicktime/webm) → 업로드할 `key`, presigned `uploadUrl`(10분), 보낼 `headers`, 그리고 같은 모양의 `thumbnail`(`{uuid}.thumb.jpg`)
-  - `POST /api/albums/:id/photos` (`{ photos: [{ key, thumbnailKey, takenAt, durationSec? }] }`) — R2에 HEAD로 실제 업로드(사진은 15MB 이하 이미지, 동영상은 R2 단일 PUT 한도인 5GB 이하 동영상, 썸네일 2MB 이하 이미지)를 확인한 뒤 기록. 키 확장자로 `mediaType`을 정한다. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`와 그 썸네일 키만 받는다. 썸네일 업로드만 실패하면 `thumbnailKey: null`로 보내고 원본을 쓴다(동영상은 응답의 `thumbnailUrl`이 `null`)
+  - `POST /api/albums/:id/photos` (`{ photos: [{ key, thumbnailKey, takenAt, durationSec?, fingerprint? }] }`) — R2에 HEAD로 실제 업로드(사진은 15MB 이하 이미지, 동영상은 R2 단일 PUT 한도인 5GB 이하 동영상, 썸네일 2MB 이하 이미지)를 확인한 뒤 기록. 키 확장자로 `mediaType`을 정한다. 키는 `couples/{coupleId}/albums/{albumId}/{uuid}.{ext}`와 그 썸네일 키만 받는다. 썸네일 업로드만 실패하면 `thumbnailKey: null`로 보내고 원본을 쓴다(동영상은 응답의 `thumbnailUrl`이 `null`). `fingerprint`(원본 파일 크기·앞뒤 1MB의 SHA-256, `src/lib/fingerprint.ts`)가 같은 앨범에 이미 있으면 기록하지 않고 올라온 R2 객체를 지운다(앨범 안에서 유일, 예전 사진은 `null`)
 
 **시드:** `npx prisma db seed`는 디자인 시안과 같은 샘플 데이터와 개발 계정(`dev-a@daty.local` / `dev-b@daty.local`, 비밀번호 `daty1234`)을 넣는다. DB 이름이 `_dev`로 끝나지 않으면 실행을 거부한다. 이미 시드된 커플이 있으면 아무것도 지우지 않고 건너뛴다. 처음부터 다시 만들려면 `npx prisma db seed -- --reset`(그 커플의 장소·기록·앨범·업로드한 사진 행이 지워진다).
 
@@ -81,7 +81,7 @@
 
 - R2 버킷은 **비공개**다. `Photo.storageKey`에 객체 키를 저장하고, 응답의 `imageUrl`은 백엔드가 매번 만든 서명 GET URL이다(`src/lib/storage.ts`). 서명 시각을 UTC 자정으로 고정하고 2일 유효라서 하루 동안 URL이 같아 브라우저 캐시가 된다. `imageUrl`만 있는 예전 행은 그 URL을 그대로 준다
 - 서명은 AWS SDK 대신 `aws4fetch`로 한다(서버 메모리 절약). R2 환경 변수(`R2_ACCOUNT_ID` 등 4개)가 비어 있으면 업로드는 `503 STORAGE_DISABLED`
-- 프론트는 업로드 전에 사진을 긴 변 2048px JPEG와 800px 썸네일로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`). 동영상은 브라우저에서 다시 인코딩하지 않고 원본 그대로 올리며, 첫 장면 썸네일·길이·촬영 시각(mvhd)만 만든다(`src/lib/videos.ts`). 업로드 URL이 10분짜리라 동영상은 하나씩 올리기 직전에 URL을 받고, 다 올라가면 바로 등록한다. 앱 차원의 용량 한도는 없다(R2 무료 한도 10GB를 넘으면 GB당 월 $0.015) 그리드·앨범 카드·장소 상세는 `thumbnailUrl`, 사진 뷰어는 `imageUrl`을 쓴다. 썸네일이 없는 예전 사진은 `thumbnailUrl`이 원본 URL이다
+- 프론트는 업로드 전에 사진을 긴 변 2048px JPEG와 800px 썸네일로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`). 동영상은 브라우저에서 다시 인코딩하지 않고 원본 그대로 올리며, 첫 장면 썸네일·길이·촬영 시각(mvhd)만 만든다(`src/lib/videos.ts`). 업로드 URL이 10분짜리라 동영상은 하나씩 올리기 직전에 URL을 받는다. 사진·동영상 모두 한 개씩 올라가는 대로 바로 등록해서 중간에 끊겨도 올라간 만큼은 남는다. 업로드 중에는 Screen Wake Lock으로 화면이 꺼지지 않게 한다(`src/lib/wakeLock.ts`, 다른 앱으로 가면 웹에서는 멈춘다). 고른 파일 중 앨범에 이미 있는 것(`fingerprint`)은 올리지 않고 건너뛴다. 앱 차원의 용량 한도는 없다(R2 무료 한도 10GB를 넘으면 GB당 월 $0.015) 그리드·앨범 카드·장소 상세는 `thumbnailUrl`, 사진 뷰어는 `imageUrl`을 쓴다. 썸네일이 없는 예전 사진은 `thumbnailUrl`이 원본 URL이다
 - 브라우저가 R2에 직접 PUT하므로 버킷 CORS에 프론트 origin의 `PUT`과 `Content-Type` 헤더를 허용해야 한다
 
 ## 작업 규칙
