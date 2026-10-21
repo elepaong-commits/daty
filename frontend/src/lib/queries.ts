@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, ImageError, uploadToStorage } from './api'
+import { fileFingerprint } from './fingerprint'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
 import type { Album, Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
+import { keepScreenOn } from './wakeLock'
 
 export const keys = {
   me: ['me'] as const,
@@ -183,6 +185,7 @@ export function useDeletePhotos(albumId: number) {
 
 const UPLOAD_BATCH = 30 // backend limit per request
 const UPLOAD_CONCURRENCY = 3
+const FINGERPRINT_CONCURRENCY = 4
 
 /** Runs `fn` over `items` with at most `limit` in flight, keeping per-item outcomes in order. */
 async function settleWithLimit<T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>) {
@@ -203,76 +206,95 @@ async function settleWithLimit<T, R>(items: T[], limit: number, fn: (item: T, in
 
 /**
  * Uploads picked photos and videos straight to R2, then records the keys on the album.
- * Photos are shrunk with a thumbnail and go up in batches; videos go up as shot, one at a time, each
- * recorded as soon as it lands so a long upload isn't lost if the page is left halfway.
- * Files that fail (e.g. a format the browser can't open) are skipped and counted in `failed`.
+ * Photos are shrunk with a thumbnail and go up a few at a time; videos go up as shot, one at a time. Each file is
+ * recorded as soon as it lands, so whatever made it up stays if the page is left halfway. The screen is kept on
+ * meanwhile, since a phone that locks itself stops the upload.
+ * Files already in the album (same fingerprint) are skipped and counted in `skipped`; files that fail
+ * (e.g. a format the browser can't open) are skipped and counted in `failed`.
  */
 export function useUploadPhotos(albumId: number) {
+  const queryClient = useQueryClient()
   const invalidate = useInvalidateDateData()
   // `percent` is how far the video currently uploading has got.
   const [progress, setProgress] = useState<{ done: number; total: number; percent: number | null } | null>(null)
   const mutation = useMutation({
-    mutationFn: async (files: File[]) => {
-      const images = files.filter((f) => !isVideoFile(f))
-      const videos = files.filter(isVideoFile)
+    mutationFn: async (picked: File[]) => {
+      // A few at a time: each reads up to 2MB, and a phone holding a hundred of those at once may drop the tab.
+      const fingerprints = (await settleWithLimit(picked, FINGERPRINT_CONCURRENCY, fileFingerprint)).map((r) =>
+        r.status === 'fulfilled' ? r.value : null,
+      )
+      const seen = new Set(queryClient.getQueryData<Album>(keys.album(albumId))?.photos.map((p) => p.fingerprint))
+      const files: { file: File; fingerprint: string | null }[] = []
+      picked.forEach((file, i) => {
+        const fingerprint = fingerprints[i]!
+        if (fingerprint && seen.has(fingerprint)) return
+        if (fingerprint) seen.add(fingerprint)
+        files.push({ file, fingerprint })
+      })
+      const skipped = picked.length - files.length
+      const images = files.filter((f) => !isVideoFile(f.file))
+      const videos = files.filter((f) => isVideoFile(f.file))
       let done = 0
       let failed = 0
       let firstError: unknown
       const report = (percent: number | null = null) => setProgress({ done, total: files.length, percent })
       report()
-      for (let start = 0; start < images.length; start += UPLOAD_BATCH) {
-        const batch = images.slice(start, start + UPLOAD_BATCH)
-        const { uploads } = await api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' })))
-        const results = await settleWithLimit(batch, UPLOAD_CONCURRENCY, async (file, i) => {
-          const upload = uploads[i]!
-          const image = await prepareImage(file)
-          // A failed thumbnail only costs some bandwidth later (the full image is shown), so it doesn't fail the photo.
-          const [, thumbnailKey] = await Promise.all([
-            uploadToStorage(upload, image.blob),
-            uploadToStorage(upload.thumbnail, image.thumbnail).then(
-              () => upload.thumbnail.key,
-              () => null,
-            ),
-          ])
+      const release = keepScreenOn()
+      try {
+        for (let start = 0; start < images.length; start += UPLOAD_BATCH) {
+          const batch = images.slice(start, start + UPLOAD_BATCH)
+          const { uploads } = await api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' })))
+          const results = await settleWithLimit(batch, UPLOAD_CONCURRENCY, async ({ file, fingerprint }, i) => {
+            const upload = uploads[i]!
+            const image = await prepareImage(file)
+            // A failed thumbnail only costs some bandwidth later (the full image is shown), so it doesn't fail the photo.
+            const [, thumbnailKey] = await Promise.all([
+              uploadToStorage(upload, image.blob),
+              uploadToStorage(upload.thumbnail, image.thumbnail).then(
+                () => upload.thumbnail.key,
+                () => null,
+              ),
+            ])
+            await api.addPhotos(albumId, [{ key: upload.key, thumbnailKey, takenAt: image.takenAt, fingerprint }])
+            done++
+            report()
+          })
+          failed += results.filter((r) => r.status === 'rejected').length
+          firstError ??= results.find((r) => r.status === 'rejected')?.reason
+        }
+        for (const { file, fingerprint } of videos) {
+          try {
+            const contentType = videoContentType(file)
+            if (!contentType) throw new ImageError(file.name, 'VIDEO_UNSUPPORTED')
+            const video = await prepareVideo(file)
+            // Asked for right before the PUT: the URL is only good for 10 minutes and earlier videos may take longer.
+            const [upload] = (await api.photoUploads(albumId, [{ contentType }])).uploads
+            report(0)
+            // Without a first frame the grid shows a video placeholder instead.
+            const [, thumbnailKey] = await Promise.all([
+              uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100))),
+              video.thumbnail
+                ? uploadToStorage(upload!.thumbnail, video.thumbnail).then(
+                    () => upload!.thumbnail.key,
+                    () => null,
+                  )
+                : null,
+            ])
+            await api.addPhotos(albumId, [
+              { key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec, fingerprint },
+            ])
+          } catch (error) {
+            failed++
+            firstError ??= error
+          }
           done++
           report()
-          return { key: upload.key, thumbnailKey, takenAt: image.takenAt }
-        })
-        const photos = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
-        failed += batch.length - photos.length
-        firstError ??= results.find((r) => r.status === 'rejected')?.reason
-        // Order the day's shots by when they were taken; ones without EXIF go last.
-        photos.sort((a, b) => (a.takenAt ?? '\uffff').localeCompare(b.takenAt ?? '\uffff'))
-        if (photos.length > 0) await api.addPhotos(albumId, photos)
-      }
-      for (const file of videos) {
-        try {
-          const contentType = videoContentType(file)
-          if (!contentType) throw new ImageError(file.name, 'VIDEO_UNSUPPORTED')
-          const video = await prepareVideo(file)
-          // Asked for right before the PUT: the URL is only good for 10 minutes and earlier videos may take longer.
-          const [upload] = (await api.photoUploads(albumId, [{ contentType }])).uploads
-          report(0)
-          // Without a first frame the grid shows a video placeholder instead.
-          const [, thumbnailKey] = await Promise.all([
-            uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100))),
-            video.thumbnail
-              ? uploadToStorage(upload!.thumbnail, video.thumbnail).then(
-                  () => upload!.thumbnail.key,
-                  () => null,
-                )
-              : null,
-          ])
-          await api.addPhotos(albumId, [{ key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec }])
-        } catch (error) {
-          failed++
-          firstError ??= error
         }
-        done++
-        report()
+      } finally {
+        release()
       }
-      if (failed === files.length) throw firstError
-      return { failed }
+      if (files.length > 0 && failed === files.length) throw firstError
+      return { failed, skipped }
     },
     onSettled: () => {
       setProgress(null)

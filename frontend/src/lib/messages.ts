@@ -302,6 +302,7 @@ const ko = {
       `올리는 중 ${done}/${total}${percent === null ? '' : ` · ${percent}%`}`,
     addPhotos: '+ 사진·동영상',
     uploadFailed: (n: number) => `${n}개는 올리지 못했어요`,
+    uploadSkipped: (n: number) => `${n}개는 이미 앨범에 있어서 건너뛰었어요`,
     mediaCount: (photos: number, videos: number) => (videos > 0 ? `사진 ${photos}장 · 동영상 ${videos}개` : `사진 ${photos}장`),
     filter: {
       ALL: (n: number) => `모두 ${n}`,
@@ -626,6 +627,7 @@ const ja: Messages = {
     uploading: (done, total, percent) => `アップロード中 ${done}/${total}${percent === null ? '' : ` · ${percent}%`}`,
     addPhotos: '+ 写真・動画',
     uploadFailed: (n) => `${n}件をアップロードできませんでした`,
+    uploadSkipped: (n) => `${n}件はすでにアルバムにあるためスキップしました`,
     mediaCount: (photos, videos) => (videos > 0 ? `写真 ${photos}枚 · 動画 ${videos}本` : `写真 ${photos}枚`),
     filter: {
       ALL: (n) => `すべて ${n}`,

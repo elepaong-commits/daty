@@ -89,7 +89,13 @@ export const api = {
     post<{ uploads: PhotoUpload[] }>(`/api/albums/${albumId}/photos/uploads`, { files }),
   addPhotos: (
     albumId: number,
-    photos: { key: string; thumbnailKey: string | null; takenAt: string | null; durationSec?: number | null }[],
+    photos: {
+      key: string
+      thumbnailKey: string | null
+      takenAt: string | null
+      durationSec?: number | null
+      fingerprint?: string | null
+    }[],
   ) =>
     post<Album>(`/api/albums/${albumId}/photos`, { photos }),
 }
