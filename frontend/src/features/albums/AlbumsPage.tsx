@@ -11,6 +11,7 @@ import { AlbumCard } from './AlbumCard'
 import { CreateAlbumSheet, type NewAlbumDraft } from './CreateAlbumSheet'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
+import { useScrollMemory } from '../../lib/useScrollMemory'
 
 export function AlbumsPage() {
   const t = useT()
@@ -26,10 +27,12 @@ export function AlbumsPage() {
     if (location.state) navigate('.', { replace: true, state: null })
   }, [location.state, navigate])
   const photoTotal = albums.reduce((sum, a) => sum + a.photoCount, 0)
+  // Coming back from an album lands where its card was.
+  const scroller = useScrollMemory<HTMLDivElement>(!isLoading)
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
+      <div ref={scroller} className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
         <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
         <ScreenHeader
           eyebrow={t.albums.eyebrow}
