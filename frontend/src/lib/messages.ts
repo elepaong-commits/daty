@@ -261,6 +261,7 @@ const ko = {
     eyebrow: '추억 갤러리',
     title: '데이트 앨범',
     newAlbum: '새 앨범',
+    toTop: '맨 위로',
     summary: (albums: number, photos: number) =>
       `사진 여러 장을 한 번에 선택하면 날짜·장소별로 묶어 드려요 · 앨범 ${albums}개 · 사진 ${photos}장`,
     createCard: '새 앨범 만들기',
@@ -590,6 +591,7 @@ const ja: Messages = {
     eyebrow: '思い出ギャラリー',
     title: 'デートアルバム',
     newAlbum: '新しいアルバム',
+    toTop: '一番上へ',
     summary: (albums, photos) => `写真をまとめて選ぶと日付・場所ごとに整理します · アルバム ${albums}件 · 写真 ${photos}枚`,
     createCard: '新しいアルバムを作る',
     createCardHint: ['写真をまとめて', '選んでください'],
