@@ -29,10 +29,15 @@ export function AlbumsPage() {
   const photoTotal = albums.reduce((sum, a) => sum + a.photoCount, 0)
   // Coming back from an album lands where its card was.
   const scroller = useScrollMemory<HTMLDivElement>(!isLoading)
+  const [scrolled, setScrolled] = useState(false)
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div ref={scroller} className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scroller}
+        onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 400)}
+        className="scrollbar-none min-h-0 flex-1 overflow-y-auto"
+      >
         <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
         <ScreenHeader
           eyebrow={t.albums.eyebrow}
@@ -81,6 +86,19 @@ export function AlbumsPage() {
         </div>
         </div>
       </div>
+
+      {scrolled && (
+        <button
+          type="button"
+          aria-label={t.albums.toTop}
+          onClick={() => scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="ui-btn-thin absolute right-4 bottom-4 z-10 flex size-11 items-center justify-center rounded-full bg-brand text-white shadow-lg hover:bg-brand-strong lg:hidden"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+        </button>
+      )}
 
       <AnimatePresence>
         {sheetOpen && (
