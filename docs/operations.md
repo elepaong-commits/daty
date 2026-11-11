@@ -2,6 +2,14 @@
 
 서버 한 대(메모리 1GB)에서 Node, PostgreSQL(Docker), Nginx가 같이 돈다. 이 문서는 백업, 배포, 알림·메일 설정, 서버 이전 방법을 적는다.
 
+## 이번 릴리스를 서버에 올릴 때 (한 번)
+
+새 코드를 받은 뒤 서버에서 스크립트 하나만 돌리면 된다. 의존성 설치 → 마이그레이션 전 DB 덤프(`~/daty-pre-migrate.dump`) → 마이그레이션 → 알림 키 생성(`.env`에 없을 때만) → 백업 한 번 실행 후 cron 등록 → 빌드·재시작 순서다. 다시 돌려도 이미 된 단계는 건너뛴다.
+
+```bash
+cd ~/daty && git pull && bash backend/scripts/server-setup.sh "<API를 재시작하는 명령>"
+```
+
 ## DB 백업
 
 `backend/scripts/backup.mjs`가 `pg_dump`(custom 형식) 결과를 R2 버킷의 `backups/`에 올리고, `BACKUP_KEEP_DAYS`(기본 14)일보다 오래된 덤프를 지운다. 사진과 같은 버킷을 쓰지만 `couples/`와 접두사가 달라 섞이지 않는다.
