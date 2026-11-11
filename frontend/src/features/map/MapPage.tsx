@@ -1,4 +1,4 @@
-import { Check, Heart } from 'lucide-react'
+import { Check, Dices, Heart, LocateFixed } from 'lucide-react'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useRef, useState } from 'react'
@@ -11,6 +11,7 @@ import { PixelSprite } from '../../components/PixelSprite'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { CATEGORIES } from '../../lib/categories'
 import { daysTogether } from '../../lib/dates'
+import { distanceBetween } from '../../lib/format'
 import { useMe, usePlaces } from '../../lib/queries'
 import type { Place, PlaceCategory, PlaceStatus } from '../../lib/types'
 import { AddPlaceSheet } from './AddPlaceSheet'
@@ -51,6 +52,9 @@ export function MapPage() {
   // A Google place tapped on the map, to start the add sheet from.
   const [tapped, setTapped] = useState<PickedPlace | null>(null)
   const lastTap = useRef('')
+  // Where the viewer is, once they ask for wish places nearest first.
+  const [near, setNear] = useState<{ lat: number; lng: number } | null>(null)
+  const [locating, setLocating] = useState<'idle' | 'pending' | 'failed'>('idle')
 
   // Category and search narrow both the pins and the cards; status only dims the other pins.
   const filtered = useMemo(
@@ -64,7 +68,14 @@ export function MapPage() {
     VISITED: places.filter((p) => p.status === 'VISITED').length,
     WISH: places.filter((p) => p.status === 'WISH').length,
   }
-  const listed = filtered.filter((p) => p.status === status)
+  const inTab = filtered.filter((p) => p.status === status)
+  // Nearest first; places without a pin can't be measured and go last.
+  const listed = useMemo(() => {
+    if (!near || status !== 'WISH') return inTab
+    const distance = (p: Place) =>
+      p.latitude === null || p.longitude === null ? Infinity : distanceBetween(near, { lat: p.latitude, lng: p.longitude })
+    return inTab.toSorted((a, b) => distance(a) - distance(b))
+  }, [inTab, near, status])
   // The open place stays highlighted on the desktop map.
   const highlightedId = isDesktop && detailId !== null ? detailId : selectedId
 
@@ -77,6 +88,33 @@ export function MapPage() {
   function selectOnMap(id: number | null) {
     if (isDesktop && id !== null) openPlace(id)
     else setSelectedId(id)
+  }
+
+  // "Where should we go?": picks one of the wish places on show.
+  function pickRandom() {
+    const others = listed.length > 1 ? listed.filter((p) => p.id !== selectedId) : listed
+    const pick = others[Math.floor(Math.random() * others.length)]
+    if (pick) selectOnMap(pick.id)
+  }
+
+  function toggleNearby() {
+    if (near) {
+      setNear(null)
+      return
+    }
+    if (!navigator.geolocation) {
+      setLocating('failed')
+      return
+    }
+    setLocating('pending')
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setNear({ lat: coords.latitude, lng: coords.longitude })
+        setLocating('idle')
+      },
+      () => setLocating('failed'),
+      { maximumAge: 60_000, timeout: 10_000 },
+    )
   }
 
   function changeStatus(next: PlaceStatus) {
@@ -195,6 +233,26 @@ export function MapPage() {
           </Chip>
         ))}
       </div>
+
+      {status === 'WISH' && listed.length > 0 && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 px-5 pb-3 text-[12px]">
+          <button type="button" onClick={pickRandom} className="ui-btn-thin flex h-8 items-center gap-1.5 rounded-full bg-white px-3 font-semibold text-brand retro:text-brand-strong">
+            <Dices size={14} strokeWidth={1.75} /> {t.map.randomPick}
+          </button>
+          <button
+            type="button"
+            onClick={toggleNearby}
+            disabled={locating === 'pending'}
+            aria-pressed={near !== null}
+            className={`ui-btn-thin flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold disabled:opacity-50 ${
+              near ? 'bg-brand text-white' : 'bg-white text-brand retro:text-brand-strong'
+            }`}
+          >
+            <LocateFixed size={14} strokeWidth={1.75} /> {locating === 'pending' ? t.common.wait : t.map.nearby}
+          </button>
+          {locating === 'failed' && <span className="text-coral-strong">{t.map.nearbyFailed}</span>}
+        </div>
+      )}
     </>
   )
 

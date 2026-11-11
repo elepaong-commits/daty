@@ -41,7 +41,29 @@ export interface Place {
   latestNote: string | null // newest memo, with tag tokens
 }
 
-export interface PlaceNote {
+/** One emoji a person left on a photo or memo (each person keeps at most one). */
+export interface Reaction {
+  userId: number
+  emoji: string
+}
+
+export interface Comment {
+  id: number
+  content: string
+  createdAt: string
+  writer: { id: number; nickname: string } | null
+}
+
+/** What the two left on a photo or a place memo. */
+export interface Feedback {
+  reactions: Reaction[]
+  comments: Comment[] // oldest first
+}
+
+/** Where feedback goes: a photo in an album or a memo on a place. */
+export type FeedbackTarget = { kind: 'photo'; albumId: number; photoId: number } | { kind: 'note'; placeId: number; noteId: number }
+
+export interface PlaceNote extends Feedback {
   id: number
   content: string // may contain `{{EAT}}`-style tag tokens
   createdAt: string
@@ -88,6 +110,10 @@ export interface Photo {
   takenAt: string | null
   durationSec: number | null // videos only
   fingerprint: string | null // hash of the original file, to skip it if picked again
+  sizeBytes: number | null // what it takes up in storage; null for files uploaded before sizes were kept
+  // Only on an album's own photos (not the previews on a place).
+  reactions?: Reaction[]
+  comments?: Comment[]
 }
 
 export interface Album {
@@ -202,4 +228,57 @@ export interface ResetCode {
   code: string
   expiresAt: string
   user: { nickname: string }
+}
+
+/** GET /api/couple/storage: how much of the photo storage is used. */
+export interface StorageUsage {
+  usedBytes: number
+  freeBytes: number // what the storage plan holds for free
+  photos: { count: number; bytes: number }
+  videos: { count: number; bytes: number }
+  pending: number // files not sized yet
+}
+
+/** GET /api/albums/:id/photos/downloads: links that save each file under a readable name. */
+export interface AlbumDownload {
+  photoId: number
+  mediaType: MediaType
+  filename: string
+  url: string
+}
+
+/** GET /api/memories: what happened on this month and day in an earlier year. */
+export interface Memory {
+  year: number
+  yearsAgo: number
+  records: {
+    id: number
+    title: string
+    category: PlaceCategory
+    rating: number | null
+    memo: string | null
+    scheduledAt: string
+    place: { id: number; name: string } | null
+  }[]
+  albums: { id: number; title: string; albumDate: string; albumEndDate: string; photoCount: number; coverPhoto: Photo | null }[]
+}
+
+interface RecapPlace {
+  placeId: number
+  name: string
+  category: PlaceCategory
+  visits: number
+  rating: number | null
+}
+
+/** GET /api/recap: one year of dates in numbers. */
+export interface Recap {
+  year: number
+  years: number[] // years that can be picked, newest first
+  totals: { visits: number; days: number; places: number; newPlaces: number; albums: number; photos: number; videos: number }
+  months: number[] // visits in each of the 12 months
+  categories: { category: PlaceCategory; count: number }[]
+  areas: { name: string; count: number }[]
+  mostVisited: RecapPlace[]
+  topRated: RecapPlace[]
 }

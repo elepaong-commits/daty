@@ -1,7 +1,10 @@
-import { TriangleAlert, X } from 'lucide-react'
+import { Download, MessageCircle, TriangleAlert, X } from 'lucide-react'
 import { useAnimate, usePresence, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { FeedbackPanel } from '../../components/FeedbackPanel'
 import { formatDotted, toTimeInput } from '../../lib/dates'
+import { saveFiles } from '../../lib/download'
+import { useAlbumDownloads } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { PixelSprite } from '../../components/PixelSprite'
 import { useMotionPreset } from '../../lib/motion'
@@ -10,6 +13,7 @@ import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 
 interface Props {
+  albumId: number
   photos: Photo[]
   startIndex: number
   coverPhotoId: number | null
@@ -24,7 +28,7 @@ interface Props {
  * grid tile (`data-photo-id`) on open and back into the tile of the one being shown on close; render it inside
  * `AnimatePresence` for the closing half.
  */
-export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, coverPending, onClose }: Props) {
+export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCover, coverPending, onClose }: Props) {
   const t = useT()
   const strip = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
@@ -35,6 +39,9 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
   const motion = useMotionPreset()
   const retro = useIsRetro()
   const [index, setIndex] = useState(startIndex)
+  const [talking, setTalking] = useState(false) // the reactions and comments panel
+  const [saving, setSaving] = useState(false)
+  const loadDownloads = useAlbumDownloads(albumId)
   const photo = photos[Math.min(index, photos.length - 1)]
 
   // Open on the tapped photo without animating through the ones before it, zooming it out of its tile.
@@ -84,6 +91,8 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Arrow keys move the cursor while a comment is being typed.
+      if (e.target instanceof HTMLInputElement && e.key !== 'Escape') return
       if (e.key === 'Escape') onClose()
       else if (e.key === 'ArrowLeft') scrollToPhoto(strip.current, index - 1, photos.length)
       else if (e.key === 'ArrowRight') scrollToPhoto(strip.current, index + 1, photos.length)
@@ -99,6 +108,20 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
 
   const takenAt = photo?.takenAt ? new Date(photo.takenAt) : null
   const isCover = photo !== undefined && photo.id === coverPhotoId
+  const feedback = { reactions: photo?.reactions ?? [], comments: photo?.comments ?? [] }
+  const reacted = [...new Set(feedback.reactions.map((r) => r.emoji))].join('')
+
+  async function save(photoId: number) {
+    setSaving(true)
+    try {
+      const file = (await loadDownloads()).find((f) => f.photoId === photoId)
+      if (file) await saveFiles([file.url])
+    } catch {
+      // Nothing was saved; the button can simply be pressed again.
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div
@@ -157,9 +180,38 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
         {photo?.thumbnailUrl && <img src={photo.thumbnailUrl} alt="" className="size-full object-cover" />}
       </div>
 
+      {talking && photo && (
+        <div data-viewer-fade className="scrollbar-none relative max-h-[45%] shrink-0 overflow-y-auto border-t border-white/15 px-4 py-3">
+          <FeedbackPanel key={photo.id} target={{ kind: 'photo', albumId, photoId: photo.id }} feedback={feedback} tone="dark" />
+        </div>
+      )}
+
       <div data-viewer-fade className="relative flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
-        <span>{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
+        <span className="min-w-0 truncate">{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
         {photo && (
+          <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTalking((on) => !on)}
+            aria-pressed={talking}
+            aria-label={t.feedback.open(feedback.comments.length)}
+            className={`ui-pop flex h-8 items-center gap-1 rounded-full px-2.5 text-[12px] font-semibold tabular-nums retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-white)] ${
+              talking ? 'bg-white text-ink' : 'bg-white/15 text-white'
+            }`}
+          >
+            <MessageCircle size={15} strokeWidth={1.75} />
+            {reacted}
+            {feedback.comments.length > 0 && feedback.comments.length}
+          </button>
+          <button
+            type="button"
+            onClick={() => save(photo.id)}
+            disabled={saving}
+            aria-label={t.albums.save}
+            className="ui-pop flex size-8 items-center justify-center rounded-full bg-white/15 text-white disabled:opacity-50 retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-white)]"
+          >
+            <Download size={15} strokeWidth={1.75} />
+          </button>
           <button
             type="button"
             onClick={() => onSetCover(isCover ? null : photo.id)}
@@ -171,6 +223,7 @@ export function PhotoViewer({ photos, startIndex, coverPhotoId, onSetCover, cove
           >
             {isCover ? t.albums.bestCut : t.albums.makeBestCut}
           </button>
+          </div>
         )}
       </div>
     </div>

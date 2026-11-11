@@ -4,8 +4,10 @@ import { BottomSheet } from '../../components/BottomSheet'
 import { ThemeToggle } from '../../components/SettingToggles'
 import { useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { NotificationSettings } from './NotificationSettings'
 import { ChangePassword, PartnerResetCode } from './PasswordSettings'
 import { ProfileSettings } from './ProfileSettings'
+import { DataExport, StorageUsage } from './StorageSettings'
 
 export function AccountSheet({ onClose }: { onClose: () => void }) {
   const me = useMe().data
@@ -61,9 +63,13 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           <ThemeToggle />
         </div>
 
+        <NotificationSettings />
+        {couple && <StorageUsage />}
+
         <ProfileSettings me={me} />
         <ChangePassword />
         {partner && <PartnerResetCode partnerName={partner.nickname} />}
+        {couple && <DataExport />}
 
         <button
           type="button"

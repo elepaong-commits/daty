@@ -1,13 +1,17 @@
-import { ArrowDown, ArrowUp, Check, MapPin, Play, Star, TriangleAlert, Video } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, MapPin, MessageCircle, Play, Star, TriangleAlert, Video } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
-import { errorMessage } from '../../lib/api'
+import { api, errorMessage } from '../../lib/api'
+import { saveFiles } from '../../lib/download'
+import { formatBytes } from '../../lib/format'
 import { albumHeading, daysBetween, formatDotted, formatDuration, formatMonthDay, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
-import { useAlbum, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
+import { keys, useAlbum, useAlbumDownloads, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
+import { isVideoFile } from '../../lib/videos'
 import { useT } from '../../lib/i18n'
 import type { MediaType, Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
@@ -23,6 +27,8 @@ type SortDirection = 'ASC' | 'DESC'
 const SORTS: SortOrder[] = ['UPLOADED', 'TAKEN']
 const SORT_STORAGE_KEY = 'daty.albumSort'
 const DIRECTION_STORAGE_KEY = 'daty.albumSortDirection'
+// Videos go up as shot, so a big batch is worth a second look before it eats the free storage.
+const BIG_VIDEO_BYTES = 300 * 1000 ** 2
 
 function sortItems(items: Photo[], sort: SortOrder, direction: SortDirection) {
   const sign = direction === 'ASC' ? 1 : -1
@@ -69,6 +75,10 @@ export function AlbumDetailPage() {
   const [sort, setSort] = useState(() => saved(SORT_STORAGE_KEY, SORTS, 'UPLOADED'))
   const [direction, setDirection] = useState(() => saved<SortDirection>(DIRECTION_STORAGE_KEY, ['ASC', 'DESC'], 'ASC'))
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
+  const queryClient = useQueryClient()
+  const loadDownloads = useAlbumDownloads(id)
+  const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null)
+  const [saveError, setSaveError] = useState<Error | null>(null)
 
   function toggleSelecting() {
     setSelecting((on) => !on)
@@ -91,10 +101,35 @@ export function AlbumDetailPage() {
     updateAlbum.mutate({ coverPhotoId: selectedIsCover ? null : selectedId }, { onSuccess: toggleSelecting })
   }
 
-  function addPhotos(e: ChangeEvent<HTMLInputElement>) {
+  async function addPhotos(e: ChangeEvent<HTMLInputElement>) {
     const files = [...(e.target.files ?? [])]
     e.target.value = '' // let the same files be picked again after a failure
-    if (files.length > 0) uploadPhotos.mutate(files)
+    if (files.length === 0) return
+    const videos = files.filter(isVideoFile)
+    const videoBytes = videos.reduce((sum, f) => sum + f.size, 0)
+    if (videoBytes >= BIG_VIDEO_BYTES) {
+      // Without the usage (offline, storage not set up) the upload just goes ahead.
+      const usage = await queryClient.fetchQuery({ queryKey: keys.storage, queryFn: api.storage }).catch(() => null)
+      const question = usage && t.storage.bigUpload(videos.length, formatBytes(videoBytes), formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))
+      if (question && !window.confirm(question)) return
+    }
+    uploadPhotos.mutate(files)
+  }
+
+  /** Saves the album's files to this device: the selected ones, or all of them. */
+  async function saveToDevice(photoIds?: Set<number>) {
+    const total = photoIds?.size ?? album?.photos.length ?? 0
+    if (total === 0 || !window.confirm(t.albums.confirmSave(total))) return
+    setSaveError(null)
+    setSaveProgress({ done: 0, total })
+    try {
+      const files = (await loadDownloads()).filter((f) => !photoIds || photoIds.has(f.photoId))
+      await saveFiles(files.map((f) => f.url), (done) => setSaveProgress({ done, total: files.length }))
+    } catch (err) {
+      setSaveError(err as Error)
+    } finally {
+      setSaveProgress(null)
+    }
   }
 
   function changeSort(next: SortOrder) {
@@ -156,7 +191,7 @@ export function AlbumDetailPage() {
       ? dayHeading(start, formatDotted(start))
       : `${dayHeading(start, formatDotted(start))} ~ ${dayHeading(end, start.getFullYear() === end.getFullYear() ? formatMonthDay(end) : formatDotted(end))} · ${t.albums.tripLength(days - 1, days)}`
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
-  const actionError = updateAlbum.error ?? deletePhotos.error
+  const actionError = updateAlbum.error ?? deletePhotos.error ?? saveError
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
@@ -216,6 +251,16 @@ export function AlbumDetailPage() {
         <div className="flex items-center justify-between">
           <h3 className="font-display text-[18px]">{album.monthly ? t.albums.momentsMonthly : t.albums.moments}</h3>
           <div className="flex gap-2">
+            {album.photos.length > 0 && !selecting && (
+              <button
+                type="button"
+                onClick={() => saveToDevice()}
+                disabled={saveProgress !== null}
+                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand disabled:opacity-50 retro:text-brand-strong"
+              >
+                {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.saveAll}
+              </button>
+            )}
             {album.photos.length > 0 && (
               <button
                 type="button"
@@ -240,6 +285,7 @@ export function AlbumDetailPage() {
         </div>
 
         {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error, t)}</p>}
+        {!selecting && saveError && <p className="text-[12px] text-coral-strong">{errorMessage(saveError, t)}</p>}
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}
@@ -330,6 +376,12 @@ export function AlbumDetailPage() {
                       <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                     </span>
                   )}
+                  {!selecting && ((photo.comments?.length ?? 0) > 0 || (photo.reactions?.length ?? 0) > 0) && (
+                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white tabular-nums">
+                      {photo.reactions?.[0]?.emoji ?? <MessageCircle size={10} strokeWidth={2} />}
+                      {(photo.comments?.length ?? 0) > 0 && photo.comments!.length}
+                    </span>
+                  )}
                   {selecting && (
                     <span
                       className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-white ${
@@ -362,6 +414,14 @@ export function AlbumDetailPage() {
             </button>
             <button
               type="button"
+              onClick={() => saveToDevice(selected)}
+              disabled={selected.size === 0 || saveProgress !== null}
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-soft text-[14px] font-semibold text-brand-strong disabled:opacity-40 retro:text-[13px]"
+            >
+              {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.save}
+            </button>
+            <button
+              type="button"
               onClick={removeSelected}
               disabled={selected.size === 0 || deletePhotos.isPending}
               className="ui-btn-thin h-11 flex-1 rounded-2xl bg-coral-soft text-[14px] font-semibold text-coral-strong disabled:opacity-40 retro:text-[13px]"
@@ -377,6 +437,7 @@ export function AlbumDetailPage() {
       <AnimatePresence>
         {viewing !== null && (
           <PhotoViewer
+            albumId={id}
             photos={shown}
             startIndex={viewing}
             coverPhotoId={album.coverPhotoId}

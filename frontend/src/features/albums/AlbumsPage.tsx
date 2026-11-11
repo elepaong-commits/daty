@@ -1,12 +1,13 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import plusIcon from '../../assets/icons/plus.svg'
 import { QueryState } from '../../components/Field'
 import { PixelSprite } from '../../components/PixelSprite'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useAlbums } from '../../lib/queries'
+import { MemoriesToday } from '../memories/MemoriesToday'
 import { AlbumCard } from './AlbumCard'
 import { CreateAlbumSheet, type NewAlbumDraft } from './CreateAlbumSheet'
 import { useT } from '../../lib/i18n'
@@ -43,14 +44,22 @@ export function AlbumsPage() {
           eyebrow={t.albums.eyebrow}
           title={t.albums.title}
           actions={
-            <button
-              type="button"
-              onClick={() => setSheetOpen(true)}
-              className="ui-btn-thin flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong retro:h-9 retro:px-3 retro:text-[12px]"
-            >
-              {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={16} height={16} />}
-              {t.albums.newAlbum}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                to="/recap"
+                className="ui-btn-thin flex h-10 items-center rounded-full bg-white px-3.5 text-[14px] font-semibold text-brand retro:h-9 retro:px-3 retro:text-[12px] retro:text-brand-strong"
+              >
+                {t.albums.recap}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="ui-btn-thin flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong retro:h-9 retro:px-3 retro:text-[12px]"
+              >
+                {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={16} height={16} />}
+                {t.albums.newAlbum}
+              </button>
+            </div>
           }
         >
           <p className="text-[12px] leading-normal text-muted">
@@ -59,6 +68,7 @@ export function AlbumsPage() {
         </ScreenHeader>
 
         <div className="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-5 lg:pb-12">
+          <MemoriesToday />
           <QueryState isLoading={isLoading} error={error} />
           {!isLoading && !error && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">

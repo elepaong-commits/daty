@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { FeedbackPanel } from '../../components/FeedbackPanel'
 import { MemoInput, MemoText } from '../../components/Memo'
 import { errorMessage } from '../../lib/api'
 import { formatDotted } from '../../lib/dates'
@@ -53,6 +54,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
                   <X size={14} strokeWidth={1.75} />
                 </button>
               </div>
+              <FeedbackPanel target={{ kind: 'note', placeId, noteId: note.id }} feedback={note} collapsible />
             </li>
           ))}
         </ul>

@@ -4,7 +4,7 @@ import { api, ApiError, ImageError, uploadToStorage } from './api'
 import { fileFingerprint } from './fingerprint'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
-import type { Album, Me, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
+import type { Album, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
 import { keepScreenOn } from './wakeLock'
 
@@ -16,6 +16,10 @@ export const keys = {
   recordRange: (from: string, to: string) => ['records', 'range', from, to] as const,
   albums: ['albums'] as const,
   album: (id: number) => ['albums', id] as const,
+  albumDownloads: (id: number) => ['albums', id, 'downloads'] as const,
+  storage: ['storage'] as const,
+  memories: (date: string) => ['memories', date] as const,
+  recap: (year: number) => ['recap', year] as const,
 }
 
 /** `null` means logged out; the backend answers 401 rather than an empty user. */
@@ -59,6 +63,7 @@ export function useUpdateMe() {
 
 export const useUpdateCouple = () => useMeMutation(api.updateCouple)
 export const useChangePassword = () => useMutation({ mutationFn: api.changePassword })
+export const useForgotPassword = () => useMutation({ mutationFn: api.forgotPassword })
 export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })
 
 export function useLogout() {
@@ -95,12 +100,54 @@ export const useRangeRecords = (from: string, to: string) =>
 export const useAlbums = () => useQuery({ queryKey: keys.albums, queryFn: api.albums })
 export const useAlbum = (id: number) => useQuery({ queryKey: keys.album(id), queryFn: () => api.album(id) })
 
+export const useStorage = () => useQuery({ queryKey: keys.storage, queryFn: api.storage, staleTime: 0 })
+export const useMemories = (date: string) => useQuery({ queryKey: keys.memories(date), queryFn: () => api.memories(date), staleTime: 60 * 60_000 })
+export const useRecap = (year: number) =>
+  useQuery({ queryKey: keys.recap(year), queryFn: () => api.recap(year), placeholderData: (previous) => previous })
+
+/** Links for saving an album's files. They are good for an hour, so they are asked for again after half of one. */
+export function useAlbumDownloads(albumId: number) {
+  const queryClient = useQueryClient()
+  return () =>
+    queryClient
+      .fetchQuery({ queryKey: keys.albumDownloads(albumId), queryFn: () => api.albumDownloads(albumId), staleTime: 30 * 60_000 })
+      .then((res) => res.files)
+}
+
+/**
+ * Reacting to and commenting on a photo or a place memo. The server answers with the target's feedback
+ * as it now stands, which goes straight into the cached album or place.
+ */
+export function useFeedback(target: FeedbackTarget) {
+  const queryClient = useQueryClient()
+  const apply = (feedback: Feedback) => {
+    if (target.kind === 'photo') {
+      queryClient.setQueryData<Album>(keys.album(target.albumId), (album) =>
+        album && { ...album, photos: album.photos.map((p) => (p.id === target.photoId ? { ...p, ...feedback } : p)) },
+      )
+    } else {
+      queryClient.setQueryData<PlaceDetail>(keys.place(target.placeId), (place) =>
+        place && { ...place, notes: place.notes.map((n) => (n.id === target.noteId ? { ...n, ...feedback } : n)) },
+      )
+    }
+  }
+  const react = useMutation({
+    mutationFn: (emoji: string | null) => (emoji ? api.setReaction(target, emoji) : api.clearReaction(target)),
+    onSuccess: apply,
+  })
+  const comment = useMutation({ mutationFn: (content: string) => api.addComment(target, content), onSuccess: apply })
+  const removeComment = useMutation({ mutationFn: (commentId: number) => api.deleteComment(target, commentId), onSuccess: apply })
+  return { react, comment, removeComment }
+}
+
 /** Records, places and albums all reflect each other (visits rate places, albums list places). */
 function useInvalidateDateData() {
   const queryClient = useQueryClient()
   return () =>
     Promise.all(
-      [['records'], keys.places, keys.albums].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      [['records'], keys.places, keys.albums, keys.storage, ['memories'], ['recap']].map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
     )
 }
 
