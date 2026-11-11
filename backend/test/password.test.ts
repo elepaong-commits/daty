@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { outbox } from "../src/lib/mail.js";
 import { prisma } from "../src/lib/prisma.js";
 import { Client, coupleMember, resetDatabase, startServer } from "./helpers.js";
 
@@ -113,5 +114,61 @@ describe("reset with a code from the partner", () => {
     const guessed = await a.ok("POST", "/couple/reset-code");
     for (let i = 0; i < 5; i++) assert.equal((await redeem("AAAAAAAA")).status, 400);
     assert.equal((await redeem(guessed.code)).status, 400);
+  });
+});
+
+describe("reset with an emailed link", () => {
+  const forgot = (email: string) => new Client(server.baseUrl).request("POST", "/auth/forgot-password", { email });
+  const tokenFrom = (text: string) => new URL(/https?:\/\/\S+/.exec(text)![0]).searchParams.get("token")!;
+  const redeem = (token: string, newPassword = "mailpassword1") =>
+    new Client(server.baseUrl).request("POST", "/auth/reset-password", { token, newPassword });
+
+  test("answers the same for an unknown email and sends nothing", async () => {
+    outbox.length = 0;
+    assert.equal((await forgot("nobody@test.local")).status, 204);
+    assert.equal(outbox.length, 0);
+  });
+
+  test("the link logs in once with the new password", async () => {
+    const { b, bEmail } = await couple("mail");
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    outbox.length = 0;
+    assert.equal((await forgot(bEmail)).status, 204);
+    assert.equal(outbox.length, 1);
+    assert.equal(outbox[0]!.to, bEmail);
+    const token = tokenFrom(outbox[0]!.text);
+
+    const res = await redeem(token);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.user.email, bEmail);
+    assert.equal((await b.request("GET", "/auth/me")).status, 401, "old sessions are logged out");
+    assert.equal((await login(bEmail, "mailpassword1")).res.status, 200);
+    assert.equal((await redeem(token, "another-password")).status, 400, "a link works once");
+  });
+
+  test("sends at most one mail every couple of minutes, and an expired link is refused", async () => {
+    const { bEmail } = await couple("mail-limits");
+    outbox.length = 0;
+    await forgot(bEmail);
+    await forgot(bEmail);
+    assert.equal(outbox.length, 1);
+    await prisma.passwordResetCode.updateMany({ where: { viaEmail: true }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    const expired = await redeem(tokenFrom(outbox[0]!.text));
+    assert.equal(expired.status, 400);
+    assert.equal(expired.body.code, "INVALID_RESET_CODE");
+  });
+
+  test("a partner's code and a mailed link don't cancel each other", async () => {
+    const { a, bEmail } = await couple("both");
+    const issued = await a.ok("POST", "/couple/reset-code");
+    outbox.length = 0;
+    await forgot(bEmail);
+    const viaCode = await new Client(server.baseUrl).request("POST", "/auth/reset-password", {
+      email: bEmail,
+      code: issued.code,
+      newPassword: "codepassword1",
+    });
+    assert.equal(viaCode.status, 200);
+    assert.equal((await redeem(tokenFrom(outbox[0]!.text))).status, 400, "resetting uses up every outstanding code");
   });
 });

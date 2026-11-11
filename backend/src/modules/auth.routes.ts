@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { env } from "../config/env.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { hashCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
+import { appUrl, mailEnabled, sendMail } from "../lib/mail.js";
 import { getDummyHash, hashPassword, verifyPassword } from "../lib/password.js";
 import { prisma } from "../lib/prisma.js";
 import { endSession, startSession } from "../lib/session.js";
@@ -122,39 +123,108 @@ authRouter.post("/password", credentialsLimiter, requireAuth, async (req, res) =
 });
 
 const MAX_RESET_ATTEMPTS = 5;
-const resetBody = z.object({ email, code: z.string().trim().toUpperCase().length(8), newPassword: password });
+const resetBody = z.union([
+  // The 8-character code the partner issued (POST /api/couple/reset-code).
+  z.object({ email, code: z.string().trim().toUpperCase().length(8), newPassword: password }),
+  // The token from the emailed link (POST /api/auth/forgot-password).
+  z.object({ token: z.string().min(20).max(100), newPassword: password }),
+]);
 
-/**
- * Forgot password: redeem a code the partner issued (POST /api/couple/reset-code) and log in.
- * Any failure gives the same answer, so it doesn't reveal which emails exist.
- */
-authRouter.post("/reset-password", credentialsLimiter, async (req, res) => {
-  const { email, code, newPassword } = resetBody.parse(req.body);
-  const invalid = new HttpError(400, "Invalid or expired reset code", "INVALID_RESET_CODE");
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+/** The reset the request proves it holds, or `null`. A wrong partner code uses up one of its attempts. */
+async function findReset(body: z.infer<typeof resetBody>) {
+  const live = { expiresAt: { gt: new Date() }, attempts: { lt: MAX_RESET_ATTEMPTS } };
+  if ("token" in body) {
+    return prisma.passwordResetCode.findFirst({ where: { ...live, viaEmail: true, codeHash: hashCode(body.token) } });
+  }
+  const user = await prisma.user.findUnique({ where: { email: body.email }, select: { id: true } });
   const reset =
     user &&
     (await prisma.passwordResetCode.findFirst({
-      where: { userId: user.id, expiresAt: { gt: new Date() }, attempts: { lt: MAX_RESET_ATTEMPTS } },
+      where: { ...live, viaEmail: false, userId: user.id },
       orderBy: { createdAt: "desc" },
     }));
-  if (!user || !reset) throw invalid;
-  if (!timingSafeEqual(Buffer.from(hashCode(code)), Buffer.from(reset.codeHash))) {
+  if (!reset) return null;
+  if (!timingSafeEqual(Buffer.from(hashCode(body.code)), Buffer.from(reset.codeHash))) {
     await prisma.passwordResetCode.update({ where: { id: reset.id }, data: { attempts: { increment: 1 } } });
-    throw invalid;
+    return null;
   }
-  const data = await passwordUpdate(newPassword);
+  return reset;
+}
+
+/**
+ * Forgot password: redeem a code the partner issued or the token from an emailed link, and log in.
+ * Any failure gives the same answer, so it doesn't reveal which emails exist.
+ */
+authRouter.post("/reset-password", credentialsLimiter, async (req, res) => {
+  const body = resetBody.parse(req.body);
+  const invalid = new HttpError(400, "Invalid or expired reset code", "INVALID_RESET_CODE");
+  const reset = await findReset(body);
+  if (!reset) throw invalid;
+  const data = await passwordUpdate(body.newPassword);
   try {
     // Deleting the code by id first makes a concurrent second redeem of it fail (P2025) instead of both winning.
     await prisma.$transaction([
       prisma.passwordResetCode.delete({ where: { id: reset.id } }),
-      prisma.user.update({ where: { id: user.id }, data }),
-      prisma.passwordResetCode.deleteMany({ where: { userId: user.id } }),
+      prisma.user.update({ where: { id: reset.userId }, data }),
+      prisma.passwordResetCode.deleteMany({ where: { userId: reset.userId } }),
     ]);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") throw invalid;
     throw err;
   }
-  await startSession(res, user.id);
-  res.json(await loadMe(user.id));
+  await startSession(res, reset.userId);
+  res.json(await loadMe(reset.userId));
+});
+
+// Password reset by email, for when the partner can't help (both forgot, or no partner yet).
+const RESET_LINK_TTL_MS = 30 * 60 * 1000;
+const RESET_MAIL_INTERVAL_MS = 2 * 60 * 1000;
+
+// Every request counts here (they all answer 204), so one address can't be used to flood inboxes.
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: env.NODE_ENV === "test" ? 1000 : 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many attempts", code: "RATE_LIMITED" },
+});
+
+const forgotBody = z.object({ email, lang: z.enum(["ko", "ja"]).default("ko") });
+
+const resetMail = {
+  ko: (link: string) => ({
+    subject: "daty 비밀번호 재설정",
+    text: `아래 링크에서 새 비밀번호를 정해 주세요. 링크는 30분 동안 한 번만 쓸 수 있어요.\n\n${link}\n\n요청한 적이 없다면 이 메일은 무시해도 됩니다.`,
+  }),
+  ja: (link: string) => ({
+    subject: "daty パスワードの再設定",
+    text: `下のリンクから新しいパスワードを設定してください。リンクは30分間、一度だけ使えます。\n\n${link}\n\n心当たりがない場合は、このメールを無視してください。`,
+  }),
+};
+
+/** Always 204, whether or not the email is registered. */
+authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
+  const { email, lang } = forgotBody.parse(req.body);
+  if (!mailEnabled) throw new HttpError(503, "Email is not configured", "MAIL_DISABLED");
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  const recent =
+    user &&
+    (await prisma.passwordResetCode.findFirst({
+      where: { userId: user.id, viaEmail: true, createdAt: { gt: new Date(Date.now() - RESET_MAIL_INTERVAL_MS) } },
+      select: { id: true },
+    }));
+  if (user && !recent) {
+    const token = randomBytes(32).toString("base64url");
+    // Only the newest link works; a code from the partner stays usable beside it.
+    await prisma.$transaction([
+      prisma.passwordResetCode.deleteMany({ where: { userId: user.id, viaEmail: true } }),
+      prisma.passwordResetCode.create({
+        data: { userId: user.id, viaEmail: true, codeHash: hashCode(token), expiresAt: new Date(Date.now() + RESET_LINK_TTL_MS) },
+      }),
+    ]);
+    const link = appUrl(`/reset-password?token=${token}`);
+    // Not awaited: the answer shouldn't take longer for an address that exists.
+    sendMail({ to: email, ...resetMail[lang](link) }).catch((err: unknown) => console.error("Reset mail failed:", err));
+  }
+  res.status(204).end();
 });

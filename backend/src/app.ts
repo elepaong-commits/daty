@@ -8,7 +8,9 @@ import { albumsRouter } from "./modules/albums.routes.js";
 import { authRouter } from "./modules/auth.routes.js";
 import { coupleRouter } from "./modules/couple.routes.js";
 import { healthRouter } from "./modules/health.routes.js";
+import { memoriesRouter, recapRouter } from "./modules/insights.routes.js";
 import { placesRouter } from "./modules/places.routes.js";
+import { pushRouter } from "./modules/push.routes.js";
 import { recordsRouter } from "./modules/records.routes.js";
 
 export function createApp() {
@@ -25,11 +27,14 @@ export function createApp() {
   const api = express.Router();
   api.use("/auth", authRouter);
   api.use("/couple", requireAuth, coupleRouter);
+  api.use("/push", requireAuth, pushRouter);
 
   // Couple-owned data: every query inside is scoped to req.coupleId.
   api.use("/places", requireAuth, requireCouple, placesRouter);
   api.use("/records", requireAuth, requireCouple, recordsRouter);
   api.use("/albums", requireAuth, requireCouple, albumsRouter);
+  api.use("/memories", requireAuth, requireCouple, memoriesRouter);
+  api.use("/recap", requireAuth, requireCouple, recapRouter);
 
   app.use("/api", api);
 

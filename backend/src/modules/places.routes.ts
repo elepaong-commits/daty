@@ -2,7 +2,19 @@ import { Router } from "express";
 import { z } from "zod";
 import { PlaceCategory, PlaceStatus, Prisma } from "../generated/prisma/client.js";
 import type { Place } from "../generated/prisma/client.js";
+import {
+  addComment,
+  clearReaction,
+  commentBody,
+  deleteComment,
+  feedbackInclude,
+  loadFeedback,
+  nicknameOf,
+  reactionBody,
+  setReaction,
+} from "../lib/feedback.js";
 import { idParam, toDateOnly } from "../lib/http.js";
+import { notifyPartner } from "../lib/push.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { prisma } from "../lib/prisma.js";
 import { serializePhoto } from "../lib/storage.js";
@@ -42,6 +54,7 @@ const noteSelect = {
   content: true,
   createdAt: true,
   writer: { select: { id: true, nickname: true } },
+  ...feedbackInclude,
 } as const;
 
 // Tags are stored inline as `{{EAT}}`-style tokens so each viewer sees them in their own language.
@@ -206,4 +219,54 @@ placesRouter.delete("/:id/notes/:noteId", async (req, res) => {
   const { id, noteId } = idParam.extend({ noteId: z.coerce.number().int().positive() }).parse(req.params);
   await prisma.placeNote.delete({ where: { id: noteId, placeId: id, coupleId: req.coupleId } });
   res.status(204).end();
+});
+
+// Reactions and comments on a place memo. Every call answers with the memo's feedback as it now stands.
+
+const noteParams = idParam.extend({ noteId: z.coerce.number().int().positive() });
+
+async function noteTarget(req: { params: unknown; coupleId: number }) {
+  const { id, noteId } = noteParams.parse(req.params);
+  await prisma.placeNote.findFirstOrThrow({ where: { id: noteId, placeId: id, coupleId: req.coupleId }, select: { id: true } });
+  return { placeId: id, target: { noteId } };
+}
+
+placesRouter.put("/:id/notes/:noteId/reaction", async (req, res) => {
+  const { placeId, target } = await noteTarget(req);
+  const { emoji } = reactionBody.parse(req.body);
+  await setReaction(req.coupleId, req.userId, target, emoji);
+  const nickname = await nicknameOf(req.userId);
+  notifyPartner(req.coupleId, req.userId, (locale) => ({
+    title: locale === "ja" ? `${nickname}さんがメモに${emoji}` : `${nickname}님이 메모에 ${emoji}`,
+    body: "",
+    url: `/places/${placeId}`,
+    tag: `note-reaction-${target.noteId}`,
+  }));
+  res.json(await loadFeedback(target));
+});
+
+placesRouter.delete("/:id/notes/:noteId/reaction", async (req, res) => {
+  const { target } = await noteTarget(req);
+  await clearReaction(req.userId, target);
+  res.json(await loadFeedback(target));
+});
+
+placesRouter.post("/:id/notes/:noteId/comments", async (req, res) => {
+  const { placeId, target } = await noteTarget(req);
+  const { content } = commentBody.parse(req.body);
+  await addComment(req.coupleId, req.userId, target, content);
+  const nickname = await nicknameOf(req.userId);
+  notifyPartner(req.coupleId, req.userId, (locale) => ({
+    title: locale === "ja" ? `${nickname}さんがメモにコメント` : `${nickname}님이 메모에 댓글을 남겼어요`,
+    body: content,
+    url: `/places/${placeId}`,
+  }));
+  res.status(201).json(await loadFeedback(target));
+});
+
+placesRouter.delete("/:id/notes/:noteId/comments/:commentId", async (req, res) => {
+  const { target } = await noteTarget(req);
+  const { commentId } = z.object({ commentId: z.coerce.number().int().positive() }).parse(req.params);
+  await deleteComment(req.userId, target, commentId);
+  res.json(await loadFeedback(target));
 });

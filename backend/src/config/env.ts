@@ -23,9 +23,22 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().optional(),
+  // Password reset by email through Resend's HTTP API. Leave empty to keep only the partner-issued code.
+  RESEND_API_KEY: z.string().optional(),
+  MAIL_FROM: z.string().optional(),
+  // Where the frontend lives, for links in emails.
+  APP_URL: z.url().optional(),
+  // Web push (VAPID). Generate a pair with: npx web-push generate-vapid-keys. Leave empty to run without notifications.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(),
 });
 
 const r2Keys = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"] as const;
+
+const mailKeys = ["RESEND_API_KEY", "MAIL_FROM", "APP_URL"] as const;
+const vapidKeys = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"] as const;
+const allOrNone = (e: Record<string, unknown>, keys: readonly string[]) => new Set(keys.map((key) => Boolean(e[key]))).size === 1;
 
 const parsed = envSchema
   .refine((e) => e.NODE_ENV !== "production" || !e.SESSION_SECRET.startsWith("change-me"), {
@@ -35,6 +48,14 @@ const parsed = envSchema
   .refine((e) => new Set(r2Keys.map((key) => Boolean(e[key]))).size === 1, {
     path: ["R2_BUCKET"],
     message: "Set all of R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET or none of them",
+  })
+  .refine((e) => allOrNone(e, mailKeys), {
+    path: ["RESEND_API_KEY"],
+    message: "Set all of RESEND_API_KEY, MAIL_FROM, APP_URL or none of them",
+  })
+  .refine((e) => allOrNone(e, vapidKeys), {
+    path: ["VAPID_PUBLIC_KEY"],
+    message: "Set both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY or neither",
   })
   .safeParse(process.env);
 
