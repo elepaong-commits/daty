@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { m } from 'motion/react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { BottomNav } from './components/BottomNav'
@@ -13,7 +13,9 @@ import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
+import { useI18n } from './lib/i18n'
 import { useMotionPreset } from './lib/motion'
+import { refreshPush } from './lib/push'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
 import { useTheme } from './lib/theme'
@@ -27,6 +29,8 @@ const AlbumsPage = lazy(() => import('./features/albums/AlbumsPage').then((m) =>
 const AlbumDetailPage = lazy(() => import('./features/albums/AlbumDetailPage').then((m) => ({ default: m.AlbumDetailPage })))
 const ThemePickerPage = lazy(() => import('./features/theme/ThemePickerPage').then((m) => ({ default: m.ThemePickerPage })))
 const PlaceEditPage = lazy(() => import('./features/places/PlaceEditPage').then((m) => ({ default: m.PlaceEditPage })))
+const RecapPage = lazy(() => import('./features/recap/RecapPage').then((m) => ({ default: m.RecapPage })))
+const ResetLinkPage = lazy(() => import('./features/auth/ResetLinkPage').then((m) => ({ default: m.ResetLinkPage })))
 
 // An expired session on any screen sends the user back to login; a lost couple back to setup.
 function onApiError(error: Error) {
@@ -79,6 +83,11 @@ function Screen() {
 }
 
 function AppShell() {
+  const { lang } = useI18n()
+  // A device with notifications on tells the server its current language and time zone.
+  useEffect(() => {
+    refreshPush(lang)
+  }, [lang])
   return (
     <MapsProvider>
       <Frame wide>
@@ -121,6 +130,7 @@ function AuthGate() {
         <Route path="places/:id/edit" element={<PlaceEditPage />} />
         <Route path="albums" element={<AlbumsPage />} />
         <Route path="albums/:id" element={<AlbumDetailPage />} />
+        <Route path="recap" element={<RecapPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
@@ -146,9 +156,27 @@ export default function App() {
           <MotionProvider>
             <BrowserRouter>
               <ErrorBoundary>
-                <ThemeGate>
-                  <AuthGate />
-                </ThemeGate>
+                <Routes>
+                  {/* The link from a password reset email: opens without a login, before anything else. */}
+                  <Route
+                    path="/reset-password"
+                    element={
+                      <Frame>
+                        <Suspense fallback={<QueryState isLoading error={null} />}>
+                          <ResetLinkPage />
+                        </Suspense>
+                      </Frame>
+                    }
+                  />
+                  <Route
+                    path="*"
+                    element={
+                      <ThemeGate>
+                        <AuthGate />
+                      </ThemeGate>
+                    }
+                  />
+                </Routes>
               </ErrorBoundary>
             </BrowserRouter>
           </MotionProvider>

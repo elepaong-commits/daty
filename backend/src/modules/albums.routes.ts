@@ -3,14 +3,34 @@ import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
+import {
+  addComment,
+  clearReaction,
+  commentBody,
+  deleteComment,
+  feedbackInclude,
+  loadFeedback,
+  nicknameOf,
+  reactionBody,
+  setReaction,
+} from "../lib/feedback.js";
 import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import { deleteObjects, photoObjectKeys, presignUpload, serializePhoto, statObject } from "../lib/storage.js";
+import { notifyPartner } from "../lib/push.js";
+import {
+  deleteObjects,
+  photoObjectKeys,
+  presignUpload,
+  serializePhoto,
+  signedDownloadUrl,
+  statObject,
+  storageEnabled,
+} from "../lib/storage.js";
 
 export const albumsRouter = Router();
 
 const albumInclude = {
-  photos: { orderBy: { displayOrder: "asc" } },
+  photos: { orderBy: { displayOrder: "asc" }, include: feedbackInclude },
   records: {
     select: { id: true, category: true, place: { select: { id: true, name: true, address: true } } },
     orderBy: { scheduledAt: "asc" },
@@ -339,6 +359,8 @@ albumsRouter.post("/:id/photos", async (req, res) => {
     throw new HttpError(400, "Upload missing, of the wrong type or too large", "INVALID_UPLOAD");
   }
 
+  // What each file takes up in R2 (the original plus its thumbnail), for the storage meter.
+  const sizeByKey = new Map(objects.map((o, i) => [o.key, stats[i]!.size]));
   const album = await prisma.$transaction(async (tx) => {
     const { _max } = await tx.photo.aggregate({ where: { albumId: id }, _max: { displayOrder: true } });
     const start = (_max.displayOrder ?? 0) + 1;
@@ -352,6 +374,7 @@ albumsRouter.post("/:id/photos", async (req, res) => {
         mediaType: p.isVideo ? ("VIDEO" as const) : ("PHOTO" as const),
         durationSec: p.isVideo ? (p.durationSec ?? null) : null,
         fingerprint: p.fingerprint ?? null,
+        sizeBytes: sizeByKey.get(p.key)! + (p.thumbnailKey ? sizeByKey.get(p.thumbnailKey)! : 0),
       })),
       skipDuplicates: true, // a retried confirm shouldn't fail on keys it already recorded
     });
@@ -361,6 +384,74 @@ albumsRouter.post("/:id/photos", async (req, res) => {
 });
 
 const photoParams = z.object({ id: z.coerce.number().int().positive(), photoId: z.coerce.number().int().positive() });
+
+// Saving the whole album: one link per file that downloads it under a readable name
+// (`2026-10-04-003.jpg`). Files still go straight from R2 to the browser.
+albumsRouter.get("/:id/photos/downloads", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const album = await prisma.album.findFirstOrThrow({
+    where: { id, coupleId: req.coupleId },
+    include: { photos: { orderBy: { displayOrder: "asc" } } },
+  });
+  const day = toDateOnly(album.albumDate);
+  const files = await Promise.all(
+    album.photos.map(async (photo, i) => {
+      const extension = /\.(\w+)$/.exec(photo.storageKey ?? "")?.[1] ?? "jpg";
+      const filename = `${day}-${String(i + 1).padStart(3, "0")}.${extension}`;
+      const url = photo.storageKey && storageEnabled ? await signedDownloadUrl(photo.storageKey, filename) : photo.imageUrl;
+      return { photoId: photo.id, mediaType: photo.mediaType, filename, url };
+    }),
+  );
+  res.json({ files: files.filter((f) => f.url !== null) });
+});
+
+// Reactions and comments on a photo or video. Every call answers with the photo's feedback as it now stands.
+
+async function photoTarget(req: { params: unknown; coupleId: number }) {
+  const { id, photoId } = photoParams.parse(req.params);
+  await prisma.photo.findFirstOrThrow({ where: { id: photoId, albumId: id, album: { coupleId: req.coupleId } }, select: { id: true } });
+  return { albumId: id, target: { photoId } };
+}
+
+albumsRouter.put("/:id/photos/:photoId/reaction", async (req, res) => {
+  const { albumId, target } = await photoTarget(req);
+  const { emoji } = reactionBody.parse(req.body);
+  await setReaction(req.coupleId, req.userId, target, emoji);
+  const nickname = await nicknameOf(req.userId);
+  notifyPartner(req.coupleId, req.userId, (locale) => ({
+    title: locale === "ja" ? `${nickname}さんが写真に${emoji}` : `${nickname}님이 사진에 ${emoji}`,
+    body: "",
+    url: `/albums/${albumId}`,
+    tag: `photo-reaction-${target.photoId}`,
+  }));
+  res.json(await loadFeedback(target));
+});
+
+albumsRouter.delete("/:id/photos/:photoId/reaction", async (req, res) => {
+  const { target } = await photoTarget(req);
+  await clearReaction(req.userId, target);
+  res.json(await loadFeedback(target));
+});
+
+albumsRouter.post("/:id/photos/:photoId/comments", async (req, res) => {
+  const { albumId, target } = await photoTarget(req);
+  const { content } = commentBody.parse(req.body);
+  await addComment(req.coupleId, req.userId, target, content);
+  const nickname = await nicknameOf(req.userId);
+  notifyPartner(req.coupleId, req.userId, (locale) => ({
+    title: locale === "ja" ? `${nickname}さんが写真にコメント` : `${nickname}님이 사진에 댓글을 남겼어요`,
+    body: content,
+    url: `/albums/${albumId}`,
+  }));
+  res.status(201).json(await loadFeedback(target));
+});
+
+albumsRouter.delete("/:id/photos/:photoId/comments/:commentId", async (req, res) => {
+  const { target } = await photoTarget(req);
+  const { commentId } = z.object({ commentId: z.coerce.number().int().positive() }).parse(req.params);
+  await deleteComment(req.userId, target, commentId);
+  res.json(await loadFeedback(target));
+});
 
 albumsRouter.delete("/:id/photos/:photoId", async (req, res) => {
   const { id, photoId } = photoParams.parse(req.params);

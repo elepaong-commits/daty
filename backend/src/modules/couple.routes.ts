@@ -3,7 +3,9 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client.js";
 import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
+import { feedbackInclude } from "../lib/feedback.js";
 import { prisma } from "../lib/prisma.js";
+import { statObject, storageEnabled } from "../lib/storage.js";
 import { requireCouple } from "../middlewares/auth.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { loadMe } from "./auth.routes.js";
@@ -98,8 +100,98 @@ coupleRouter.post("/reset-code", requireCouple, async (req, res) => {
   const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS);
   // Only the newest code works.
   await prisma.$transaction([
-    prisma.passwordResetCode.deleteMany({ where: { userId: partner.id } }),
+    prisma.passwordResetCode.deleteMany({ where: { userId: partner.id, viaEmail: false } }),
     prisma.passwordResetCode.create({ data: { userId: partner.id, issuedById: req.userId, codeHash: hashCode(code), expiresAt } }),
   ]);
   res.status(201).json({ code, expiresAt, user: { nickname: partner.nickname } });
+});
+
+// How much of the R2 bucket the couple's photos and videos take up. R2's free plan holds 10 GB.
+const FREE_STORAGE_BYTES = 10 * 1000 ** 3;
+const SIZE_BACKFILL_PER_REQUEST = 60;
+
+/** Photos uploaded before sizes were recorded get theirs from R2, a batch per request. */
+async function backfillSizes(coupleId: number) {
+  if (!storageEnabled) return;
+  const unsized = await prisma.photo.findMany({
+    where: { album: { coupleId }, sizeBytes: null, storageKey: { not: null } },
+    select: { id: true, storageKey: true, thumbnailKey: true },
+    take: SIZE_BACKFILL_PER_REQUEST,
+  });
+  await Promise.all(
+    unsized.map(async (photo) => {
+      try {
+        const [original, thumbnail] = await Promise.all([
+          statObject(photo.storageKey!),
+          photo.thumbnailKey ? statObject(photo.thumbnailKey) : null,
+        ]);
+        await prisma.photo.update({ where: { id: photo.id }, data: { sizeBytes: (original?.size ?? 0) + (thumbnail?.size ?? 0) } });
+      } catch (err) {
+        console.error(`Sizing photo ${photo.id} failed:`, err);
+      }
+    }),
+  );
+}
+
+coupleRouter.get("/storage", requireCouple, async (req, res) => {
+  const { coupleId } = req;
+  await backfillSizes(coupleId);
+  const [groups, pending] = await Promise.all([
+    prisma.photo.groupBy({ by: ["mediaType"], where: { album: { coupleId } }, _sum: { sizeBytes: true }, _count: true }),
+    prisma.photo.count({ where: { album: { coupleId }, sizeBytes: null, storageKey: { not: null } } }),
+  ]);
+  const of = (mediaType: "PHOTO" | "VIDEO") => {
+    const group = groups.find((g) => g.mediaType === mediaType);
+    return { count: group?._count ?? 0, bytes: Number(group?._sum.sizeBytes ?? 0) };
+  };
+  const [photos, videos] = [of("PHOTO"), of("VIDEO")];
+  res.json({
+    usedBytes: photos.bytes + videos.bytes,
+    freeBytes: FREE_STORAGE_BYTES,
+    photos,
+    videos,
+    // Files whose size isn't known yet; asking again sizes the next batch.
+    pending,
+  });
+});
+
+// Everything the couple wrote, as one JSON file to keep. Photos and videos are listed with their
+// storage keys; the files themselves are saved from each album.
+coupleRouter.get("/export", requireCouple, async (req, res) => {
+  const { coupleId } = req;
+  const [couple, places, records, albums] = await Promise.all([
+    prisma.couple.findUniqueOrThrow({
+      where: { id: coupleId },
+      select: { anniversaryDate: true, createdAt: true, users: { select: { id: true, nickname: true, email: true } } },
+    }),
+    prisma.place.findMany({
+      where: { coupleId },
+      orderBy: { id: "asc" },
+      include: { notes: { orderBy: { createdAt: "asc" }, select: { id: true, content: true, createdAt: true, writerId: true, ...feedbackInclude } } },
+    }),
+    prisma.dateRecord.findMany({ where: { coupleId }, orderBy: { scheduledAt: "asc" } }),
+    prisma.album.findMany({
+      where: { coupleId },
+      orderBy: { albumDate: "asc" },
+      include: { photos: { orderBy: { displayOrder: "asc" }, include: feedbackInclude } },
+    }),
+  ]);
+  const body = {
+    exportedAt: new Date(),
+    couple: { ...couple, anniversaryDate: toDateOnly(couple.anniversaryDate) },
+    places: places.map(({ latitude, longitude, ...place }) => ({
+      ...place,
+      latitude: latitude === null ? null : Number(latitude),
+      longitude: longitude === null ? null : Number(longitude),
+    })),
+    records,
+    albums: albums.map(({ albumDate, albumEndDate, photos, ...album }) => ({
+      ...album,
+      albumDate: toDateOnly(albumDate),
+      albumEndDate: toDateOnly(albumEndDate ?? albumDate),
+      photos: photos.map(({ sizeBytes, ...photo }) => ({ ...photo, sizeBytes: sizeBytes === null ? null : Number(sizeBytes) })),
+    })),
+  };
+  res.setHeader("Content-Disposition", `attachment; filename="daty-${toDateOnly(new Date())}.json"`);
+  res.json(body);
 });

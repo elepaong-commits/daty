@@ -1,6 +1,12 @@
 import type { Messages } from './messages'
 import type {
   Album,
+  AlbumDownload,
+  Feedback,
+  FeedbackTarget,
+  Memory,
+  Recap,
+  StorageUsage,
   CreateAlbumInput,
   CreatePlaceInput,
   CreateRecordInput,
@@ -45,12 +51,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 const send =
-  (method: 'POST' | 'PATCH' | 'DELETE') =>
+  (method: 'POST' | 'PATCH' | 'PUT' | 'DELETE') =>
   <T>(path: string, body?: unknown) =>
     request<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) })
 const post = send('POST')
 const patch = send('PATCH')
+const put = send('PUT')
 const del = send('DELETE')
+
+const feedbackPath = (target: FeedbackTarget) =>
+  target.kind === 'photo'
+    ? `/api/albums/${target.albumId}/photos/${target.photoId}`
+    : `/api/places/${target.placeId}/notes/${target.noteId}`
+
+/** The viewer's IANA time zone, so the server counts days the way their calendar does. */
+const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 export const api = {
   me: () => request<Me>('/api/auth/me'),
@@ -59,8 +74,9 @@ export const api = {
   logout: () => post<void>('/api/auth/logout'),
   updateMe: (input: { nickname: string }) => patch<Me>('/api/auth/me', input),
   changePassword: (input: { currentPassword: string; newPassword: string }) => post<void>('/api/auth/password', input),
-  resetPassword: (input: { email: string; code: string; newPassword: string }) =>
+  resetPassword: (input: { email: string; code: string; newPassword: string } | { token: string; newPassword: string }) =>
     post<Me>('/api/auth/reset-password', input),
+  forgotPassword: (input: { email: string; lang: string }) => post<void>('/api/auth/forgot-password', input),
   issueResetCode: () => post<ResetCode>('/api/couple/reset-code'),
   createCouple: (input: { anniversaryDate: string }) => post<Me>('/api/couple', input),
   joinCouple: (input: { code: string }) => post<Me>('/api/couple/join', input),
@@ -98,6 +114,28 @@ export const api = {
     }[],
   ) =>
     post<Album>(`/api/albums/${albumId}/photos`, { photos }),
+  albumDownloads: (albumId: number) => request<{ files: AlbumDownload[] }>(`/api/albums/${albumId}/photos/downloads`),
+
+  setReaction: (target: FeedbackTarget, emoji: string) => put<Feedback>(`${feedbackPath(target)}/reaction`, { emoji }),
+  clearReaction: (target: FeedbackTarget) => del<Feedback>(`${feedbackPath(target)}/reaction`),
+  addComment: (target: FeedbackTarget, content: string) => post<Feedback>(`${feedbackPath(target)}/comments`, { content }),
+  deleteComment: (target: FeedbackTarget, commentId: number) => del<Feedback>(`${feedbackPath(target)}/comments/${commentId}`),
+
+  storage: () => request<StorageUsage>('/api/couple/storage'),
+  /** The whole export as a file to save. */
+  exportData: async () => {
+    const res = await fetch(`${BASE_URL}/api/couple/export`, { credentials: 'include' })
+    if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status}`)
+    return res.blob()
+  },
+  memories: (date: string) => request<Memory[]>(`/api/memories?${new URLSearchParams({ date, tz: timeZone() })}`),
+  recap: (year: number) => request<Recap>(`/api/recap?${new URLSearchParams({ year: String(year), tz: timeZone() })}`),
+
+  pushKey: () => request<{ publicKey: string }>('/api/push/key'),
+  savePushSubscription: (input: { endpoint: string; keys: { p256dh: string; auth: string }; locale: string }) =>
+    post<void>('/api/push/subscriptions', { ...input, timeZone: timeZone() }),
+  deletePushSubscription: (endpoint: string) => del<void>('/api/push/subscriptions', { endpoint }),
+  testPush: () => post<{ devices: number }>('/api/push/test'),
 }
 
 /**

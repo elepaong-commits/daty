@@ -1,0 +1,61 @@
+name: Deploy backend
+
+# Builds the API here and ships dist/ to the server, so the 1GB machine never runs the TypeScript compiler.
+# Off until the repository variable DEPLOY_HOST is set; see docs/operations.md for the variables and secrets.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - .github/workflows/deploy-backend.yml
+  workflow_dispatch:
+
+concurrency: deploy-backend
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    env:
+      TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      RESTART_COMMAND: ${{ vars.DEPLOY_RESTART_COMMAND || 'sudo systemctl restart daty-api' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Build
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "$HOST" > ~/.ssh/known_hosts
+          fi
+      - name: Update the checkout and its dependencies
+        run: |
+          ssh "$TARGET" "cd '$DEPLOY_PATH' && git pull --ff-only && cd backend && npm install --no-audit --no-fund"
+      - name: Ship the build
+        run: |
+          tar -C backend -czf - dist | ssh "$TARGET" "cd '$DEPLOY_PATH/backend' && rm -rf dist.new && mkdir dist.new && tar -xzf - -C dist.new && rm -rf dist.old && { [ ! -d dist ] || mv dist dist.old; } && mv dist.new/dist dist && rmdir dist.new"
+      - name: Migrate and restart
+        run: |
+          ssh "$TARGET" "cd '$DEPLOY_PATH/backend' && npx prisma migrate deploy && $RESTART_COMMAND"
+      - name: Check health
+        run: |
+          ssh "$TARGET" 'for i in 1 2 3 4 5 6; do sleep 2; curl -fsS http://127.0.0.1:4000/health && exit 0; done; exit 1'

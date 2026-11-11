@@ -18,6 +18,9 @@ const r2 =
       }
     : null;
 
+/** Whether photo storage is set up; without it uploads answer 503 and photos have no URLs. */
+export const storageEnabled = r2 !== null;
+
 function requireR2() {
   if (!r2) throw new HttpError(503, "Photo storage is not configured", "STORAGE_DISABLED");
   return r2;
@@ -26,10 +29,16 @@ function requireR2() {
 const DAY_MS = 86_400_000;
 const UPLOAD_TTL_SECONDS = 10 * 60;
 
-async function presign(key: string, method: "GET" | "PUT", expiresSeconds: number, datetime?: string) {
+async function presign(
+  key: string,
+  method: "GET" | "PUT",
+  expiresSeconds: number,
+  { datetime, query = {} }: { datetime?: string; query?: Record<string, string> } = {},
+) {
   const { client, bucketUrl } = requireR2();
   const url = new URL(`${bucketUrl}/${key}`);
   url.searchParams.set("X-Amz-Expires", String(expiresSeconds));
+  for (const [name, value] of Object.entries(query)) url.searchParams.set(name, value);
   const signed = await client.sign(url.href, { method, aws: { signQuery: true, datetime } });
   return signed.url;
 }
@@ -44,8 +53,12 @@ export const presignUpload = (key: string) => presign(key, "PUT", UPLOAD_TTL_SEC
  */
 export function signedImageUrl(key: string) {
   const dayStart = new Date(Math.floor(Date.now() / DAY_MS) * DAY_MS);
-  return presign(key, "GET", (2 * DAY_MS) / 1000, dayStart.toISOString().replace(/[:-]|\.\d{3}/g, ""));
+  return presign(key, "GET", (2 * DAY_MS) / 1000, { datetime: dayStart.toISOString().replace(/[:-]|\.\d{3}/g, "") });
 }
+
+/** Signed GET that makes the browser save the file under `filename` instead of showing it. Good for an hour. */
+export const signedDownloadUrl = (key: string, filename: string) =>
+  presign(key, "GET", 60 * 60, { query: { "response-content-disposition": `attachment; filename="${filename}"` } });
 
 /** Size and type of an uploaded object, or `null` if nothing was uploaded under the key. */
 export async function statObject(key: string) {
@@ -75,13 +88,25 @@ export async function deleteObjects(keys: string[]) {
  * For a video `imageUrl` is the video itself and `thumbnailUrl` its first frame.
  */
 export async function serializePhoto<
-  T extends { storageKey: string | null; thumbnailKey: string | null; imageUrl: string | null; mediaType: string },
->({ storageKey, thumbnailKey, imageUrl, ...photo }: T) {
+  T extends {
+    storageKey: string | null;
+    thumbnailKey: string | null;
+    imageUrl: string | null;
+    mediaType: string;
+    sizeBytes: bigint | null;
+  },
+>({ storageKey, thumbnailKey, imageUrl, sizeBytes, ...photo }: T) {
   const sign = (key: string) => (r2 ? signedImageUrl(key) : null);
   const full = storageKey ? await sign(storageKey) : imageUrl;
   // Photos uploaded before thumbnails existed fall back to the full image; a video can't stand in for one.
   const fallback = photo.mediaType === "VIDEO" ? null : full;
-  return { ...photo, imageUrl: full, thumbnailUrl: thumbnailKey ? await sign(thumbnailKey) : fallback };
+  return {
+    ...photo,
+    // BigInt doesn't go through JSON; a file is far below where a double loses whole bytes.
+    sizeBytes: sizeBytes === null ? null : Number(sizeBytes),
+    imageUrl: full,
+    thumbnailUrl: thumbnailKey ? await sign(thumbnailKey) : fallback,
+  };
 }
 
 /** Every R2 object behind a photo, for deleting it. */

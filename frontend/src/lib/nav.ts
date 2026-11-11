@@ -7,7 +7,7 @@ import type { SpriteName } from './sprites'
 export const NAV_ITEMS: { to: string; paths: string[]; Icon: LucideIcon; sprite: SpriteName; key: keyof Messages['nav'] }[] = [
   { to: '/', paths: ['/', '/places'], Icon: Map, sprite: 'map', key: 'map' },
   { to: '/calendar', paths: ['/calendar'], Icon: CalendarDays, sprite: 'calendar', key: 'calendar' },
-  { to: '/albums', paths: ['/albums'], Icon: Images, sprite: 'photo', key: 'albums' },
+  { to: '/albums', paths: ['/albums', '/recap'], Icon: Images, sprite: 'photo', key: 'albums' },
 ]
 
 /** Whether the current screen belongs to the tab with these `paths`. */
