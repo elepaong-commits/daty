@@ -5,13 +5,15 @@
 ## 저장소 구조 (모노레포)
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
-  - React Router(탭 3개: `/`, `/calendar`, `/albums` + 하위 화면 `/places/:id`, `/places/:id/edit`, `/albums/:id`. 하위 화면에서도 해당 탭이 활성 표시된다), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
+  - React Router(탭 3개: `/`, `/calendar`, `/albums` + 하위 화면 `/places/:id`, `/places/:id/edit`, `/albums/:id`, `/recap`(연말 결산, 앨범 탭 아래). 로그인 없이 열리는 `/reset-password?token=`(메일 링크)은 로그인 게이트보다 앞에 있다. 하위 화면에서도 해당 탭이 활성 표시된다), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
   - 1024px(`lg`) 미만은 폰 폭 한 열 + 하단 탭, 이상은 왼쪽 `Sidebar` + 넓은 화면(`useIsDesktop`, 나머지는 `lg:` 클래스). 데스크톱에서 `/places/:id`는 지도 탭 왼쪽 열에 열리고(지도는 그대로), 바텀시트는 가운데 모달이 된다
   - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다. 장소 상세 위쪽 사진도 `googlePlaceId`로 Google 장소 사진을 받아 쓰고(`PlaceHero`, 작성자 표시 필수), 없으면 앨범 표지 → 카테고리 타일
   - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand`, `text-muted`, `font-display` 등)
   - 디자인이 두 벌이다: 기본(classic)과 도트(retro). 기기마다 처음 화면(`ThemePickerPage`)에서 고르고 사이드바·내 정보에서 바꾼다(localStorage, `<html data-theme>`, `src/lib/theme.ts`). 여러 곳에 쓰는 모양은 두 디자인을 함께 담은 `ui-*` 클래스(`ui-card`, `ui-chip`, `ui-title` 등, `index.css` 아래쪽)를 쓰고, 한 곳만 다른 건 `retro:` 변형으로 쓴다. 코드에서 디자인을 가르는 건 아이콘·핀·마스코트처럼 그림이 다른 곳뿐이다(`useIsRetro`, `PixelSprite`). 도트 디자인에서는 기본 글꼴이 Galmuri로 바뀌고 모서리·그림자가 전역으로 각지므로, 메모·노트처럼 긴 글에는 `ui-prose`를 붙인다. 픽셀 테두리만 필요하면 도트 전용 `ui-box`/`ui-btn`/`ui-outline` 등을 기존 클래스 옆에 붙인다. 애니메이션은 `useMotionPreset()`(도트는 계단식 easing, 화면 와이프, 대화창처럼 펼쳐지는 시트)과 `RISE_IN`을 쓴다
   - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
   - 한국어/일본어 지원. 화면 문구는 하드코딩하지 않고 `src/lib/messages.ts`의 `ko`와 `ja` 양쪽에 넣은 뒤 `useT()`로 쓴다(`ja`는 `Messages` 타입이라 키가 빠지면 빌드가 깨진다). 언어는 헤더 오른쪽 위 토글로 바꾸고 기기(localStorage)에 기억한다. Google 지도 타일 언어는 페이지를 처음 열 때 언어로 고정된다
+  - 서비스 워커(`public/sw.js`, 빌드 도구 없이 손으로 쓴 파일)가 앱 껍데기(페이지·해시된 `/assets/*`·아이콘)를 캐시하고 웹 푸시를 띄운다. `/api`와 사진은 캐시하지 않는다. 푸시 구독은 `src/lib/push.ts`, 설정 화면은 내 정보 시트(`NotificationSettings`)
+  - 사진·장소 메모의 반응·댓글은 `FeedbackPanel`(`useFeedback`) 하나로 그린다. 파일 저장은 `src/lib/download.ts`(숨은 iframe으로 R2의 attachment 링크를 연다)
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
   - 디자인 원본: Figma `7Qc5QDKQEeFWbnAeSbhEA7` (지도 `1:797`, 캘린더 `1:538`, 앨범 `1:329`, 일정 등록 `1:2`, 장소 상세 `17:1531`, 장소 수정 `17:1598`, 일정 수정 `17:1684`, 앨범 상세 `17:1807`)
 - `backend/` — Express 5 + Prisma 7 (PostgreSQL) + TypeScript (ESM, `NodeNext`). 개발 실행은 `tsx`, 환경 변수 검증과 요청 검증은 `zod`
@@ -26,15 +28,17 @@
 
 - **Frontend 배포:** Vercel(또는 Netlify). 프로젝트 Root Directory는 `frontend`.
   - 로그인 쿠키가 SameSite=Lax라서 **API는 프론트와 같은 사이트에서 불러야 한다.** 배포 시 Vercel rewrite로 `/api/*`를 백엔드로 넘기거나 같은 상위 도메인(예: `app.example.com` + `api.example.com`)을 쓴다. 서로 다른 도메인에서 직접 호출하면 쿠키가 전송되지 않는다
-- **Backend 배포:** Oracle Cloud Always Free AMD 인스턴스 (x86_64, **메모리 1GB**, Ubuntu 22.04). 서버에서 `git pull`로 배포. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
+- **Backend 배포:** Google Cloud VM (x86_64, **메모리 1GB** 기준, Ubuntu 22.04). 지금은 무료 체험 크레딧으로 돌고, 끝나기 전에 Always Free `e2-micro`(미국 리전)로 옮긴다. GitHub Actions가 빌드한 `dist/`를 서버로 보내고 서버는 `git pull`·마이그레이션·재시작만 한다(`deploy-backend.yml`, 저장소 변수 `DEPLOY_HOST`가 있어야 켜진다). 백업·배포·이전 절차는 `docs/operations.md`. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
 - **로컬 개발 DB:** Mac의 OrbStack(Docker)에서 `backend/compose.yaml`로 구동 (`npm run db:up`). `localhost:5433`, 계정 `daty`/`daty`, DB `daty_dev`. 개발과 테스트는 이 DB로 하고, 운영 DB에는 붙지 않는다.
-- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
+- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 매일 `backend/scripts/backup.mjs`(cron)가 덤프를 R2 `backups/`에 올린다. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
 - **이미지 저장:** Cloudflare R2.
 
 ## 데이터 모델 (`backend/prisma/schema.prisma`)
 
 - 커플 단위 앱: `Couple`에 `User` 두 명이 `coupleCode`로 묶이고, 모든 데이터는 `coupleId`로 소유된다.
 - `Place`: 지도 핀. Google Maps 기반(`googlePlaceId`). 상태는 `WISH`(가고 싶은 곳) / `VISITED`.
+- `Comment` / `Reaction`: 사진·동영상(`photoId`)이나 장소 메모(`noteId`)에 단 댓글과 이모지. 둘 중 하나만 채운다(DB CHECK). 이모지는 한 사람이 한 대상에 하나
+- `PushSubscription`: 알림을 켠 기기의 웹 푸시 구독(언어·시간대 포함)
 - `PlaceNote`: 장소 메모(여러 개, 작성자 포함). 본문에 `{{EAT}}` `{{SEE}}` `{{DO}}` 태그 토큰이 들어가고, 프론트(`src/lib/memo.ts`)가 입력창에서는 보는 사람 언어의 문구로 풀고 저장할 때 다시 토큰으로 바꾼다. `DateRecord.memo`도 같은 토큰을 쓴다.
 - `DateRecord`: 캘린더 항목. `PLAN`(일정) / `RECORD`(기록). 장소 하나와 연결되고, 앨범에 묶일 수 있다.
 - `Album` / `Photo`: 앨범 탭. 하루 데이트의 여러 기록과 사진·동영상을 하나의 앨범으로 묶는다. `Photo.mediaType`이 `PHOTO`/`VIDEO`이고, 앨범 상세에서 모두/사진/동영상 탭으로 거른다.
@@ -51,7 +55,12 @@
 
 - `POST /api/auth/signup|login|logout`, `GET|PATCH /api/auth/me` — 응답은 `{ user, couple | null }`. `PATCH`는 닉네임(`{ nickname }`) 변경
 - `POST /api/couple` (기념일 → 6자리 초대 코드 발급), `POST /api/couple/join` (코드로 합류, 최대 2명)
-- 비밀번호: `POST /api/auth/password`(로그인 상태에서 변경), `POST /api/couple/reset-code`(짝꿍이 상대의 10분짜리 일회용 코드 발급) → `POST /api/auth/reset-password`(코드로 재설정 후 로그인). 이메일 재설정은 아직 없다. 설계와 나중에 추가할 이메일 방식은 `docs/password-reset.md`
+- 비밀번호: `POST /api/auth/password`(로그인 상태에서 변경), `POST /api/couple/reset-code`(짝꿍이 상대의 10분짜리 일회용 코드 발급) → `POST /api/auth/reset-password`(코드로 재설정 후 로그인). 이메일 링크 방식도 있다: `POST /api/auth/forgot-password`(`{ email, lang }`, 항상 `204`) → 메일의 `/reset-password?token=` → 같은 `reset-password`에 `{ token, newPassword }`. Resend 환경 변수가 비어 있으면 `503 MAIL_DISABLED`. 설계는 `docs/password-reset.md`
+- `GET /api/couple/storage`(R2 사용량. `Photo.sizeBytes`의 합이고, 크기가 없는 예전 사진은 조회할 때 60개씩 R2 HEAD로 채운다), `GET /api/couple/export`(기록 전체 JSON 내려받기)
+- `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다)
+- `GET /api/memories?date=&tz=`(N년 전 오늘의 방문·앨범), `GET /api/recap?year=&tz=`(연말 결산) — 날짜는 보는 사람 시간대(`tz`, IANA 이름)의 달력으로 센다. 동네 이름은 주소에서 읽는다(`src/lib/area.ts`, 한국·일본 주소)
+- 반응·댓글: `PUT|DELETE /api/albums/:id/photos/:photoId/reaction`, `POST .../comments`, `DELETE .../comments/:commentId`, 장소 메모는 `/api/places/:id/notes/:noteId/...`로 같다. 응답은 그 대상의 `{ reactions, comments }`. 댓글은 쓴 사람만 지운다
+- `GET /api/albums/:id/photos/downloads` — 파일마다 저장용 서명 URL(`response-content-disposition=attachment`, 1시간)
 - `GET /api/couple` — 초대 코드, 기념일(`anniversaryDate`), 두 사람 정보. D+N은 클라이언트에서 계산. `PATCH /api/couple`(`{ anniversaryDate }`)로 기념일을 고치고 `{ user, couple }`을 돌려준다
 - `GET|POST /api/places`, `GET|PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
   - 목록 응답의 `latestNote`는 가장 최근 메모. `POST`는 `note`로 첫 메모를 함께 만들 수 있고, 같은 `googlePlaceId`가 이미 있으면 `409 PLACE_EXISTS`
