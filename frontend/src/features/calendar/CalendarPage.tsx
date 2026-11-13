@@ -39,7 +39,8 @@ export function CalendarPage() {
     setMonth(startOfMonth(day))
     setSelected(day)
   }
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // Open with the start time to suggest (HH:MM), or `true` for the usual default.
+  const [sheetOpen, setSheetOpen] = useState<boolean | string>(false)
   const [editing, setEditing] = useState<DateRecord | null>(null)
   const [completed, setCompleted] = useState<DateRecord | null>(null)
   const navigate = useNavigate()
@@ -152,7 +153,7 @@ export function CalendarPage() {
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
-            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} milestones={milestonesFor(selected)} onEdit={setEditing} onComplete={setCompleted} />
+            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} milestones={milestonesFor(selected)} onAddNext={(time) => setSheetOpen(time)} onEdit={setEditing} onComplete={setCompleted} />
           )}
         </div>
         </div>
@@ -208,6 +209,7 @@ export function CalendarPage() {
         {sheetOpen && (
           <ScheduleSheet
             initialDate={selected}
+            initialTime={typeof sheetOpen === 'string' ? sheetOpen : undefined}
             onClose={() => setSheetOpen(false)}
             onSaved={(at) => {
               setMonth(startOfMonth(at))

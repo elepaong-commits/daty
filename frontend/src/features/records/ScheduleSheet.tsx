@@ -26,6 +26,8 @@ interface Props {
   /** Editing an existing record; without it the sheet creates a new one on `initialDate`. */
   record?: DateRecord
   initialDate?: Date
+  /** Start time (HH:MM) for a new record, e.g. when the day's previous stop ends. */
+  initialTime?: string
   onClose: () => void
   onSaved?: (scheduledAt: Date) => void
 }
@@ -38,7 +40,7 @@ const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: st
 /** Where the record happens: one of the couple's saved places, or a new one from Google. */
 type PlaceSource = 'saved' | 'new'
 
-export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSaved }: Props) {
+export function ScheduleSheet({ record, initialDate = new Date(), initialTime = '18:00', onClose, onSaved }: Props) {
   const t = useT()
   const confirm = useConfirm()
   const retro = useIsRetro()
@@ -51,7 +53,11 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
 
   const [type, setType] = useState<RecordType>(record?.type ?? 'PLAN')
   const [date, setDate] = useState(toDateInput(at ?? initialDate))
-  const [time, setTime] = useState(at ? toTimeInput(at) : '18:00')
+  const [time, setTime] = useState(at ? toTimeInput(at) : initialTime)
+  const [endTime, setEndTime] = useState(record?.endsAt ? toTimeInput(new Date(record.endsAt)) : '')
+  // The end is on the same day as the start.
+  const endsAt = endTime && date && time ? fromInputs(date, endTime) : null
+  const endsBeforeStart = endsAt !== null && endsAt <= fromInputs(date, time)
   // Until chosen: saved places when there are any (a record whose place was deleted starts as new).
   const [source, setSource] = useState<PlaceSource | null>(record ? (record.placeId ? 'saved' : 'new') : null)
   const [savedId, setSavedId] = useState<number | null>(record?.placeId ?? null)
@@ -68,7 +74,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   const mutation = editing ? updateRecord : createRecord
   const busy = mutation.isPending || deleteRecord.isPending
   const hasPlace = placeSource === 'saved' ? savedId !== null : placeName.trim() !== ''
-  const canSave = hasPlace && date !== '' && time !== '' && !busy
+  const canSave = hasPlace && date !== '' && time !== '' && !endsBeforeStart && !busy
   const error = mutation.error ?? deleteRecord.error
   const latestPlaceNote = placeSource === 'saved' ? places.find((p) => p.id === savedId)?.latestNote : null
 
@@ -98,6 +104,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         {
           type,
           scheduledAt: scheduledAt.toISOString(),
+          endsAt: endsAt?.toISOString() ?? null,
           category,
           memo: content || null,
           placeNote,
@@ -113,6 +120,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
       {
         type,
         scheduledAt: scheduledAt.toISOString(),
+        endsAt: endsAt?.toISOString(),
         category,
         ...(placeSource === 'saved' ? { placeId: savedId! } : newPlace),
         memo: content || undefined,
@@ -155,6 +163,22 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
           <Field label={t.common.time} className="flex-1">
             <PickerInput type="time" value={time} onChange={setTime} icon={editing ? clockOutlineIcon : clockIcon} />
           </Field>
+        </div>
+        <div className="flex items-end gap-3 pb-4">
+          <Field label={t.schedule.endTime} className="flex-1">
+            <PickerInput type="time" value={endTime} onChange={setEndTime} icon={editing ? clockOutlineIcon : clockIcon} required={false} />
+          </Field>
+          <div className="flex min-h-11 flex-1 items-center">
+            {endsBeforeStart ? (
+              <p className="text-[12px] text-coral-strong">{t.schedule.endBeforeStart}</p>
+            ) : (
+              endTime && (
+                <button type="button" onClick={() => setEndTime('')} className="text-[12px] text-muted underline">
+                  {t.schedule.clearEndTime}
+                </button>
+              )
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -311,16 +335,18 @@ function PickerInput({
   value,
   onChange,
   icon,
+  required = true,
 }: {
   type: 'date' | 'time'
   value: string
   onChange: (value: string) => void
   icon: string
+  required?: boolean
 }) {
   return (
     <div className={`${inputClass} relative flex items-center justify-between focus-within:border-brand`}>
       <input
-        required
+        required={required}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

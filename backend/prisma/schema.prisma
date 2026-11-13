@@ -142,6 +142,8 @@ model DateRecord {
   category    PlaceCategory
   rating      Int?          @db.SmallInt // 1~5, CHECK는 마이그레이션 SQL로
   scheduledAt DateTime      @map("scheduled_at") @db.Timestamptz(3)
+  // When this stop of the date ends, if set; a day's records in time order make its course. CHECK: after scheduledAt
+  endsAt      DateTime?     @map("ends_at") @db.Timestamptz(3)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   couple      Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)

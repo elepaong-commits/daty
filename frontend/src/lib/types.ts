@@ -92,6 +92,7 @@ export interface DateRecord {
   category: PlaceCategory
   rating: number | null
   scheduledAt: string
+  endsAt: string | null // when this stop of the day ends, if set
   place: { id: number; name: string; address: string | null; googleMapsUrl: string | null } | null
   writer: { id: number; nickname: string } | null
 }
@@ -146,6 +147,7 @@ export interface Album extends AlbumBase {
 export interface CreateRecordInput {
   type: RecordType
   scheduledAt: string
+  endsAt?: string
   category: PlaceCategory
   // A saved place by id, or a name that is matched or created.
   placeId?: number
@@ -201,6 +203,7 @@ export interface UpdatePlaceInput {
 export interface UpdateRecordInput {
   type?: RecordType
   scheduledAt?: string
+  endsAt?: string | null
   category?: PlaceCategory
   memo?: string | null
   placeNote?: string // a new memo for the record's place

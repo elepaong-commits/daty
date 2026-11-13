@@ -43,7 +43,7 @@
 - `Comment` / `Reaction`: 사진·동영상(`photoId`)이나 장소 메모(`noteId`)에 단 댓글과 이모지. 둘 중 하나만 채운다(DB CHECK). 이모지는 한 사람이 한 대상에 하나
 - `PushSubscription`: 알림을 켠 기기의 웹 푸시 구독(언어·시간대 포함)
 - `PlaceNote`: 장소 메모(여러 개, 작성자 포함). 본문에 `{{EAT}}` `{{SEE}}` `{{DO}}` 태그 토큰이 들어가고, 프론트(`src/lib/memo.ts`)가 입력창에서는 보는 사람 언어의 문구로 풀고 저장할 때 다시 토큰으로 바꾼다. `DateRecord.memo`도 같은 토큰을 쓴다.
-- `DateRecord`: 캘린더 항목. `PLAN`(일정) / `RECORD`(기록). 장소 하나와 연결되고, 앨범에 묶일 수 있다.
+- `DateRecord`: 캘린더 항목. `PLAN`(일정) / `RECORD`(기록). 장소 하나와 연결되고, 앨범에 묶일 수 있다. `endsAt`(선택, 시작보다 뒤 — DB CHECK)가 있으면 그 장소에 머문 끝 시간이고, 하루의 기록을 시간순으로 놓은 것이 그날의 데이트 코스다(타임라인의 "이어서 다음 장소 추가"가 앞 장소가 끝나는 시간으로 새 일정을 연다)
 - `Album` / `Photo`: 앨범 탭. 하루 데이트의 여러 기록과 사진·동영상을 하나의 앨범으로 묶는다. `Photo.mediaType`이 `PHOTO`/`VIDEO`이고, 앨범 상세에서 모두/사진/동영상 탭으로 거른다.
 
 스키마를 바꿀 때는 로컬 개발 DB에서 `npm run db:migrate`(`prisma migrate dev`)로 마이그레이션 파일을 만들어 커밋하고, 운영 DB에는 `npx prisma migrate deploy`만 쓴다. 운영 DB에 `migrate dev`, `db push`, `migrate reset`을 실행하지 않는다.
@@ -76,6 +76,7 @@
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id` — 생성과 수정 모두 `resolvePlace`로 장소를 찾거나 만든다. 수정 시 장소 이름이 바뀌거나 검색으로 고르면 다른 장소로 옮긴다
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
   - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 장소 이름과 주소는 앱 언어와 상관없이 그 나라 말로 저장한다(일본 장소는 일본어, `LOCAL_LANGUAGE`). 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
+  - `endsAt`은 `scheduledAt`보다 뒤여야 한다(`400 ENDS_BEFORE_START`, 수정에서 시작만 옮겨도 검사). `PATCH`에서 `null`이면 지운다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다
   - `memo`는 그 데이트에 대한 메모(`DateRecord.memo`), `placeNote`는 장소에 대한 메모로 연결된 장소의 `PlaceNote`를 하나 새로 만든다(생성·수정 모두, 수정에서 장소를 옮기면 새 장소에). 일정 폼에 두 칸이 따로 있다
 - `GET|POST /api/albums`, `GET|PATCH|DELETE /api/albums/:id`, `DELETE /api/albums/:id/photos/:photoId` — 앨범은 하루(`albumDate`) 또는 기간(`albumDate`~`albumEndDate`, 여행 등)을 덮는다. DB의 `albumEndDate`는 하루짜리면 `null`이고 응답에서는 항상 마지막 날(하루면 `albumDate`와 같음)을 준다. 하루에는 앨범 하나뿐이라 기간이 겹치면 `409 ALBUM_EXISTS`. 월별 앨범(`monthly`, 한 달 동안 집이나 자주 가는 곳에서 찍은 사진)은 날짜 대신 `albumMonth`(`YYYY-MM`)로 만들고 그 달 1일~말일을 덮지만, 날짜를 차지하지 않아 겹침 검사에서 빠진다(같은 달에 여러 개 가능). 폼에서는 방문 기록·장소 고르기를 숨긴다. `coverPhotoId`가 "베스트 컷"(앨범 표지). 고르지 않으면(`null`) 응답의 `coverPhoto`는 첫 번째 사진. 목록(`GET /api/albums`)은 카드에 쓸 만큼만 준다: `photos` 대신 표지를 앞에 둔 최대 3장(`previewPhotos`, 반응·댓글 없음)과 `photoCount`·`videoCount`. 사진 전체와 반응·댓글은 상세(`GET /:id`)에만 있다(프론트 타입 `AlbumSummary` / `Album`). 사진이나 앨범을 지우면 원본·썸네일 R2 객체도 지운다(실패해도 로그만 남김)

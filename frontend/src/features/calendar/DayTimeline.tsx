@@ -1,4 +1,4 @@
-import { Check, MapPin } from 'lucide-react'
+import { Check, MapPin, Plus } from 'lucide-react'
 import timelineConnector from '../../assets/icons/timeline-connector.svg'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { MemoText } from '../../components/Memo'
@@ -20,11 +20,14 @@ export function DayTimeline({
   milestones,
   onEdit,
   onComplete,
+  onAddNext,
 }: {
   day: Date
   today: Date
   records: DateRecord[]
   milestones: Milestone[]
+  /** Another stop for the day, starting (HH:MM) when the last one ends. */
+  onAddNext: (time: string) => void
   onEdit: (record: DateRecord) => void
   /** A plan was marked as done (it is now a record). */
   onComplete: (record: DateRecord) => void
@@ -56,8 +59,28 @@ export function DayTimeline({
           <TimelineEntry key={r.id} index={i} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />
         ))
       )}
+
+      {records.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onAddNext(nextStopTime(records.at(-1)!))}
+          className="ui-btn-thin flex h-10 items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand/50 text-[13px] font-semibold text-brand-strong retro:border-0 retro:bg-white retro:text-[12px]"
+        >
+          <Plus size={15} strokeWidth={2} aria-hidden="true" />
+          {t.calendar.addNextStop}
+        </button>
+      )}
     </section>
   )
+}
+
+const HOUR_MS = 60 * 60 * 1000
+
+/** Where the next stop starts: when the last one ends, or an hour after it started (not past 23:00). */
+function nextStopTime(last: DateRecord) {
+  const start = new Date(last.scheduledAt)
+  const next = last.endsAt ? new Date(last.endsAt) : new Date(start.getTime() + HOUR_MS)
+  return next.getDate() === start.getDate() ? toTimeInput(next) : '23:00'
 }
 
 function TimelineEntry({
@@ -86,7 +109,10 @@ function TimelineEntry({
 
   return (
     <div className={`flex items-start gap-1 ${RISE_IN}`} style={riseDelay(index)}>
-      <span className="w-11 shrink-0 pt-3.5 text-right text-[12px] leading-normal font-semibold text-muted">{toTimeInput(at)}</span>
+      <span className="flex w-11 shrink-0 flex-col pt-3.5 text-right text-[12px] leading-normal font-semibold text-muted">
+        {toTimeInput(at)}
+        {record.endsAt && <span className="text-[11px] font-normal">~{toTimeInput(new Date(record.endsAt))}</span>}
+      </span>
       {isPlan ? (
         <img src={timelineConnector} alt="" width={18} height={28} className="shrink-0" />
       ) : (
