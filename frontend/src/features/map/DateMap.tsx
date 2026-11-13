@@ -9,13 +9,13 @@ import selectedHalo from '../../assets/icons/selected-halo.svg'
 import { PixelSprite } from '../../components/PixelSprite'
 import { categoryOf } from '../../lib/categories'
 import { MAP_ID, MAP_ID_RETRO, MAPS_API_KEY } from '../../lib/maps'
+import { HOME } from '../../lib/home'
 import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { useIsRetro } from '../../lib/theme'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
 
-const SEOUL = { lat: 37.5563, lng: 126.9906 }
 const DEFAULT_ZOOM = 12
 const WORLD: [number, number, number, number] = [-180, -85, 180, 85]
 // Leave room for the place sheet that covers the bottom of the map (phones only).
@@ -50,7 +50,7 @@ export function DateMap(props: Props) {
       <Map
         key={mapId}
         mapId={mapId}
-        defaultCenter={SEOUL}
+        defaultCenter={HOME.center}
         defaultZoom={DEFAULT_ZOOM}
         disableDefaultUI
         gestureHandling="greedy"
