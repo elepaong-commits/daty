@@ -176,7 +176,23 @@ export class ImageError extends Error {
 }
 
 /** Localized message for a failure, falling back to the raw error. */
+/**
+ * What to tell the user about a failure, in their language: the backend's `code` when there is a
+ * message for it, otherwise a plain one by kind (never the raw "Failed to fetch" or "Invalid request").
+ */
 export function errorMessage(error: Error, t: Messages) {
   if (error instanceof ImageError) return `${error.message}: ${t.errors[error.code]}`
-  return (error instanceof ApiError && error.code && t.errors[error.code]) || error.message
+  if (error instanceof ApiError) {
+    const known = error.code && t.errors[error.code]
+    if (known) return known
+    if (error.status === 400 || error.status === 422) return t.failures.invalid
+    if (error.status === 404) return t.failures.notFound
+    if (error.status === 409) return t.failures.conflict
+    if (error.status === 429) return t.errors.RATE_LIMITED!
+    if (error.status >= 500) return t.failures.server
+    return t.failures.unknown
+  }
+  // fetch() rejects with a TypeError when the request never got an answer (offline, server down, CORS).
+  if (error instanceof TypeError) return t.failures.network
+  return t.failures.unknown
 }

@@ -90,7 +90,17 @@ const ko = {
     NO_PARTNER: '연결된 짝꿍이 없어요',
     MAIL_DISABLED: '이메일 재설정은 아직 쓸 수 없어요. 짝꿍에게 코드를 받아 주세요',
     PUSH_DISABLED: '알림이 아직 설정되지 않았어요',
+    CONFLICT: '동시에 바뀐 내용이 있어요. 다시 시도해 주세요',
   } as Record<string, string>,
+  // Failures without a message of their own (see errorMessage).
+  failures: {
+    network: '인터넷 연결을 확인하고 다시 시도해 주세요',
+    invalid: '입력한 내용을 다시 확인해 주세요',
+    notFound: '찾을 수 없어요. 이미 지워졌을 수 있어요',
+    conflict: '다른 곳에서 먼저 바뀌었어요. 새로고침 후 다시 해 주세요',
+    server: '서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요',
+    unknown: '문제가 생겼어요. 다시 시도해 주세요',
+  },
   memo: {
     addTag: '태그 넣기',
   },
@@ -518,6 +528,15 @@ const ja: Messages = {
     NO_PARTNER: 'つながっているパートナーがいません',
     MAIL_DISABLED: 'メールでの再設定はまだ使えません。パートナーにコードをもらってください',
     PUSH_DISABLED: '通知はまだ設定されていません',
+    CONFLICT: '同時に変更がありました。もう一度お試しください',
+  },
+  failures: {
+    network: 'インターネット接続を確認して、もう一度お試しください',
+    invalid: '入力内容をもう一度確認してください',
+    notFound: '見つかりません。すでに削除された可能性があります',
+    conflict: 'ほかの場所で先に変更されました。再読み込みしてからもう一度お試しください',
+    server: 'サーバーで問題が起きました。しばらくしてからもう一度お試しください',
+    unknown: '問題が起きました。もう一度お試しください',
   },
   memo: {
     addTag: 'タグを入れる',

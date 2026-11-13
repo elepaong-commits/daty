@@ -53,7 +53,7 @@
 
 - `requireAuth` → `req.userId`, `requireCouple` → `req.coupleId` (`src/middlewares/auth.ts`). 커플 데이터 라우터(places, records, albums)는 둘 다 거친다. `requireAuth`는 매 요청 사용자를 조회해서 `passwordChangedAt`보다 먼저 발급된 세션을 막는다(비밀번호를 바꾸면 다른 기기는 로그아웃)
 - 커플 데이터 쿼리는 반드시 `req.coupleId`로 범위를 제한한다 (`where: { id, coupleId }`)
-- 에러 응답은 `{ error, code }`. 프론트는 `code`(`UNAUTHENTICATED`, `COUPLE_REQUIRED`, `INVALID_CREDENTIALS` 등)로 분기한다
+- 에러 응답은 `{ error, code }`. 프론트는 `code`(`UNAUTHENTICATED`, `COUPLE_REQUIRED`, `INVALID_CREDENTIALS` 등)로 분기한다. 검증 실패는 `INVALID_REQUEST`, 없는 대상은 `NOT_FOUND`, 서버 오류는 `INTERNAL`. 화면에 보이는 문구는 프론트 `errorMessage`(`src/lib/api.ts`)가 `messages.ts`의 `errors[code]`로 바꾸고, 문구가 없는 코드는 상태 코드별 `failures`, 네트워크 끊김(`TypeError`)은 `failures.network`로 보여 준다. 영어 원문은 화면에 내보내지 않는다
 
 - `POST /api/auth/signup|login|logout`, `GET|PATCH /api/auth/me` — 응답은 `{ user, couple | null }`. `PATCH`는 닉네임(`{ nickname }`) 변경
 - `POST /api/couple` (기념일 → 6자리 초대 코드 발급), `POST /api/couple/join` (코드로 합류, 최대 2명)
