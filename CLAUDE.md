@@ -13,6 +13,7 @@
   - 화면은 `src/features/<화면>/`, 공용 UI는 `src/components/`, API·타입·날짜 유틸은 `src/lib/`
   - 한국어/일본어 지원. 화면 문구는 하드코딩하지 않고 `src/lib/messages.ts`의 `ko`와 `ja` 양쪽에 넣은 뒤 `useT()`로 쓴다(`ja`는 `Messages` 타입이라 키가 빠지면 빌드가 깨진다). 언어는 헤더 오른쪽 위 토글로 바꾸고 기기(localStorage)에 기억한다. Google 지도 타일 언어는 페이지를 처음 열 때 언어로 고정된다
   - 서비스 워커(`public/sw.js`, 빌드 도구 없이 손으로 쓴 파일)가 앱 껍데기(페이지·해시된 `/assets/*`·아이콘)를 캐시하고 웹 푸시를 띄운다. `/api`와 사진은 캐시하지 않는다. 푸시 구독은 `src/lib/push.ts`, 설정 화면은 내 정보 시트(`NotificationSettings`)
+  - 확인창은 `window.confirm` 대신 `useConfirm()`(`src/lib/confirm.ts`, `ConfirmProvider`가 앱 전체에 하나 띄운다)을 쓴다: `if (await confirm({ title, message?, confirmLabel, danger? }))`. 삭제는 `danger`(빨간 버튼)
   - 사진·장소 메모의 반응·댓글은 `FeedbackPanel`(`useFeedback`) 하나로 그린다. 파일 저장은 `src/lib/download.ts`(숨은 iframe으로 R2의 attachment 링크를 연다)
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
   - 디자인 원본: Figma `7Qc5QDKQEeFWbnAeSbhEA7` (지도 `1:797`, 캘린더 `1:538`, 앨범 `1:329`, 일정 등록 `1:2`, 장소 상세 `17:1531`, 장소 수정 `17:1598`, 일정 수정 `17:1684`, 앨범 상세 `17:1807`)

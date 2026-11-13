@@ -20,6 +20,7 @@ import type { PickedPlace } from '../../lib/places'
 import { SavedPlacePicker } from './SavedPlacePicker'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
+import { useConfirm } from '../../lib/confirm'
 
 interface Props {
   /** Editing an existing record; without it the sheet creates a new one on `initialDate`. */
@@ -39,6 +40,7 @@ type PlaceSource = 'saved' | 'new'
 
 export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSaved }: Props) {
   const t = useT()
+  const confirm = useConfirm()
   const retro = useIsRetro()
   const editing = record !== undefined
   const createRecord = useCreateRecord()
@@ -121,8 +123,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
     )
   }
 
-  function remove() {
-    if (record && window.confirm(t.schedule.confirmDelete)) deleteRecord.mutate(record.id, { onSuccess: onClose })
+  async function remove() {
+    if (record && (await confirm({ title: t.schedule.confirmDelete, confirmLabel: t.common.delete, danger: true })))
+      deleteRecord.mutate(record.id, { onSuccess: onClose })
   }
 
   return (

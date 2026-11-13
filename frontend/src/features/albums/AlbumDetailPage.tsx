@@ -17,6 +17,7 @@ import type { MediaType, Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 import { EditAlbumSheet } from './EditAlbumSheet'
 import { PhotoViewer } from './PhotoViewer'
+import { useConfirm } from '../../lib/confirm'
 
 type MediaFilter = 'ALL' | MediaType
 const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
@@ -64,6 +65,7 @@ export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
   const t = useT()
+  const confirm = useConfirm()
   const updateAlbum = useUpdateAlbum(id)
   const deletePhotos = useDeletePhotos(id)
   const uploadPhotos = useUploadPhotos(id)
@@ -110,8 +112,8 @@ export function AlbumDetailPage() {
     if (videoBytes >= BIG_VIDEO_BYTES) {
       // Without the usage (offline, storage not set up) the upload just goes ahead.
       const usage = await queryClient.fetchQuery({ queryKey: keys.storage, queryFn: api.storage }).catch(() => null)
-      const question = usage && t.storage.bigUpload(videos.length, formatBytes(videoBytes), formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))
-      if (question && !window.confirm(question)) return
+      const message = usage && t.storage.bigUpload(videos.length, formatBytes(videoBytes), formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))
+      if (message && !(await confirm({ title: t.storage.bigUploadTitle, message, confirmLabel: t.common.proceed }))) return
     }
     uploadPhotos.mutate(files)
   }
@@ -119,7 +121,7 @@ export function AlbumDetailPage() {
   /** Saves the album's files to this device: the selected ones, or all of them. */
   async function saveToDevice(photoIds?: Set<number>) {
     const total = photoIds?.size ?? album?.photos.length ?? 0
-    if (total === 0 || !window.confirm(t.albums.confirmSave(total))) return
+    if (total === 0 || !(await confirm({ title: t.albums.confirmSave(total), message: t.albums.confirmSaveBody, confirmLabel: t.common.save }))) return
     setSaveError(null)
     setSaveProgress({ done: 0, total })
     try {
@@ -143,8 +145,8 @@ export function AlbumDetailPage() {
     remember(DIRECTION_STORAGE_KEY, next)
   }
 
-  function removeSelected() {
-    if (!window.confirm(t.albums.confirmDelete(selected.size))) return
+  async function removeSelected() {
+    if (!(await confirm({ title: t.albums.confirmDelete(selected.size), confirmLabel: t.common.delete, danger: true }))) return
     deletePhotos.mutate([...selected], { onSuccess: toggleSelecting })
   }
 

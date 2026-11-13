@@ -19,6 +19,7 @@ import { refreshPush } from './lib/push'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
 import { useTheme } from './lib/theme'
+import { ConfirmProvider } from './components/ConfirmProvider'
 
 // The map (and the place column inside it) is the home screen and loads up front; the other
 // screens, and login/setup that a signed-in user never sees, load when first opened.
@@ -154,31 +155,33 @@ export default function App() {
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <MotionProvider>
-            <BrowserRouter>
-              <ErrorBoundary>
-                <Routes>
-                  {/* The link from a password reset email: opens without a login, before anything else. */}
-                  <Route
-                    path="/reset-password"
-                    element={
-                      <Frame>
-                        <Suspense fallback={<QueryState isLoading error={null} />}>
-                          <ResetLinkPage />
-                        </Suspense>
-                      </Frame>
-                    }
-                  />
-                  <Route
-                    path="*"
-                    element={
-                      <ThemeGate>
-                        <AuthGate />
-                      </ThemeGate>
-                    }
-                  />
-                </Routes>
-              </ErrorBoundary>
-            </BrowserRouter>
+            <ConfirmProvider>
+              <BrowserRouter>
+                <ErrorBoundary>
+                  <Routes>
+                    {/* The link from a password reset email: opens without a login, before anything else. */}
+                    <Route
+                      path="/reset-password"
+                      element={
+                        <Frame>
+                          <Suspense fallback={<QueryState isLoading error={null} />}>
+                            <ResetLinkPage />
+                          </Suspense>
+                        </Frame>
+                      }
+                    />
+                    <Route
+                      path="*"
+                      element={
+                        <ThemeGate>
+                          <AuthGate />
+                        </ThemeGate>
+                      }
+                    />
+                  </Routes>
+                </ErrorBoundary>
+              </BrowserRouter>
+            </ConfirmProvider>
           </MotionProvider>
         </QueryClientProvider>
       </ThemeProvider>

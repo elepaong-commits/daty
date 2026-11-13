@@ -14,6 +14,9 @@ const ko = {
     saving: '저장 중…',
     saveChanges: '변경사항 저장',
     cancel: '취소',
+    delete: '삭제',
+    save: '저장',
+    proceed: '계속',
     close: '닫기',
     showPassword: '비밀번호 보기',
     hidePassword: '비밀번호 숨기기',
@@ -288,7 +291,8 @@ const ko = {
     notesOnDetail: '메모는 장소 화면에서 추가하고 지울 수 있어요.',
     albumKept: (title: string) => `연결된 ‘${title}’ 앨범은 그대로 유지돼요.`,
     delete: '이 장소 삭제',
-    confirmDelete: '이 장소를 삭제할까요? 메모도 함께 지워져요. 캘린더 기록과 앨범은 남아요.',
+    confirmDelete: '이 장소를 삭제할까요?',
+    confirmDeleteBody: '메모도 함께 지워져요. 캘린더 기록과 앨범은 남아요.',
   },
   albums: {
     eyebrow: '추억 갤러리',
@@ -368,7 +372,8 @@ const ko = {
     saveAll: '모두 저장',
     save: '저장',
     saveStarting: (done: number, total: number) => `저장 중 ${done}/${total}`,
-    confirmSave: (n: number) => `${n}개를 이 기기에 저장할까요? 브라우저가 여러 파일 내려받기를 물으면 허용해 주세요.`,
+    confirmSave: (n: number) => `${n}개를 이 기기에 저장할까요?`,
+    confirmSaveBody: '브라우저가 여러 파일 내려받기를 물으면 허용해 주세요.',
     recap: '결산',
   },
   feedback: {
@@ -416,8 +421,9 @@ const ko = {
       `사진 ${photos}장 ${photoSize} · 동영상 ${videos}개 ${videoSize}`,
     pending: (n: number) => `${n}개는 아직 계산 중이에요`,
     over: '무료 한도를 넘었어요. 넘는 만큼 요금이 붙어요',
+    bigUploadTitle: '큰 동영상을 올릴까요?',
     bigUpload: (count: number, size: string, used: string, total: string) =>
-      `동영상 ${count}개(${size})를 원본 그대로 올려요. 지금 ${used}를 쓰고 있고 무료 한도는 ${total}예요. 계속할까요?`,
+      `동영상 ${count}개(${size})를 원본 그대로 올려요. 지금 ${used}를 쓰고 있고 무료 한도는 ${total}예요.`,
   },
   data: {
     title: '내 데이터',
@@ -436,6 +442,9 @@ const ja: Messages = {
     saving: '保存中…',
     saveChanges: '変更を保存',
     cancel: 'キャンセル',
+    delete: '削除',
+    save: '保存',
+    proceed: '続ける',
     close: '閉じる',
     showPassword: 'パスワードを表示',
     hidePassword: 'パスワードを隠す',
@@ -709,7 +718,8 @@ const ja: Messages = {
     notesOnDetail: 'メモは場所の画面で追加・削除できます。',
     albumKept: (title) => `つながっている「${title}」アルバムはそのまま残ります。`,
     delete: 'この場所を削除',
-    confirmDelete: 'この場所を削除しますか？メモも一緒に消えます。カレンダーの記録とアルバムは残ります。',
+    confirmDelete: 'この場所を削除しますか？',
+    confirmDeleteBody: 'メモも一緒に消えます。カレンダーの記録とアルバムは残ります。',
   },
   albums: {
     eyebrow: '思い出ギャラリー',
@@ -787,7 +797,8 @@ const ja: Messages = {
     saveAll: 'すべて保存',
     save: '保存',
     saveStarting: (done, total) => `保存中 ${done}/${total}`,
-    confirmSave: (n) => `${n}件をこの端末に保存しますか？ブラウザに複数ファイルのダウンロードを聞かれたら許可してください。`,
+    confirmSave: (n) => `${n}件をこの端末に保存しますか？`,
+    confirmSaveBody: 'ブラウザに複数ファイルのダウンロードを聞かれたら許可してください。',
     recap: 'まとめ',
   },
   feedback: {
@@ -834,8 +845,9 @@ const ja: Messages = {
     breakdown: (photos, photoSize, videos, videoSize) => `写真 ${photos}枚 ${photoSize} · 動画 ${videos}本 ${videoSize}`,
     pending: (n) => `${n}件はまだ計算中です`,
     over: '無料枠を超えました。超えた分は料金がかかります',
+    bigUploadTitle: '大きな動画をアップロードしますか？',
     bigUpload: (count, size, used, total) =>
-      `動画${count}本（${size}）を元のままアップロードします。現在${used}を使っていて、無料枠は${total}です。続けますか？`,
+      `動画${count}本（${size}）を元のままアップロードします。現在${used}を使っていて、無料枠は${total}です。`,
   },
   data: {
     title: 'マイデータ',

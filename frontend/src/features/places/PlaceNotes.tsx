@@ -8,10 +8,12 @@ import { useT } from '../../lib/i18n'
 import { encodeMemo } from '../../lib/memo'
 import { useAddPlaceNote, useDeletePlaceNote } from '../../lib/queries'
 import type { PlaceNote } from '../../lib/types'
+import { useConfirm } from '../../lib/confirm'
 
 /** The place's memos, newest first, with a composer that can drop tags into a new memo. */
 export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNote[] }) {
   const t = useT()
+  const confirm = useConfirm()
   const addNote = useAddPlaceNote(placeId)
   const deleteNote = useDeletePlaceNote(placeId)
   const [draft, setDraft] = useState('')
@@ -24,8 +26,8 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
     addNote.mutate(content, { onSuccess: () => setDraft('') })
   }
 
-  function remove(noteId: number) {
-    if (window.confirm(t.place.confirmDeleteNote)) deleteNote.mutate(noteId)
+  async function remove(noteId: number) {
+    if (await confirm({ title: t.place.confirmDeleteNote, confirmLabel: t.common.delete, danger: true })) deleteNote.mutate(noteId)
   }
 
   return (

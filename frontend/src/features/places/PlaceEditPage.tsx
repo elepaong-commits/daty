@@ -15,6 +15,7 @@ import type { PlaceDetail, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
 import type { MapFocus } from '../map/MapPage'
+import { useConfirm } from '../../lib/confirm'
 
 export function PlaceEditPage() {
   const id = Number(useParams().id)
@@ -38,6 +39,7 @@ export function PlaceEditPage() {
 
 function PlaceEditForm({ place }: { place: PlaceDetail }) {
   const t = useT()
+  const confirm = useConfirm()
   const retro = useIsRetro()
   const navigate = useNavigate()
   const updatePlace = useUpdatePlace(place.id)
@@ -77,8 +79,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
     )
   }
 
-  function remove() {
-    if (window.confirm(t.place.confirmDelete)) deletePlace.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
+  async function remove() {
+    if (await confirm({ title: t.place.confirmDelete, message: t.place.confirmDeleteBody, confirmLabel: t.common.delete, danger: true }))
+      deletePlace.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
   return (

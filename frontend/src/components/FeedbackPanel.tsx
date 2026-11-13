@@ -4,6 +4,7 @@ import { errorMessage } from '../lib/api'
 import { useT } from '../lib/i18n'
 import { useFeedback, useMe } from '../lib/queries'
 import type { Feedback, FeedbackTarget } from '../lib/types'
+import { useConfirm } from '../lib/confirm'
 
 /** The emoji the backend accepts (backend/src/lib/feedback.ts). */
 const EMOJIS = ['❤️', '😍', '😂', '🥹', '👍', '🔥']
@@ -20,6 +21,7 @@ interface Props {
 /** Emoji reactions and comments the two leave on a photo or a place memo. */
 export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = false }: Props) {
   const t = useT()
+  const confirm = useConfirm()
   const myId = useMe().data?.user.id
   const { react, comment, removeComment } = useFeedback(target)
   const [draft, setDraft] = useState('')
@@ -35,8 +37,8 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
     comment.mutate(content, { onSuccess: () => setDraft('') })
   }
 
-  function remove(commentId: number) {
-    if (window.confirm(t.feedback.confirmDelete)) removeComment.mutate(commentId)
+  async function remove(commentId: number) {
+    if (await confirm({ title: t.feedback.confirmDelete, confirmLabel: t.common.delete, danger: true })) removeComment.mutate(commentId)
   }
 
   return (
