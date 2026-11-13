@@ -43,7 +43,7 @@ export function ChangePassword() {
           {t.account.changePassword}
           <span className="text-muted">›</span>
         </button>
-        {change.isSuccess && <p className="px-1 text-[12px] text-brand">{t.account.passwordChanged}</p>}
+        {change.isSuccess && <p className="px-1 text-[12px] text-brand-strong">{t.account.passwordChanged}</p>}
       </div>
     )
   }
@@ -78,7 +78,7 @@ export function ChangePassword() {
         <button
           type="submit"
           disabled={!canSubmit || change.isPending}
-          className="h-11 flex-1 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+          className="h-11 flex-1 rounded-xl bg-brand-strong text-[14px] font-semibold text-white disabled:opacity-50"
         >
           {change.isPending ? t.common.wait : t.account.submitPassword}
         </button>

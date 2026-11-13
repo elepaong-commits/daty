@@ -9,7 +9,7 @@ function CrashScreen() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="h-[44px] rounded-full bg-brand px-6 text-[14px] font-bold text-white hover:bg-brand-strong"
+        className="h-[44px] rounded-full bg-brand-strong px-6 text-[14px] font-bold text-white hover:bg-brand-deep"
       >
         {t.common.reload}
       </button>

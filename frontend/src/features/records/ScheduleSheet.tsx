@@ -31,7 +31,7 @@ interface Props {
 
 const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: string }[] = [
   { value: 'PLAN', key: 'plan', activeClass: 'text-coral' },
-  { value: 'RECORD', key: 'record', activeClass: 'text-brand' },
+  { value: 'RECORD', key: 'record', activeClass: 'text-brand-strong' },
 ]
 
 /** Where the record happens: one of the couple's saved places, or a new one from Google. */
@@ -164,7 +164,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                 role="radio"
                 aria-checked={placeSource === value}
                 onClick={() => setSource(value)}
-                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-white text-brand' : 'text-ink'}`}
+                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
               >
                 {t.schedule.placeSource[value]}
               </button>
@@ -277,7 +277,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               <button
                 type="submit"
                 disabled={!canSave}
-                className="ui-btn h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+                className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
               >
                 {updateRecord.isPending ? t.common.saving : t.common.saveChanges}
               </button>
@@ -291,7 +291,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             <button
               type="submit"
               disabled={!canSave}
-              className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
             >
               {createRecord.isPending ? t.common.saving : t.schedule.save}
             </button>

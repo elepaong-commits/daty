@@ -113,7 +113,7 @@ function TimelineEntry({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex max-w-full items-center gap-1 self-start pt-2 text-[11px] leading-normal font-medium text-brand"
+            className="flex max-w-full items-center gap-1 self-start pt-2 text-[11px] leading-normal font-medium text-brand-strong"
           >
             <MapPin size={12} strokeWidth={1.75} className="shrink-0" />
             <span className="truncate">{mapUrl.replace(/^https?:\/\//, '')}</span>
@@ -128,7 +128,7 @@ function TimelineEntry({
               complete.mutate({ type: 'RECORD' }, { onSuccess: onComplete })
             }}
             onKeyDown={(e) => e.stopPropagation()}
-            className="ui-btn-thin mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50 retro:text-[13px]"
+            className="ui-btn-thin mt-3 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-strong text-[14px] font-semibold text-white disabled:opacity-50 retro:text-[13px]"
           >
             {!complete.isPending && (retro ? <PixelSprite name="check" scale={2} colors={{ k: 'var(--color-white)' }} /> : <Check size={16} strokeWidth={1.75} />)}
             {complete.isPending ? t.calendar.completing : t.calendar.complete}

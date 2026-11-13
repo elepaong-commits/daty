@@ -51,7 +51,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
                   className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
                 >
                   <span className="text-[20px] font-bold tracking-[6px] text-brand-strong">{couple.coupleCode}</span>
-                  <span className="text-[12px] font-semibold text-brand">{copied ? t.account.copied : t.account.copy}</span>
+                  <span className="text-[12px] font-semibold text-brand-strong">{copied ? t.account.copied : t.account.copy}</span>
                 </button>
               </>
             )}
@@ -87,7 +87,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-brand font-display text-white retro:rounded-none retro:font-pixel retro:pixel-outline retro:pixel-thin retro:pixel-crisp ${
+      className={`flex shrink-0 items-center justify-center rounded-full bg-brand-strong font-display text-white retro:rounded-none retro:font-pixel retro:pixel-outline retro:pixel-thin retro:pixel-crisp ${
         size === 'sm' ? 'size-7 text-[13px]' : 'size-11 text-[18px]'
       }`}
       aria-hidden="true"

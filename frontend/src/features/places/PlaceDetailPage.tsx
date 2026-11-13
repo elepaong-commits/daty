@@ -51,7 +51,7 @@ export function PlaceDetailPage() {
             category={place.category}
             className="size-full rounded-xl"
           />
-          <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand' : 'text-coral'}`}>
+          <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand-strong' : 'text-coral'}`}>
             {visited ? <Check size={12} strokeWidth={1.75} /> : <Heart size={12} strokeWidth={1.75} />} {t.place.badge[place.status]}
           </span>
         </div>
@@ -78,7 +78,7 @@ export function PlaceDetailPage() {
           <section className="ui-box-thin flex flex-col gap-2 rounded-2xl bg-white p-3">
             <div className="flex items-center justify-between">
               <h3 className="font-display text-[18px]">{t.place.photos}</h3>
-              <Link to={`/albums/${album.id}`} className="text-[11px] font-semibold text-brand">
+              <Link to={`/albums/${album.id}`} className="text-[11px] font-semibold text-brand-strong">
                 {t.place.viewAlbum}
               </Link>
             </div>
@@ -107,7 +107,7 @@ export function PlaceDetailPage() {
             href={googleMapsLink(place)}
             target="_blank"
             rel="noreferrer"
-            className="ui-btn flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-brand bg-white text-[16px] font-semibold text-brand retro:mb-1.5 retro:text-[14px] retro:text-brand-strong"
+            className="ui-btn flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-brand bg-white text-[16px] font-semibold text-brand-strong retro:mb-1.5 retro:text-[14px] retro:text-brand-strong"
           >
             <Map size={18} strokeWidth={1.75} />
             {t.place.openGoogleMaps}
@@ -115,7 +115,7 @@ export function PlaceDetailPage() {
           <button
             type="button"
             onClick={edit}
-            className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] retro:mb-1.5 retro:text-[14px]"
+            className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] retro:mb-1.5 retro:text-[14px]"
           >
             {t.place.editPlace}
           </button>

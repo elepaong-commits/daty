@@ -126,11 +126,11 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           <span className="ui-badge">{monthly ? t.albums.wholeMonth : multiDay ? t.albums.tripLength(days - 1, days) : t.albums.oneDay}</span>
           <span className="ml-auto flex gap-3">
             {multiDay && !monthly && (
-              <button type="button" onClick={() => setEndDate(date)} className="text-[12px] font-semibold text-brand">
+              <button type="button" onClick={() => setEndDate(date)} className="text-[12px] font-semibold text-brand-strong">
                 {t.albums.makeOneDay}
               </button>
             )}
-            <button type="button" onClick={() => setMonthly(!monthly)} className="text-[12px] font-semibold text-brand">
+            <button type="button" onClick={() => setMonthly(!monthly)} className="text-[12px] font-semibold text-brand-strong">
               {monthly ? t.albums.byDate : t.albums.byMonth}
             </button>
           </span>
@@ -178,7 +178,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       {dayAlbum && (
         <p className="-mt-2 flex flex-col gap-1 rounded-xl bg-coral-soft px-3 py-2 text-[12px] text-coral-strong">
           {multiDay ? t.albums.periodTaken : t.albums.dayTaken}
-          <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand">
+          <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand-strong">
             {t.albums.openDayAlbum(dayAlbum.title)}
           </Link>
         </p>
@@ -215,14 +215,14 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           <button
             type="button"
             onClick={() => setChoosingPlaces((on) => !on)}
-            className="h-9 self-start rounded-full bg-sand-soft px-3 text-[12px] font-semibold text-brand"
+            className="h-9 self-start rounded-full bg-sand-soft px-3 text-[12px] font-semibold text-brand-strong"
           >
             {choosingPlaces ? t.albums.closePlaces : t.albums.addPlaces}
           </button>
           {choosingPlaces && (
             <SavedPlacePicker places={pickable} selectedIds={placeIds} onSelect={(place) => togglePlace(place.id)} />
           )}
-          {addedPlaces.length > 0 && <p className="text-[11px] text-brand">{multiDay ? t.albums.newVisitHintPeriod : t.albums.newVisitHint}</p>}
+          {addedPlaces.length > 0 && <p className="text-[11px] text-brand-strong">{multiDay ? t.albums.newVisitHintPeriod : t.albums.newVisitHint}</p>}
         </div>
       )}
 
@@ -237,7 +237,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       <button
         type="submit"
         disabled={!canSave}
-        className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+        className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
       >
         {isPending ? t.common.saving : submitLabel}
       </button>

@@ -28,13 +28,13 @@ export function NotificationSettings() {
       <p className="text-[12px] leading-normal text-muted">{pushSupported ? t.notifications.help : t.notifications.unsupported}</p>
       {pushSupported && (
         <>
-          {subscribed && <p className="text-[13px] font-semibold text-brand">{t.notifications.on}</p>}
+          {subscribed && <p className="text-[13px] font-semibold text-brand-strong">{t.notifications.on}</p>}
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => toggle.mutate()}
               disabled={toggle.isPending}
-              className={`h-11 flex-1 rounded-xl text-[14px] font-semibold disabled:opacity-50 ${subscribed ? 'bg-sand-soft' : 'bg-brand text-white'}`}
+              className={`h-11 flex-1 rounded-xl text-[14px] font-semibold disabled:opacity-50 ${subscribed ? 'bg-sand-soft' : 'bg-brand-strong text-white'}`}
             >
               {toggle.isPending ? t.common.wait : subscribed ? t.notifications.disable : t.notifications.enable}
             </button>

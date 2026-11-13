@@ -27,7 +27,7 @@ export function BottomNav() {
                 isActive ? 'text-white' : 'text-ink'
               }`}
             >
-              {isActive && <m.span layoutId="bottom-nav-highlight" transition={highlight} className="absolute inset-0 -z-10 bg-brand" />}
+              {isActive && <m.span layoutId="bottom-nav-highlight" transition={highlight} className="absolute inset-0 -z-10 bg-brand-strong" />}
               <PixelSprite name={sprite} scale={2} />
               {t.nav[key]}
             </NavLink>
@@ -47,7 +47,7 @@ export function BottomNav() {
             <>
               <span
                 className={`relative flex h-8 w-[70.4px] items-center justify-center transition-colors duration-200 ${
-                  isActive ? 'text-brand' : 'text-faint'
+                  isActive ? 'text-brand-strong' : 'text-faint'
                 }`}
               >
                 {isActive && (
@@ -56,7 +56,7 @@ export function BottomNav() {
                 <Icon size={20} strokeWidth={1.75} className="relative" />
               </span>
               <span
-                className={`text-[11px] leading-normal font-semibold transition-colors duration-200 ${isActive ? 'text-brand' : 'text-faint'}`}
+                className={`text-[11px] leading-normal font-semibold transition-colors duration-200 ${isActive ? 'text-brand-strong' : 'text-faint'}`}
               >
                 {t.nav[key]}
               </span>

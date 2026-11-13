@@ -46,7 +46,7 @@ export function AuthPage() {
         <LanguageToggle />
       </div>
       <div className="pb-8 text-center">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.auth.tagline}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
 
@@ -62,7 +62,7 @@ export function AuthPage() {
                 role="tab"
                 aria-selected={mode === value}
                 onClick={() => switchMode(value)}
-                className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
+                className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
               >
                 {value === 'login' ? t.auth.login : t.auth.signup}
               </button>
@@ -110,7 +110,7 @@ export function AuthPage() {
             <button
               type="submit"
               disabled={!canSubmit || active.isPending}
-              className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
             >
               {active.isPending ? t.common.wait : mode === 'login' ? t.auth.login : t.auth.signupSubmit}
             </button>
@@ -140,10 +140,10 @@ function AuthHero() {
   return (
     <section className="hidden w-[55%] shrink-0 flex-col bg-brand-soft px-16 py-14 lg:flex">
       <div className="flex items-center gap-2.5">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-brand text-white">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-brand-strong text-white">
           <Heart size={20} strokeWidth={1.75} fill="currentColor" />
         </span>
-        <span className="font-display text-[36px] leading-none text-brand">daty</span>
+        <span className="font-display text-[36px] leading-none text-brand-strong">daty</span>
       </div>
 
       <div className="relative my-8 min-h-0 flex-1" aria-hidden="true">
@@ -160,7 +160,7 @@ function AuthHero() {
             </div>
           )
         })}
-        <MapPin size={44} strokeWidth={1.75} className="absolute top-[30%] left-[46%] fill-white text-brand" />
+        <MapPin size={44} strokeWidth={1.75} className="absolute top-[30%] left-[46%] fill-white text-brand-strong" />
       </div>
 
       <div className="flex flex-col gap-2.5">

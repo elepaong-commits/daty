@@ -24,7 +24,7 @@ export function ResetLinkPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
       <div className="pb-8 text-center">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.auth.tagline}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
       <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
@@ -50,11 +50,11 @@ export function ResetLinkPage() {
         <button
           type="submit"
           disabled={!canSubmit || reset.isPending}
-          className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+          className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {reset.isPending ? t.common.wait : t.auth.linkSubmit}
         </button>
-        <button type="button" onClick={() => navigate('/', { replace: true })} className="text-[13px] font-semibold text-brand">
+        <button type="button" onClick={() => navigate('/', { replace: true })} className="text-[13px] font-semibold text-brand-strong">
           {t.auth.backToLogin}
         </button>
       </form>

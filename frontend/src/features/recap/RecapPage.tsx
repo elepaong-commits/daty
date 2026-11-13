@@ -151,7 +151,7 @@ function Row({ rank, to, trailing, children }: { rank: number; to?: string; trai
     <li className="flex items-center gap-2 text-[13px] leading-normal">
       <span className="w-4 shrink-0 text-center text-[12px] text-muted tabular-nums">{rank}</span>
       {to ? (
-        <Link to={to} className="flex min-w-0 flex-1 hover:text-brand">
+        <Link to={to} className="flex min-w-0 flex-1 hover:text-brand-strong">
           {name}
         </Link>
       ) : (

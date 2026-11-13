@@ -256,7 +256,7 @@ export function AlbumDetailPage() {
                 type="button"
                 onClick={() => saveToDevice()}
                 disabled={saveProgress !== null}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand disabled:opacity-50 retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand-strong disabled:opacity-50 retro:text-brand-strong"
               >
                 {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.saveAll}
               </button>
@@ -265,7 +265,7 @@ export function AlbumDetailPage() {
               <button
                 type="button"
                 onClick={toggleSelecting}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand-strong retro:text-brand-strong"
               >
                 {selecting ? t.albums.done : t.albums.select}
               </button>
@@ -274,7 +274,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={uploadPhotos.isPending || selecting}
-              className="ui-btn-thin h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+              className="ui-btn-thin h-8 rounded-full bg-brand-strong px-3 text-[12px] font-semibold text-white disabled:opacity-50"
             >
               {uploadPhotos.progress
                 ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total, uploadPhotos.progress.percent)
@@ -307,7 +307,7 @@ export function AlbumDetailPage() {
                   setSelected(new Set()) // don't keep hidden items selected for deletion
                 }}
                 className={`ui-seg-option flex-1 rounded-xl text-[13px] leading-normal font-semibold retro:text-[12px] ${
-                  filter === value ? 'bg-brand text-white' : 'text-ink'
+                  filter === value ? 'bg-brand-strong text-white' : 'text-ink'
                 }`}
               >
                 {t.albums.filter[value](counts[value])}
@@ -385,7 +385,7 @@ export function AlbumDetailPage() {
                   {selecting && (
                     <span
                       className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-white ${
-                        isSelected ? 'bg-brand' : 'bg-ink/30'
+                        isSelected ? 'bg-brand-strong' : 'bg-ink/30'
                       }`}
                     >
                       {isSelected && <Check size={12} strokeWidth={2.5} />}

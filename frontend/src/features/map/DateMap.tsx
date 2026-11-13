@@ -172,7 +172,7 @@ function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
   return (
     <div
       className={`flex items-center justify-center rounded-full font-display text-[15px] leading-none shadow-md ${
-        status === 'VISITED' ? 'border-3 border-white bg-brand text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
+        status === 'VISITED' ? 'border-3 border-white bg-brand-strong text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
       }`}
       style={{ width: size, height: size, transform: 'translateY(50%)' }}
     >
@@ -191,7 +191,7 @@ function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; 
       {selected && <img src={selectedHalo} alt="" width={53.5} height={53.5} className="absolute -top-1.5 -left-1.5 max-w-none" />}
       <div
         className={`absolute inset-0 -rotate-45 rounded-t-full rounded-br-full ${
-          visited ? 'border-3 border-white bg-brand' : 'border-2 border-coral bg-coral-soft'
+          visited ? 'border-3 border-white bg-brand-strong' : 'border-2 border-coral bg-coral-soft'
         }`}
       />
       <span className={`absolute inset-0 flex items-center justify-center ${visited ? 'text-white' : 'text-coral-strong'}`}>
@@ -212,7 +212,7 @@ function RetroClusterPin({ count, status }: { count: number; status: PlaceStatus
   return (
     <div
       className={`flex items-center justify-center font-pixel-head text-[15px] leading-none pixel-box pixel-crisp ${
-        status === 'VISITED' ? 'bg-brand text-white' : 'bg-coral-soft text-coral-strong [--pixel-border:var(--color-coral-strong)]'
+        status === 'VISITED' ? 'bg-brand-strong text-white' : 'bg-coral-soft text-coral-strong [--pixel-border:var(--color-coral-strong)]'
       }`}
       style={{ width: size, height: size, transform: 'translateY(50%)' }}
     >

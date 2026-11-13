@@ -153,7 +153,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         </ul>
       )}
 
-      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
+      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand-strong' : 'text-muted'}`}>
         {loadingPick
           ? t.placeSearch.fetching
           : picked

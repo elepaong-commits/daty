@@ -183,7 +183,7 @@ export function MapPage() {
           <button
             type="button"
             onClick={() => startAdding(null)}
-            className="ui-icon-button bg-brand shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-strong"
+            className="ui-icon-button bg-brand-strong shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-deep"
             aria-label={t.map.addWish}
           >
             {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={20} height={20} />}
@@ -236,7 +236,7 @@ export function MapPage() {
 
       {status === 'WISH' && listed.length > 0 && (
         <div className="flex shrink-0 flex-wrap items-center gap-2 px-5 pb-3 text-[12px]">
-          <button type="button" onClick={pickRandom} className="ui-btn-thin flex h-8 items-center gap-1.5 rounded-full bg-white px-3 font-semibold text-brand retro:text-brand-strong">
+          <button type="button" onClick={pickRandom} className="ui-btn-thin flex h-8 items-center gap-1.5 rounded-full bg-white px-3 font-semibold text-brand-strong retro:text-brand-strong">
             <Dices size={14} strokeWidth={1.75} /> {t.map.randomPick}
           </button>
           <button
@@ -245,7 +245,7 @@ export function MapPage() {
             disabled={locating === 'pending'}
             aria-pressed={near !== null}
             className={`ui-btn-thin flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold disabled:opacity-50 ${
-              near ? 'bg-brand text-white' : 'bg-white text-brand retro:text-brand-strong'
+              near ? 'bg-brand-strong text-white' : 'bg-white text-brand-strong retro:text-brand-strong'
             }`}
           >
             <LocateFixed size={14} strokeWidth={1.75} /> {locating === 'pending' ? t.common.wait : t.map.nearby}

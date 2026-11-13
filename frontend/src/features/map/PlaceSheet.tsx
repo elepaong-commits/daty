@@ -40,13 +40,13 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
       <div className="flex items-center justify-between px-5 pb-2.5">
         <h2 className="ui-heading">
           {t.map.sheetHeading[status][0]}
-          <span className="text-brand">{places.length}</span>
+          <span className="text-brand-strong">{places.length}</span>
           {t.map.sheetHeading[status][1]}
         </h2>
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className="ui-label text-[12px] font-semibold text-brand retro:text-[11px] retro:text-brand-strong"
+          className="ui-label text-[12px] font-semibold text-brand-strong retro:text-[11px] retro:text-brand-strong"
         >
           {expanded ? t.map.viewMap : t.map.viewAll}
         </button>
@@ -113,7 +113,7 @@ export function PlaceList({
     <section className="flex min-h-0 flex-1 flex-col">
       <h2 className="ui-heading px-5 pt-1 pb-2.5">
         {t.map.sheetHeading[status][0]}
-        <span className="text-brand">{places.length}</span>
+        <span className="text-brand-strong">{places.length}</span>
         {t.map.sheetHeading[status][1]}
       </h2>
       {places.length === 0 ? (

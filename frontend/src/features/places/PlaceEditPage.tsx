@@ -100,7 +100,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                 role="radio"
                 aria-checked={status === value}
                 onClick={() => setStatus(value)}
-                className={`ui-seg-option flex flex-1 items-center justify-center gap-1 rounded-xl text-[13px] font-semibold retro:text-[12px] ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
+                className={`ui-seg-option flex flex-1 items-center justify-center gap-1 rounded-xl text-[13px] font-semibold retro:text-[12px] ${status === value ? 'bg-brand-strong text-white' : 'text-ink'}`}
               >
                 {!retro && (value === 'VISITED' ? <Check size={14} strokeWidth={1.75} /> : <Heart size={14} strokeWidth={1.75} />)} {t.status[value]}
               </button>
@@ -123,7 +123,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                     onClick={() => setCategory(value)}
                     className={`ui-pop flex h-[34px] items-center gap-1 rounded-full border px-3 text-[12px] font-semibold retro:h-8 retro:border-0 retro:font-normal retro:pixel-outline retro:pixel-thin ${
                       category === value
-                        ? 'border-brand bg-brand text-white retro:bg-brand-soft retro:text-brand-strong retro:[--pixel-border:var(--color-brand)]'
+                        ? 'border-brand bg-brand-strong text-white retro:bg-brand-soft retro:text-brand-strong retro:[--pixel-border:var(--color-brand)]'
                         : 'border-field-border bg-white retro:[--pixel-border:var(--color-handle)]'
                     }`}
                   >
@@ -207,7 +207,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
             <button
               type="submit"
               disabled={!canSave}
-              className="ui-btn h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
             >
               {updatePlace.isPending ? t.common.saving : t.common.saveChanges}
             </button>

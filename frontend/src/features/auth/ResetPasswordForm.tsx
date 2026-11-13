@@ -38,7 +38,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
           role="tab"
           aria-selected={method === value}
           onClick={() => setMethod(value)}
-          className={`flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-white text-brand' : 'text-ink'}`}
+          className={`flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
         >
           {value === 'code' ? t.auth.resetByCode : t.auth.resetByEmail}
         </button>
@@ -66,15 +66,15 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
           />
         </Field>
         {forgot.error && <p className="text-[12px] text-coral-strong">{errorMessage(forgot.error, t)}</p>}
-        {forgot.isSuccess && <p className="text-[12px] leading-normal text-brand">{t.auth.resetMailSent}</p>}
+        {forgot.isSuccess && <p className="text-[12px] leading-normal text-brand-strong">{t.auth.resetMailSent}</p>}
         <button
           type="submit"
           disabled={email.trim() === '' || forgot.isPending}
-          className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+          className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {forgot.isPending ? t.common.wait : t.auth.sendResetMail}
         </button>
-        <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand">
+        <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-strong">
           {t.auth.backToLogin}
         </button>
       </form>
@@ -127,11 +127,11 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
       <button
         type="submit"
         disabled={!canSubmit || reset.isPending}
-        className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+        className="ui-btn mt-1 h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
       >
         {reset.isPending ? t.common.wait : t.auth.resetSubmit}
       </button>
-      <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand">
+      <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-strong">
         {t.auth.backToLogin}
       </button>
     </form>

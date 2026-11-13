@@ -119,7 +119,7 @@ export function CalendarPage() {
 
           <div className="grid grid-cols-7 pb-1 text-center text-[11px] leading-normal font-semibold">
             {t.weekdays.map((d, i) => (
-              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand' : ''}>
+              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand-strong' : ''}>
                 {d}
               </span>
             ))}
@@ -158,7 +158,7 @@ export function CalendarPage() {
       <button
         type="button"
         onClick={() => setSheetOpen(true)}
-        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
+        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand-strong pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
       >
         {retro ? <PixelSprite name="plus" scale={2} /> : <span className="text-[24px] leading-none">+</span>}
         <span className="text-[16px] font-semibold retro:text-[13px]">{t.calendar.addSchedule}</span>
@@ -241,7 +241,7 @@ function DayCell({
       : weekday === 0
         ? 'text-coral'
         : weekday === 6
-          ? 'text-brand'
+          ? 'text-brand-strong'
           : 'text-ink'
   const visible = inMonth ? records.slice(0, isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) : []
   const hidden = inMonth ? records.length - visible.length : 0
@@ -259,7 +259,7 @@ function DayCell({
     >
       <span
         className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold lg:mx-0 ${numberColor} ${
-          isSelected ? 'bg-brand' : isToday ? 'ring-1 ring-brand' : ''
+          isSelected ? 'bg-brand-strong' : isToday ? 'ring-1 ring-brand' : ''
         }`}
       >
         {day.getDate()}

@@ -111,7 +111,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               type="submit"
               disabled={!draft.trim() || comment.isPending}
               className={`h-9 shrink-0 rounded-full px-3.5 text-[13px] font-semibold disabled:opacity-40 retro:rounded-none ${
-                dark ? 'bg-white text-ink' : 'bg-brand text-white'
+                dark ? 'bg-white text-ink' : 'bg-brand-strong text-white'
               }`}
             >
               {t.feedback.send}

@@ -53,7 +53,7 @@ export function ProfileSettings({ me }: { me: Me }) {
           {t.account.editProfile}
           <span className="text-muted">›</span>
         </button>
-        {saved && <p className="px-1 text-[12px] text-brand">{t.account.profileSaved}</p>}
+        {saved && <p className="px-1 text-[12px] text-brand-strong">{t.account.profileSaved}</p>}
       </div>
     )
   }
@@ -91,7 +91,7 @@ export function ProfileSettings({ me }: { me: Me }) {
         <button
           type="submit"
           disabled={!canSubmit || pending}
-          className="h-11 flex-1 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+          className="h-11 flex-1 rounded-xl bg-brand-strong text-[14px] font-semibold text-white disabled:opacity-50"
         >
           {pending ? t.common.saving : t.common.saveChanges}
         </button>

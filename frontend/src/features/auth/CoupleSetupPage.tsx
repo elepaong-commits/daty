@@ -35,7 +35,7 @@ export function CoupleSetupPage() {
         <LanguageToggle />
       </div>
       <div className="pb-8">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.couple.hello(nickname ?? '')}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.couple.hello(nickname ?? '')}</p>
         <h1 className="font-display text-[26px] leading-[1.25]">{t.couple.title}</h1>
         <p className="pt-2 text-[13px] leading-normal text-muted">
           {t.couple.description}
@@ -50,7 +50,7 @@ export function CoupleSetupPage() {
             role="tab"
             aria-selected={mode === value}
             onClick={() => setMode(value)}
-            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
+            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
           >
             {value === 'create' ? t.couple.createTab : t.couple.joinTab}
           </button>
@@ -89,7 +89,7 @@ export function CoupleSetupPage() {
         <button
           type="submit"
           disabled={!canSubmit || active.isPending}
-          className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+          className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {active.isPending ? t.common.wait : mode === 'create' ? t.couple.create : t.couple.join}
         </button>

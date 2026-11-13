@@ -74,7 +74,7 @@ export function AddPlaceSheet({ onClose, onSaved, initial }: Props) {
         {existing && (
           <p className="pt-1.5 text-[11px] font-medium text-coral-strong">
             {t.addPlace.alreadySaved}{' '}
-            <Link to={`/places/${existing.id}`} className="font-semibold text-brand">
+            <Link to={`/places/${existing.id}`} className="font-semibold text-brand-strong">
               {t.addPlace.viewSaved}
             </Link>
           </p>
@@ -112,7 +112,7 @@ export function AddPlaceSheet({ onClose, onSaved, initial }: Props) {
           <button
             type="submit"
             disabled={!canSave}
-            className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+            className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
           >
             {createPlace.isPending ? t.common.saving : t.addPlace.save}
           </button>

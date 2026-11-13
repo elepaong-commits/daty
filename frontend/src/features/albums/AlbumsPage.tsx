@@ -47,14 +47,14 @@ export function AlbumsPage() {
             <div className="flex shrink-0 items-center gap-2">
               <Link
                 to="/recap"
-                className="ui-btn-thin flex h-10 items-center rounded-full bg-white px-3.5 text-[14px] font-semibold text-brand retro:h-9 retro:px-3 retro:text-[12px] retro:text-brand-strong"
+                className="ui-btn-thin flex h-10 items-center rounded-full bg-white px-3.5 text-[14px] font-semibold text-brand-strong retro:h-9 retro:px-3 retro:text-[12px] retro:text-brand-strong"
               >
                 {t.albums.recap}
               </Link>
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="ui-btn-thin flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-strong retro:h-9 retro:px-3 retro:text-[12px]"
+                className="ui-btn-thin flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-strong px-4 text-[14px] font-semibold text-white hover:bg-brand-deep retro:h-9 retro:px-3 retro:text-[12px]"
               >
                 {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={16} height={16} />}
                 {t.albums.newAlbum}
@@ -81,7 +81,7 @@ export function AlbumsPage() {
                 style={riseDelay(albums.length)}
                 className={`flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/50 p-4 hover:bg-brand-soft ui-box-thin retro:m-0.5 retro:bg-cream retro:bg-[repeating-linear-gradient(45deg,transparent_0_6px,rgb(0_168_150/0.07)_6px_12px)] retro:hover:bg-brand-soft ${RISE_IN}`}
               >
-                <span className="flex size-11 items-center justify-center rounded-full bg-brand text-[24px] text-white retro:size-10 retro:pixel-outline retro:pixel-thin">
+                <span className="flex size-11 items-center justify-center rounded-full bg-brand-strong text-[24px] text-white retro:size-10 retro:pixel-outline retro:pixel-thin">
                   {retro ? <PixelSprite name="plus" scale={3} /> : '+'}
                 </span>
                 <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>
@@ -102,7 +102,7 @@ export function AlbumsPage() {
           type="button"
           aria-label={t.albums.toTop}
           onClick={() => scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="ui-btn-thin absolute right-4 bottom-4 z-10 flex size-11 items-center justify-center rounded-full bg-brand text-white shadow-lg hover:bg-brand-strong lg:hidden"
+          className="ui-btn-thin absolute right-4 bottom-4 z-10 flex size-11 items-center justify-center rounded-full bg-brand-strong text-white shadow-lg hover:bg-brand-deep lg:hidden"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 19V5M5 12l7-7 7 7" />

@@ -40,7 +40,7 @@ export function HeaderAction({ onClick, children, disabled }: { onClick: () => v
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="ui-btn-thin h-9 shrink-0 rounded-full bg-white px-3 text-[13px] font-semibold text-brand disabled:opacity-50 retro:h-8 retro:text-[12px] retro:text-brand-strong"
+      className="ui-btn-thin h-9 shrink-0 rounded-full bg-white px-3 text-[13px] font-semibold text-brand-strong disabled:opacity-50 retro:h-8 retro:text-[12px] retro:text-brand-strong"
     >
       {children}
     </button>

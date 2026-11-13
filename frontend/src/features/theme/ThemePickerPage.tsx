@@ -20,11 +20,11 @@ export function ThemePickerPage() {
     <div className="h-dvh overflow-y-auto bg-cream">
       <div className="mx-auto flex w-full max-w-[960px] flex-col px-5 pt-[max(20px,env(safe-area-inset-top))] lg:pt-12 lg:pb-12">
         <header className="flex items-center justify-between">
-          <span className="font-display text-[28px] leading-none text-brand">daty</span>
+          <span className="font-display text-[28px] leading-none text-brand-strong">daty</span>
           <LanguageToggle />
         </header>
 
-        <p className="pt-7 text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.theme.pickerEyebrow}</p>
+        <p className="pt-7 text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.theme.pickerEyebrow}</p>
         <h1 className="pt-1 font-display text-[26px] leading-[1.25] lg:text-[28px]">{t.theme.pickerTitle}</h1>
         <p className="pt-1.5 text-[13px] leading-normal text-muted">{t.theme.pickerHint}</p>
 
@@ -65,7 +65,7 @@ export function ThemePickerPage() {
           <button
             type="button"
             onClick={() => setTheme(picked)}
-            className="h-[52px] w-full rounded-full bg-brand text-[15px] font-bold text-white shadow-cta hover:bg-brand-strong lg:mx-auto lg:block lg:w-[360px]"
+            className="h-[52px] w-full rounded-full bg-brand-strong text-[15px] font-bold text-white shadow-cta hover:bg-brand-deep lg:mx-auto lg:block lg:w-[360px]"
           >
             {t.theme.start}
           </button>

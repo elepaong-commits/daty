@@ -46,7 +46,7 @@ export function ConfirmDialog({ title, message, confirmLabel, cancelLabel, error
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand text-[15px] font-semibold text-white disabled:opacity-50 retro:text-[13px]"
+            className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-strong text-[15px] font-semibold text-white disabled:opacity-50 retro:text-[13px]"
           >
             {confirmLabel}
           </button>
