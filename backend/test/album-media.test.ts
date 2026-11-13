@@ -59,3 +59,30 @@ test("a file already in the album isn't recorded again", async () => {
   assert.equal(res.body.photos.length, 1);
   assert.equal(res.body.photos[0].fingerprint, fingerprint);
 });
+
+test("the album list carries a card's worth of photos, cover first, and the counts", async () => {
+  const album = await a.ok("POST", "/albums", { title: "Many", albumDate: "2026-10-05" });
+  await prisma.photo.createMany({
+    data: [1, 2, 3, 4, 5].map((n) => ({
+      albumId: album.id,
+      imageUrl: `https://example.com/${n}.${n === 2 ? "mp4" : "jpg"}`,
+      displayOrder: n,
+      mediaType: n === 2 ? ("VIDEO" as const) : ("PHOTO" as const),
+    })),
+  });
+  const photos = await prisma.photo.findMany({ where: { albumId: album.id }, orderBy: { displayOrder: "asc" } });
+  const user = await prisma.user.findFirstOrThrow({ where: { email: "media@test.local" } });
+  await prisma.reaction.create({ data: { photoId: photos[0]!.id, userId: user.id, coupleId: user.coupleId!, emoji: "❤️" } });
+  await a.ok("PATCH", `/albums/${album.id}`, { coverPhotoId: photos[4]!.id });
+
+  const listed = (await a.ok("GET", "/albums")).find((x: { id: number }) => x.id === album.id);
+  assert.equal(listed.photoCount, 5);
+  assert.equal(listed.videoCount, 1);
+  assert.equal(listed.coverPhoto.id, photos[4]!.id);
+  assert.deepEqual(
+    listed.previewPhotos.map((p: { id: number }) => p.id),
+    [photos[4]!.id, photos[0]!.id, photos[1]!.id],
+  );
+  assert.equal(listed.photos, undefined);
+  assert.equal(listed.previewPhotos[1].reactions, undefined);
+});

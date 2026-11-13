@@ -4,7 +4,7 @@ import { api, ApiError, ImageError, uploadToStorage } from './api'
 import { fileFingerprint } from './fingerprint'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
-import type { Album, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
+import type { Album, AlbumBase, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
 import { keepScreenOn } from './wakeLock'
 
@@ -204,7 +204,7 @@ export function useUpdateRecord(id: number) {
 export function useAddRecordToAlbum() {
   const invalidate = useInvalidateDateData()
   return useMutation({
-    mutationFn: ({ album, recordId }: { album: Album; recordId: number }) =>
+    mutationFn: ({ album, recordId }: { album: Pick<AlbumBase, 'id' | 'recordIds'>; recordId: number }) =>
       api.updateAlbum(album.id, { recordIds: [...new Set([...album.recordIds, recordId])] }),
     onSuccess: invalidate,
   })

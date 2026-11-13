@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { PHOTO_GRADIENTS } from '../../lib/categories'
 import { albumHeading, formatDottedRange, parseDateOnly } from '../../lib/dates'
-import type { Album, PlaceCategory } from '../../lib/types'
+import type { AlbumSummary, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -14,7 +14,7 @@ const LAYERS = [
   'rotate-5 retro:hidden',
 ] as const
 
-export function AlbumCard({ album, className = '', style }: { album: Album; className?: string; style?: CSSProperties }) {
+export function AlbumCard({ album, className = '', style }: { album: AlbumSummary; className?: string; style?: CSSProperties }) {
   const t = useT()
   const start = parseDateOnly(album.albumDate)
   const end = parseDateOnly(album.albumEndDate)
@@ -59,14 +59,12 @@ export function AlbumCard({ album, className = '', style }: { album: Album; clas
 }
 
 /** A pile of prints. Real photos replace the gradient placeholders once uploaded. */
-function PhotoStack({ album, date }: { album: Album; date: string }) {
+function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
   const t = useT()
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
-  const { coverPhoto } = album
-  const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
-  const videoCount = album.photos.filter((p) => p.mediaType === 'VIDEO').length
+  const { previewPhotos: photos, videoCount } = album
 
   const layer = (i: number) => (
     <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} category={i === 0 ? category : null} />

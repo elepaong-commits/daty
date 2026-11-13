@@ -1,6 +1,7 @@
 import type { Messages } from './messages'
 import type {
   Album,
+  AlbumSummary,
   AlbumDownload,
   Feedback,
   FeedbackTarget,
@@ -96,7 +97,7 @@ export const api = {
   createRecord: (input: CreateRecordInput) => post<DateRecord>('/api/records', input),
   updateRecord: (id: number, input: UpdateRecordInput) => patch<DateRecord>(`/api/records/${id}`, input),
   deleteRecord: (id: number) => del<void>(`/api/records/${id}`),
-  albums: () => request<Album[]>('/api/albums'),
+  albums: () => request<AlbumSummary[]>('/api/albums'),
   album: (id: number) => request<Album>(`/api/albums/${id}`),
   updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
   deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),

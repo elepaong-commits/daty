@@ -116,7 +116,8 @@ export interface Photo {
   comments?: Comment[]
 }
 
-export interface Album {
+/** What an album's list entry and its own screen share. */
+export interface AlbumBase {
   id: number
   title: string
   albumDate: string // YYYY-MM-DD, the first day
@@ -129,6 +130,16 @@ export interface Album {
   category: PlaceCategory | null
   places: { id: number; name: string; address: string | null }[]
   recordIds: number[] // the visits bundled into this album
+}
+
+/** GET /api/albums: enough for a card — no reactions or comments on the photos. */
+export interface AlbumSummary extends AlbumBase {
+  videoCount: number
+  previewPhotos: Photo[] // up to three, cover first
+}
+
+/** GET /api/albums/:id: every photo with its reactions and comments. */
+export interface Album extends AlbumBase {
   photos: Photo[]
 }
 

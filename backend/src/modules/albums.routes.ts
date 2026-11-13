@@ -39,10 +39,14 @@ const albumInclude = {
 
 type AlbumWithRelations = Prisma.AlbumGetPayload<{ include: typeof albumInclude }>;
 
+/** The distinct places of an album's visits, in visit order. */
+const placesOf = (records: AlbumWithRelations["records"]) => [
+  ...new Map(records.flatMap((r) => (r.place ? [[r.place.id, r.place]] : []))).values(),
+];
+
 async function serializeAlbum({ photos, records, ...album }: AlbumWithRelations) {
   const serialized = await Promise.all(photos.map(serializePhoto));
   const cover = serialized.find((p) => p.id === album.coverPhotoId) ?? serialized[0] ?? null;
-  const places = [...new Map(records.flatMap((r) => (r.place ? [[r.place.id, r.place]] : []))).values()];
   return {
     ...album,
     albumDate: toDateOnly(album.albumDate),
@@ -50,7 +54,7 @@ async function serializeAlbum({ photos, records, ...album }: AlbumWithRelations)
     photoCount: photos.length,
     coverPhoto: cover,
     category: records[0]?.category ?? null,
-    places,
+    places: placesOf(records),
     recordIds: records.map((r) => r.id),
     photos: serialized,
   };
@@ -108,13 +112,53 @@ async function addPlaceVisits(
   await tx.place.updateMany({ where: { id: { in: fresh.map((p) => p.id) }, status: "WISH" }, data: { status: "VISITED" } });
 }
 
+// The list draws cards, so it carries the card's photos (cover first, up to three) and counts — not every
+// photo with its reactions and comments, which only the album's own screen needs.
+const PREVIEW_PHOTOS = 3;
+
 albumsRouter.get("/", async (req, res) => {
-  const albums = await prisma.album.findMany({
-    where: { coupleId: req.coupleId },
-    include: albumInclude,
-    orderBy: [{ albumDate: "desc" }, { createdAt: "desc" }],
-  });
-  res.json(await Promise.all(albums.map(serializeAlbum)));
+  const { coupleId } = req;
+  const [albums, counts] = await Promise.all([
+    prisma.album.findMany({
+      where: { coupleId },
+      include: { ...albumInclude, photos: { orderBy: { displayOrder: "asc" }, take: PREVIEW_PHOTOS } },
+      orderBy: [{ albumDate: "desc" }, { createdAt: "desc" }],
+    }),
+    prisma.photo.groupBy({ by: ["albumId", "mediaType"], where: { album: { coupleId } }, _count: { _all: true } }),
+  ]);
+  // A cover picked from further down the album isn't among the first photos.
+  const missingCovers = albums.flatMap((a) =>
+    a.coverPhotoId !== null && !a.photos.some((p) => p.id === a.coverPhotoId) ? [a.coverPhotoId] : [],
+  );
+  const covers = missingCovers.length
+    ? await prisma.photo.findMany({ where: { id: { in: missingCovers }, album: { coupleId } } })
+    : [];
+  const countOf = (albumId: number, mediaType?: string) =>
+    counts
+      .filter((c) => c.albumId === albumId && (mediaType === undefined || c.mediaType === mediaType))
+      .reduce((sum, c) => sum + c._count._all, 0);
+
+  res.json(
+    await Promise.all(
+      albums.map(async ({ photos, records, ...album }) => {
+        const cover = photos.find((p) => p.id === album.coverPhotoId) ?? covers.find((p) => p.id === album.coverPhotoId);
+        const preview = cover ? [cover, ...photos.filter((p) => p.id !== cover.id)].slice(0, PREVIEW_PHOTOS) : photos;
+        const previewPhotos = await Promise.all(preview.map(serializePhoto));
+        return {
+          ...album,
+          albumDate: toDateOnly(album.albumDate),
+          albumEndDate: toDateOnly(album.albumEndDate ?? album.albumDate),
+          photoCount: countOf(album.id),
+          videoCount: countOf(album.id, "VIDEO"),
+          coverPhoto: previewPhotos[0] ?? null,
+          category: records[0]?.category ?? null,
+          places: placesOf(records),
+          recordIds: records.map((r) => r.id),
+          previewPhotos,
+        };
+      }),
+    ),
+  );
 });
 
 albumsRouter.get("/:id", async (req, res) => {
