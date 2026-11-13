@@ -13,6 +13,7 @@ import { useIsRetro } from '../../lib/theme'
 import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 import { isTopModal, useDialogFocus } from '../../lib/useDialogFocus'
+import { useZoom } from './useZoom'
 
 interface Props {
   albumId: number
@@ -44,6 +45,8 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const [index, setIndex] = useState(startIndex)
   const [talking, setTalking] = useState(false) // the reactions and comments panel
   const loadDownloads = useAlbumDownloads(albumId)
+  // A zoomed photo pans under the finger instead of the strip swiping to the next one.
+  const [zoomed, setZoomed] = useState(false)
   const saver = useSaveFiles(loadDownloads)
   const saving = saver.state.phase !== 'idle'
   const photo = photos[Math.min(index, photos.length - 1)]
@@ -151,7 +154,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
         <div
           ref={strip}
           onScroll={onScroll}
-          className="scrollbar-none flex size-full snap-x snap-mandatory overflow-x-auto overscroll-contain"
+          className={`scrollbar-none flex size-full snap-x snap-mandatory overscroll-contain ${zoomed ? 'overflow-x-hidden' : 'overflow-x-auto'}`}
         >
           {photos.map((p, i) => (
             <div key={p.id} className="flex size-full shrink-0 snap-center items-center justify-center">
@@ -159,7 +162,13 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
                 <ViewerVideo src={p.imageUrl} poster={p.thumbnailUrl} active={i === index} />
               ) : (
                 // Neighbours load right away so swiping doesn't show a blank frame.
-                <ViewerPhoto src={p.imageUrl} thumb={p.thumbnailUrl} eager={Math.abs(i - index) <= 1} />
+                <ViewerPhoto
+                  src={p.imageUrl}
+                  thumb={p.thumbnailUrl}
+                  eager={Math.abs(i - index) <= 1}
+                  active={i === index}
+                  onZoomChange={setZoomed}
+                />
               )}
             </div>
           ))}
@@ -306,12 +315,29 @@ function ViewerVideo({ src, poster, active }: { src: string | null; poster: stri
 }
 
 /** The full image over its thumbnail, which is already cached from the grid and shows while the full one loads. */
-function ViewerPhoto({ src, thumb, eager }: { src: string | null; thumb: string | null; eager: boolean }) {
+function ViewerPhoto({
+  src,
+  thumb,
+  eager,
+  active,
+  onZoomChange,
+}: {
+  src: string | null
+  thumb: string | null
+  eager: boolean
+  active: boolean
+  onZoomChange: (zoomed: boolean) => void
+}) {
   const t = useT()
   const { failed, onError } = useImageFailed(src)
+  const { ref: zoomRef, bind, style, reset } = useZoom((zoomed) => active && onZoomChange(zoomed))
+  // A photo swiped away comes back at its normal size.
+  useEffect(() => {
+    if (!active) reset()
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps -- reset is new each render
   if (src && !failed) {
     return (
-      <div className="relative size-full select-none">
+      <div ref={zoomRef} {...bind} style={style} className="relative size-full select-none">
         {thumb && thumb !== src && <img src={thumb} alt="" draggable={false} className="absolute inset-0 size-full object-contain" />}
         <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} onError={onError} draggable={false} className="absolute inset-0 size-full object-contain" />
       </div>
