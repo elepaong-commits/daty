@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import { prisma } from "../lib/prisma.js";
-import { readSession, SESSION_COOKIE, sessionRevoked } from "../lib/session.js";
+import { readSession, SESSION_COOKIE, sessionNeedsRenewal, sessionRevoked, startSession } from "../lib/session.js";
 import { HttpError } from "./error-handler.js";
 
 declare global {
@@ -14,8 +14,11 @@ declare global {
   }
 }
 
-/** Looks the user up on every request, so a password change logs out other devices right away. */
-export const requireAuth: RequestHandler = async (req, _res, next) => {
+/**
+ * Looks the user up on every request, so a password change logs out other devices right away.
+ * A valid session more than a day old is renewed, so it only runs out after 30 days without use.
+ */
+export const requireAuth: RequestHandler = async (req, res, next) => {
   const session = await readSession(req.cookies?.[SESSION_COOKIE]);
   const user =
     session &&
@@ -23,6 +26,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
   if (!session || !user || sessionRevoked(session.issuedAt, user.passwordChangedAt)) {
     throw new HttpError(401, "Unauthorized", "UNAUTHENTICATED");
   }
+  if (sessionNeedsRenewal(session.issuedAt)) await startSession(res, session.userId);
   req.userId = session.userId;
   req.userCoupleId = user.coupleId;
   next();

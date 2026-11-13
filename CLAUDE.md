@@ -47,7 +47,7 @@
 
 ## API (`backend/src/modules/`)
 
-**인증:** 이메일 + 비밀번호. 로그인하면 `daty_session` 쿠키(httpOnly, SameSite=Lax, 30일, HS256 JWT)가 발급된다. 비밀번호는 `node:crypto` scrypt로 해시(`src/lib/password.ts`). 로그인·가입·비밀번호 변경·재설정·계정 삭제·초대 코드 합류(`/api/couple/join`)는 IP당 15분에 10회 실패로 제한. 가입은 `SIGNUP_ENABLED=true`일 때만 열리고(기본은 닫힘, `403 SIGNUP_CLOSED`), 로그인 화면은 `GET /api/auth/signup`(`{ open }`)을 보고 가입 탭을 숨긴다.
+**인증:** 이메일 + 비밀번호. 로그인하면 `daty_session` 쿠키(httpOnly, SameSite=Lax, 30일, HS256 JWT)가 발급된다. 발급된 지 하루가 지난 세션은 `requireAuth`가 다음 요청에서 30일짜리로 다시 발급한다(30일 동안 쓰지 않아야 로그아웃). 비밀번호는 `node:crypto` scrypt로 해시(`src/lib/password.ts`). 로그인·가입·비밀번호 변경·재설정·계정 삭제·초대 코드 합류(`/api/couple/join`)는 IP당 15분에 10회 실패로 제한. 가입은 `SIGNUP_ENABLED=true`일 때만 열리고(기본은 닫힘, `403 SIGNUP_CLOSED`), 로그인 화면은 `GET /api/auth/signup`(`{ open }`)을 보고 가입 탭을 숨긴다.
 
 - `requireAuth` → `req.userId`, `requireCouple` → `req.coupleId` (`src/middlewares/auth.ts`). 커플 데이터 라우터(places, records, albums)는 둘 다 거친다. `requireAuth`는 매 요청 사용자를 조회해서 `passwordChangedAt`보다 먼저 발급된 세션을 막는다(비밀번호를 바꾸면 다른 기기는 로그아웃)
 - 커플 데이터 쿼리는 반드시 `req.coupleId`로 범위를 제한한다 (`where: { id, coupleId }`)
