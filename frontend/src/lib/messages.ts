@@ -1,4 +1,5 @@
 import type { PlaceCategory, PlaceStatus, TipType } from './types'
+import type { SaveMode } from './download'
 
 export type Lang = 'ko' | 'ja'
 export const LANGS: { value: Lang; short: string }[] = [
@@ -385,7 +386,13 @@ const ko = {
     save: '저장',
     saveStarting: (done: number, total: number) => `저장 중 ${done}/${total}`,
     confirmSave: (n: number) => `${n}개를 이 기기에 저장할까요?`,
-    confirmSaveBody: '브라우저가 여러 파일 내려받기를 물으면 허용해 주세요.',
+    confirmSaveBody: {
+      folder: '저장할 폴더를 고르면 그 폴더에 한꺼번에 저장해요.',
+      share: '10개씩 준비될 때마다 저장 버튼을 눌러 사진 앱에 넣어 주세요.',
+      frames: '브라우저가 여러 파일 내려받기를 물으면 허용해 주세요.',
+    } satisfies Record<SaveMode, string>,
+    saveReady: (n: number, done: number, total: number) => `${n}개 준비됐어요 (${done}/${total})`,
+    saveReadyButton: '사진에 저장',
     recap: '결산',
   },
   feedback: {
@@ -821,7 +828,13 @@ const ja: Messages = {
     save: '保存',
     saveStarting: (done, total) => `保存中 ${done}/${total}`,
     confirmSave: (n) => `${n}件をこの端末に保存しますか？`,
-    confirmSaveBody: 'ブラウザに複数ファイルのダウンロードを聞かれたら許可してください。',
+    confirmSaveBody: {
+      folder: '保存先のフォルダを選ぶと、そこにまとめて保存します。',
+      share: '10件ずつ準備できるたびに保存ボタンを押して、写真アプリに入れてください。',
+      frames: 'ブラウザに複数ファイルのダウンロードを聞かれたら許可してください。',
+    },
+    saveReady: (n, done, total) => `${n}件準備できました（${done}/${total}）`,
+    saveReadyButton: '写真に保存',
     recap: 'まとめ',
   },
   feedback: {

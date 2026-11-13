@@ -6,7 +6,9 @@ import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { api, errorMessage } from '../../lib/api'
-import { saveFiles } from '../../lib/download'
+import { saveMode } from '../../lib/download'
+import { useSaveFiles } from '../../lib/useSaveFiles'
+import { SaveReadyBar } from './SaveReadyBar'
 import { formatBytes } from '../../lib/format'
 import { albumHeading, daysBetween, formatDotted, formatDuration, formatMonthDay, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
@@ -79,8 +81,9 @@ export function AlbumDetailPage() {
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
   const queryClient = useQueryClient()
   const loadDownloads = useAlbumDownloads(id)
-  const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null)
-  const [saveError, setSaveError] = useState<Error | null>(null)
+  const saver = useSaveFiles(loadDownloads)
+  const saveProgress = saver.state.phase === 'idle' ? null : saver.state
+  const saveError = saver.error
 
   function toggleSelecting() {
     setSelecting((on) => !on)
@@ -121,17 +124,10 @@ export function AlbumDetailPage() {
   /** Saves the album's files to this device: the selected ones, or all of them. */
   async function saveToDevice(photoIds?: Set<number>) {
     const total = photoIds?.size ?? album?.photos.length ?? 0
-    if (total === 0 || !(await confirm({ title: t.albums.confirmSave(total), message: t.albums.confirmSaveBody, confirmLabel: t.common.save }))) return
-    setSaveError(null)
-    setSaveProgress({ done: 0, total })
-    try {
-      const files = (await loadDownloads()).filter((f) => !photoIds || photoIds.has(f.photoId))
-      await saveFiles(files.map((f) => f.url), (done) => setSaveProgress({ done, total: files.length }))
-    } catch (err) {
-      setSaveError(err as Error)
-    } finally {
-      setSaveProgress(null)
-    }
+    const message = t.albums.confirmSaveBody[saveMode()]
+    if (total === 0 || !(await confirm({ title: t.albums.confirmSave(total), message, confirmLabel: t.common.save }))) return
+    // Straight from the confirm tap: a folder picker needs it.
+    await saver.start(async () => (await loadDownloads()).filter((f) => !photoIds || photoIds.has(f.photoId)))
   }
 
   function changeSort(next: SortOrder) {
@@ -288,6 +284,7 @@ export function AlbumDetailPage() {
 
         {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error, t)}</p>}
         {!selecting && saveError && <p className="text-[12px] text-coral-strong">{errorMessage(saveError, t)}</p>}
+        <SaveReadyBar saver={saver} />
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
         )}

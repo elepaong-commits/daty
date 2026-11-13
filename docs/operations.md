@@ -71,6 +71,23 @@ cd backend && npx web-push generate-vapid-keys
 
 [Resend](https://resend.com) 무료 플랜을 쓴다. 발신 도메인을 Resend에 등록하고 안내하는 SPF/DKIM 레코드를 DNS에 추가한 뒤, 서버 `.env`에 `RESEND_API_KEY`, `MAIL_FROM`(예: `daty <no-reply@ourdaty.com>`), `APP_URL`(예: `https://ourdaty.com`)을 넣는다. 비워 두면 `503 MAIL_DISABLED`이고 짝꿍 코드 방식만 쓴다. 설계는 `docs/password-reset.md`.
 
+## R2 버킷 CORS
+
+브라우저가 사진을 R2에 직접 올리고(PUT), "모두 저장"에서 직접 읽는다(GET). Cloudflare 대시보드 → R2 → 버킷 → Settings → CORS Policy에 다음을 넣는다(origin은 실제 프론트 주소):
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://ourdaty.com"],
+    "AllowedMethods": ["PUT", "GET"],
+    "AllowedHeaders": ["Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+`GET`이 없으면 저장은 예전처럼 파일마다 내려받기로 돌아간다(휴대폰 사진 앱 저장·폴더 저장이 안 된다).
+
 ## 새 계정 가입
 
 가입은 기본으로 닫혀 있다(`SIGNUP_ENABLED`가 `true`가 아니면 `403 SIGNUP_CLOSED`, 로그인 화면에 가입 탭이 안 보인다). 새 계정이 필요하면 서버 `.env`에 `SIGNUP_ENABLED=true`를 넣고 재시작해 가입을 마친 뒤, 줄을 지우고 다시 재시작한다.

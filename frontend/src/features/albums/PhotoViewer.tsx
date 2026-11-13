@@ -3,7 +3,8 @@ import { useAnimate, usePresence, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { FeedbackPanel } from '../../components/FeedbackPanel'
 import { formatDotted, toTimeInput } from '../../lib/dates'
-import { saveFiles } from '../../lib/download'
+import { useSaveFiles } from '../../lib/useSaveFiles'
+import { SaveReadyBar } from './SaveReadyBar'
 import { useAlbumDownloads } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { PixelSprite } from '../../components/PixelSprite'
@@ -42,8 +43,9 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const retro = useIsRetro()
   const [index, setIndex] = useState(startIndex)
   const [talking, setTalking] = useState(false) // the reactions and comments panel
-  const [saving, setSaving] = useState(false)
   const loadDownloads = useAlbumDownloads(albumId)
+  const saver = useSaveFiles(loadDownloads)
+  const saving = saver.state.phase !== 'idle'
   const photo = photos[Math.min(index, photos.length - 1)]
 
   // Open on the tapped photo without animating through the ones before it, zooming it out of its tile.
@@ -112,17 +114,9 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const feedback = { reactions: photo?.reactions ?? [], comments: photo?.comments ?? [] }
   const reacted = [...new Set(feedback.reactions.map((r) => r.emoji))].join('')
 
-  async function save(photoId: number) {
-    setSaving(true)
-    try {
-      const file = (await loadDownloads()).find((f) => f.photoId === photoId)
-      if (file) await saveFiles([file.url])
-    } catch {
-      // Nothing was saved; the button can simply be pressed again.
-    } finally {
-      setSaving(false)
-    }
-  }
+  // A failure leaves nothing saved; the button can simply be pressed again.
+  const save = (photoId: number) =>
+    saver.start(async () => (await loadDownloads()).filter((f) => f.photoId === photoId), { single: true })
 
   return (
     <div
@@ -147,6 +141,11 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
           {retro ? <PixelSprite name="close" scale={2} /> : <X size={18} strokeWidth={1.75} />}
         </button>
       </div>
+      {saver.state.phase === 'ready' && (
+        <div className="relative shrink-0 px-4 pb-2">
+          <SaveReadyBar saver={saver} dark />
+        </div>
+      )}
 
       <div ref={stage} className="relative min-h-0 flex-1">
         <div

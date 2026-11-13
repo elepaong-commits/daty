@@ -15,7 +15,7 @@
   - 서비스 워커(`public/sw.js`, 빌드 도구 없이 손으로 쓴 파일)가 앱 껍데기(페이지·해시된 `/assets/*`·아이콘)를 캐시하고 웹 푸시를 띄운다. `/api`와 사진은 캐시하지 않는다. 푸시 구독은 `src/lib/push.ts`, 설정 화면은 내 정보 시트(`NotificationSettings`)
   - 모달(시트·확인창·사진 뷰어)은 `useDialogFocus`(`src/lib/useDialogFocus.ts`)로 열 때 포커스를 안으로 옮기고, Tab을 가두고, Escape를 받고, 닫으면 연 버튼으로 포커스를 돌린다. 겹쳐 열리면 맨 위 것만 반응한다. 키보드 포커스 표시는 `index.css`의 전역 `:focus-visible`(자체 포커스 테두리가 있는 입력창만 `outline-none`)
   - 확인창은 `window.confirm` 대신 `useConfirm()`(`src/lib/confirm.ts`, `ConfirmProvider`가 앱 전체에 하나 띄운다)을 쓴다: `if (await confirm({ title, message?, confirmLabel, danger? }))`. 삭제는 `danger`(빨간 버튼)
-  - 사진·장소 메모의 반응·댓글은 `FeedbackPanel`(`useFeedback`) 하나로 그린다. 파일 저장은 `src/lib/download.ts`(숨은 iframe으로 R2의 attachment 링크를 연다)
+  - 사진·장소 메모의 반응·댓글은 `FeedbackPanel`(`useFeedback`) 하나로 그린다. 파일 저장은 `useSaveFiles`(`src/lib/useSaveFiles.ts`, `src/lib/download.ts`)가 브라우저에 맞게 고른다: 공유 가능한 터치 기기는 10개(또는 150MB)씩 받아 두고 "사진에 저장" 탭으로 공유 시트를 연다(공유는 사용자 탭에서만 열린다), 데스크톱 Chrome/Edge는 고른 폴더에 3개씩 스트리밍으로 쓴다, 그 밖에는 숨은 iframe으로 attachment 링크를 연다. 앞의 둘은 R2를 fetch로 읽으므로 버킷 CORS에 `GET`이 필요하고, 막히면 iframe으로 돌아간다
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
   - 디자인 원본: Figma `7Qc5QDKQEeFWbnAeSbhEA7` (지도 `1:797`, 캘린더 `1:538`, 앨범 `1:329`, 일정 등록 `1:2`, 장소 상세 `17:1531`, 장소 수정 `17:1598`, 일정 수정 `17:1684`, 앨범 상세 `17:1807`)
 - `backend/` — Express 5 + Prisma 7 (PostgreSQL) + TypeScript (ESM, `NodeNext`). 개발 실행은 `tsx`, 환경 변수 검증과 요청 검증은 `zod`
@@ -94,7 +94,7 @@
 - R2 버킷은 **비공개**다. `Photo.storageKey`에 객체 키를 저장하고, 응답의 `imageUrl`은 백엔드가 매번 만든 서명 GET URL이다(`src/lib/storage.ts`). 서명 시각을 6일 단위 구간의 시작(19:00 UTC, 한국·일본 새벽 4시)으로 고정하고 7일(SigV4 최대) 유효라서 6일 동안 URL이 같아 브라우저 캐시가 된다(`imageSigningTime`). `imageUrl`만 있는 예전 행은 그 URL을 그대로 준다
 - 서명은 AWS SDK 대신 `aws4fetch`로 한다(서버 메모리 절약). R2 환경 변수(`R2_ACCOUNT_ID` 등 4개)가 비어 있으면 업로드는 `503 STORAGE_DISABLED`
 - 프론트는 업로드 전에 사진을 긴 변 2048px JPEG와 800px 썸네일로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`). 동영상은 브라우저에서 다시 인코딩하지 않고 원본 그대로 올리며, 첫 장면 썸네일·길이·촬영 시각(mvhd)만 만든다(`src/lib/videos.ts`). 업로드 URL이 10분짜리라 동영상은 하나씩 올리기 직전에 URL을 받는다. 사진·동영상 모두 한 개씩 올라가는 대로 바로 등록해서 중간에 끊겨도 올라간 만큼은 남는다. 업로드 URL 요청·R2 PUT·등록은 네트워크 끊김이나 5xx면 `withRetry`(`src/lib/api.ts`)로 두 번 더 시도한다(같은 키의 등록 재시도는 서버가 한 번만 기록한다). R2에 올라갔지만 등록되지 않은 파일은 API 프로세스 안의 하루 한 번 타이머(`src/lib/orphans.ts`)가 `couples/` 아래를 훑어, 하루 넘게 어떤 사진 행도 가리키지 않는 것을 지운다. 업로드 중에는 Screen Wake Lock으로 화면이 꺼지지 않게 한다(`src/lib/wakeLock.ts`, 다른 앱으로 가면 웹에서는 멈춘다). 고른 파일 중 앨범에 이미 있는 것(`fingerprint`)은 올리지 않고 건너뛴다. 앱 차원의 용량 한도는 없다(R2 무료 한도 10GB를 넘으면 GB당 월 $0.015) 그리드·앨범 카드·장소 상세는 `thumbnailUrl`, 사진 뷰어는 `imageUrl`을 쓴다. 썸네일이 없는 예전 사진은 `thumbnailUrl`이 원본 URL이다
-- 브라우저가 R2에 직접 PUT하므로 버킷 CORS에 프론트 origin의 `PUT`과 `Content-Type` 헤더를 허용해야 한다
+- 브라우저가 R2에 직접 PUT하고 저장할 때 fetch로 읽으므로 버킷 CORS에 프론트 origin의 `PUT`·`GET`과 `Content-Type` 헤더를 허용해야 한다
 
 ## 작업 규칙
 
