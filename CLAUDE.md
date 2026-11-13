@@ -91,7 +91,7 @@
 
 백엔드에 multipart 업로드 엔드포인트를 만들지 않는다.
 
-- R2 버킷은 **비공개**다. `Photo.storageKey`에 객체 키를 저장하고, 응답의 `imageUrl`은 백엔드가 매번 만든 서명 GET URL이다(`src/lib/storage.ts`). 서명 시각을 UTC 자정으로 고정하고 2일 유효라서 하루 동안 URL이 같아 브라우저 캐시가 된다. `imageUrl`만 있는 예전 행은 그 URL을 그대로 준다
+- R2 버킷은 **비공개**다. `Photo.storageKey`에 객체 키를 저장하고, 응답의 `imageUrl`은 백엔드가 매번 만든 서명 GET URL이다(`src/lib/storage.ts`). 서명 시각을 6일 단위 구간의 시작(19:00 UTC, 한국·일본 새벽 4시)으로 고정하고 7일(SigV4 최대) 유효라서 6일 동안 URL이 같아 브라우저 캐시가 된다(`imageSigningTime`). `imageUrl`만 있는 예전 행은 그 URL을 그대로 준다
 - 서명은 AWS SDK 대신 `aws4fetch`로 한다(서버 메모리 절약). R2 환경 변수(`R2_ACCOUNT_ID` 등 4개)가 비어 있으면 업로드는 `503 STORAGE_DISABLED`
 - 프론트는 업로드 전에 사진을 긴 변 2048px JPEG와 800px 썸네일로 줄이고 EXIF 촬영 시각(`takenAt`)을 읽는다(`src/lib/images.ts`, `useUploadPhotos`). 동영상은 브라우저에서 다시 인코딩하지 않고 원본 그대로 올리며, 첫 장면 썸네일·길이·촬영 시각(mvhd)만 만든다(`src/lib/videos.ts`). 업로드 URL이 10분짜리라 동영상은 하나씩 올리기 직전에 URL을 받는다. 사진·동영상 모두 한 개씩 올라가는 대로 바로 등록해서 중간에 끊겨도 올라간 만큼은 남는다. 업로드 중에는 Screen Wake Lock으로 화면이 꺼지지 않게 한다(`src/lib/wakeLock.ts`, 다른 앱으로 가면 웹에서는 멈춘다). 고른 파일 중 앨범에 이미 있는 것(`fingerprint`)은 올리지 않고 건너뛴다. 앱 차원의 용량 한도는 없다(R2 무료 한도 10GB를 넘으면 GB당 월 $0.015) 그리드·앨범 카드·장소 상세는 `thumbnailUrl`, 사진 뷰어는 `imageUrl`을 쓴다. 썸네일이 없는 예전 사진은 `thumbnailUrl`이 원본 URL이다
 - 브라우저가 R2에 직접 PUT하므로 버킷 CORS에 프론트 origin의 `PUT`과 `Content-Type` 헤더를 허용해야 한다
