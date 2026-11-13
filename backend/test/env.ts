@@ -3,6 +3,7 @@
 process.env.NODE_ENV = "test";
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgresql://daty:daty@localhost:5433/daty_test?schema=public";
 process.env.SESSION_SECRET = "test-session-secret-at-least-32-characters";
+process.env.SIGNUP_ENABLED = "true";
 // No R2: upload endpoints answer 503 once they get past the ownership checks.
 // No mail provider or push keys either: mail lands in an in-memory outbox (src/lib/mail.ts) and nothing is pushed.
 for (const key of [

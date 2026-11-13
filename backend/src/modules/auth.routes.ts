@@ -61,7 +61,13 @@ export async function loadMe(userId: number) {
   };
 }
 
+/** Whether the login screen should offer signing up. */
+authRouter.get("/signup", (_req, res) => {
+  res.json({ open: env.SIGNUP_ENABLED });
+});
+
 authRouter.post("/signup", credentialsLimiter, async (req, res) => {
+  if (!env.SIGNUP_ENABLED) throw new HttpError(403, "Signup is closed", "SIGNUP_CLOSED");
   const body = signupBody.parse(req.body);
   try {
     const user = await prisma.user.create({

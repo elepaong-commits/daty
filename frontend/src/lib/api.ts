@@ -71,6 +71,7 @@ const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 export const api = {
   me: () => request<Me>('/api/auth/me'),
   login: (input: { email: string; password: string }) => post<Me>('/api/auth/login', input),
+  signupStatus: () => request<{ open: boolean }>('/api/auth/signup'),
   signup: (input: { email: string; password: string; nickname: string }) => post<Me>('/api/auth/signup', input),
   logout: () => post<void>('/api/auth/logout'),
   updateMe: (input: { nickname: string }) => patch<Me>('/api/auth/me', input),

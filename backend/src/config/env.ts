@@ -16,6 +16,8 @@ const envSchema = z.object({
     ),
   // Signs session cookies. Generate with: openssl rand -base64 48
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
+  // New accounts. Closed unless "true": this is an app for two people, so open it only while someone signs up.
+  SIGNUP_ENABLED: z.stringbool().default(false),
   // Number of reverse proxies in front of the API (Nginx = 1), so rate limits see the real client IP.
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // Cloudflare R2 (S3 API) for album photos. Leave all empty to run without photo uploads.

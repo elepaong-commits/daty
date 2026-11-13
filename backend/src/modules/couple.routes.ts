@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
+import { env } from "../config/env.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
@@ -67,7 +69,17 @@ coupleRouter.post("/", async (req, res) => {
   throw new HttpError(503, "Could not generate a couple code");
 });
 
-coupleRouter.post("/join", async (req, res) => {
+// Invite codes are 6 characters, so wrong guesses are limited like passwords: 10 per IP every 15 minutes.
+const joinLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: env.NODE_ENV === "test" ? 1000 : 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: "Too many attempts", code: "RATE_LIMITED" },
+});
+
+coupleRouter.post("/join", joinLimiter, async (req, res) => {
   const { code } = joinBody.parse(req.body);
   await prisma.$transaction(
     async (tx) => {

@@ -4,7 +4,7 @@ import { Field, inputClass, PasswordInput } from '../../components/Field'
 import { LanguageToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
-import { useLogin, useSignup } from '../../lib/queries'
+import { useLogin, useSignup, useSignupOpen } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { ResetPasswordForm } from './ResetPasswordForm'
 
@@ -15,6 +15,8 @@ export function AuthPage() {
   const t = useT()
   const login = useLogin()
   const signup = useSignup()
+  // Shown only once the server says it's open, so a closed signup never flashes in.
+  const signupOpen = useSignupOpen().data === true
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
@@ -54,20 +56,22 @@ export function AuthPage() {
         <ResetPasswordForm initialEmail={email} onBack={() => setResetting(false)} />
       ) : (
         <>
-          <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
-            {(['login', 'signup'] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                role="tab"
-                aria-selected={mode === value}
-                onClick={() => switchMode(value)}
-                className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
-              >
-                {value === 'login' ? t.auth.login : t.auth.signup}
-              </button>
-            ))}
-          </div>
+          {signupOpen && (
+            <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
+              {(['login', 'signup'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === value}
+                  onClick={() => switchMode(value)}
+                  className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
+                >
+                  {value === 'login' ? t.auth.login : t.auth.signup}
+                </button>
+              ))}
+            </div>
+          )}
 
           <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
             {mode === 'signup' && (

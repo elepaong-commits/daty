@@ -45,6 +45,8 @@ function useMeMutation<TInput>(mutationFn: (input: TInput) => Promise<Me>) {
 
 export const useLogin = () => useMeMutation(api.login)
 export const useSignup = () => useMeMutation(api.signup)
+/** Signup is closed on the server unless it was opened for someone new; the login screen hides it then. */
+export const useSignupOpen = () => useQuery({ queryKey: ['signup'], queryFn: api.signupStatus, staleTime: Infinity, select: (s) => s.open })
 export const useCreateCouple = () => useMeMutation(api.createCouple)
 export const useJoinCouple = () => useMeMutation(api.joinCouple)
 export const useResetPassword = () => useMeMutation(api.resetPassword)
