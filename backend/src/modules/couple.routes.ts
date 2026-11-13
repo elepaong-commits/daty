@@ -4,6 +4,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { feedbackInclude } from "../lib/feedback.js";
+import { removeFromCouple } from "../lib/membership.js";
 import { prisma } from "../lib/prisma.js";
 import { statObject, storageEnabled } from "../lib/storage.js";
 import { requireCouple } from "../middlewares/auth.js";
@@ -83,6 +84,20 @@ coupleRouter.post("/join", async (req, res) => {
     // Two people joining with the same code at once must not both get in.
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   );
+  res.json(await loadMe(req.userId));
+});
+
+// Leaving: the couple's data stays with the partner; the last one out deletes it (see removeFromCouple).
+coupleRouter.post("/leave", requireCouple, async (req, res) => {
+  await removeFromCouple(req.userId);
+  res.json(await loadMe(req.userId));
+});
+
+// For someone who joined with the wrong code, or a partner who should no longer see the couple's records.
+coupleRouter.delete("/partner", requireCouple, async (req, res) => {
+  const partner = await prisma.user.findFirst({ where: { coupleId: req.coupleId, id: { not: req.userId } }, select: { id: true } });
+  if (!partner) throw new HttpError(409, "No partner to remove", "NO_PARTNER");
+  await removeFromCouple(partner.id);
   res.json(await loadMe(req.userId));
 });
 

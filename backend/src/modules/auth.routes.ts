@@ -7,6 +7,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { hashCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { appUrl, mailEnabled, sendMail } from "../lib/mail.js";
+import { removeFromCouple } from "../lib/membership.js";
 import { getDummyHash, hashPassword, verifyPassword } from "../lib/password.js";
 import { prisma } from "../lib/prisma.js";
 import { endSession, startSession } from "../lib/session.js";
@@ -99,6 +100,20 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
   const { nickname } = updateMeBody.parse(req.body);
   await prisma.user.update({ where: { id: req.userId }, data: { nickname } });
   res.json(await loadMe(req.userId));
+});
+
+const deleteMeBody = z.object({ password: z.string().min(1).max(72) });
+
+/** Deletes the account: leaves the couple first (see removeFromCouple); memos and comments stay without a writer. */
+authRouter.delete("/me", credentialsLimiter, requireAuth, async (req, res) => {
+  const { password } = deleteMeBody.parse(req.body);
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId } });
+  // 400 rather than 401: the client treats any 401 as being logged out.
+  if (!(await verifyPassword(password, user.passwordHash))) throw new HttpError(400, "Password is wrong", "WRONG_PASSWORD");
+  await removeFromCouple(user.id);
+  await prisma.user.delete({ where: { id: user.id } });
+  endSession(res);
+  res.status(204).end();
 });
 
 /** New hash plus the change time, which logs out every session issued before it (see requireAuth). */

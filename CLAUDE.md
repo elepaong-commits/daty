@@ -56,6 +56,7 @@
 - `POST /api/auth/signup|login|logout`, `GET|PATCH /api/auth/me` — 응답은 `{ user, couple | null }`. `PATCH`는 닉네임(`{ nickname }`) 변경
 - `POST /api/couple` (기념일 → 6자리 초대 코드 발급), `POST /api/couple/join` (코드로 합류, 최대 2명)
 - 비밀번호: `POST /api/auth/password`(로그인 상태에서 변경), `POST /api/couple/reset-code`(짝꿍이 상대의 10분짜리 일회용 코드 발급) → `POST /api/auth/reset-password`(코드로 재설정 후 로그인). 이메일 링크 방식도 있다: `POST /api/auth/forgot-password`(`{ email, lang }`, 항상 `204`) → 메일의 `/reset-password?token=` → 같은 `reset-password`에 `{ token, newPassword }`. Resend 환경 변수가 비어 있으면 `503 MAIL_DISABLED`. 설계는 `docs/password-reset.md`
+- 나가기·삭제: `POST /api/couple/leave`(커플에서 나가기), `DELETE /api/couple/partner`(짝꿍 내보내기), `DELETE /api/auth/me`(`{ password }`, 계정 삭제 → 나간 뒤 사용자 행 삭제, 204). 모두 `src/lib/membership.ts`의 `removeFromCouple`을 거친다: 기록은 남은 사람에게 남고, 나간 사람의 반응과 둘 사이의 짝꿍 재설정 코드는 지우고, 쓴 메모·댓글은 남긴다(계정 삭제면 작성자 `null`). 초대 코드는 새로 바뀐다. 마지막 사람이 나가면 커플과 모든 데이터·R2 파일을 지운다
 - `GET /api/couple/storage`(R2 사용량. `Photo.sizeBytes`의 합이고, 크기가 없는 예전 사진은 조회할 때 60개씩 R2 HEAD로 채운다), `GET /api/couple/export`(기록 전체 JSON 내려받기)
 - `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다)
 - `GET /api/memories?date=&tz=`(N년 전 오늘의 방문·앨범), `GET /api/recap?year=&tz=`(연말 결산) — 날짜는 보는 사람 시간대(`tz`, IANA 이름)의 달력으로 센다. 동네 이름은 주소에서 읽는다(`src/lib/area.ts`, 한국·일본 주소)

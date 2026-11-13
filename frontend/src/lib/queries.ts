@@ -66,17 +66,44 @@ export const useChangePassword = () => useMutation({ mutationFn: api.changePassw
 export const useForgotPassword = () => useMutation({ mutationFn: api.forgotPassword })
 export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })
 
+/**
+ * Sets `me` and drops every other cached screen, so what comes next never shows the previous
+ * couple's data. `me` is flipped in place (clear() would detach the gate watching it).
+ */
+function useSwitchMe() {
+  const queryClient = useQueryClient()
+  return (me: Me | null) => {
+    queryClient.setQueryData(keys.me, me)
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+  }
+}
+
 export function useLogout() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.logout, onSuccess: () => switchMe(null) })
+}
+
+/** The couple's records stay with the partner; this account goes back to connecting a couple. */
+export function useLeaveCouple() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.leaveCouple, onSuccess: switchMe })
+}
+
+/** Records stay; the partner's names drop out of what is cached. */
+export function useRemovePartner() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: api.logout,
-    onSuccess: () => {
-      // Flip `me` in place (clear() would detach the gate watching it), then drop every
-      // other cached screen so the next account never sees the previous one's data.
-      queryClient.setQueryData(keys.me, null)
-      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+    mutationFn: api.removePartner,
+    onSuccess: (me) => {
+      queryClient.setQueryData(keys.me, me)
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
     },
   })
+}
+
+export function useDeleteAccount() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.deleteAccount, onSuccess: () => switchMe(null) })
 }
 
 export const usePlaces = () => useQuery({ queryKey: keys.places, queryFn: api.places })

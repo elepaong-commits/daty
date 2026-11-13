@@ -4,6 +4,7 @@ import { BottomSheet } from '../../components/BottomSheet'
 import { ThemeToggle } from '../../components/SettingToggles'
 import { useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { MembershipSettings } from './MembershipSettings'
 import { NotificationSettings } from './NotificationSettings'
 import { ChangePassword, PartnerResetCode } from './PasswordSettings'
 import { ProfileSettings } from './ProfileSettings'
@@ -70,6 +71,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
         <ChangePassword />
         {partner && <PartnerResetCode partnerName={partner.nickname} />}
         {couple && <DataExport />}
+        <MembershipSettings inCouple={couple !== null} partnerName={partner?.nickname ?? null} />
 
         <button
           type="button"

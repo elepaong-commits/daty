@@ -70,9 +70,15 @@ export async function statObject(key: string) {
 }
 
 /** Best effort: a leftover object only costs storage, so failures are logged rather than surfaced. */
+// A whole couple's files can be thousands; a few at a time keeps sockets and memory in check.
+const DELETE_BATCH = 20;
+
 export async function deleteObjects(keys: string[]) {
   if (!r2 || keys.length === 0) return;
-  const { client, bucketUrl } = r2;
+  for (let i = 0; i < keys.length; i += DELETE_BATCH) await deleteBatch(r2, keys.slice(i, i + DELETE_BATCH));
+}
+
+async function deleteBatch({ client, bucketUrl }: NonNullable<typeof r2>, keys: string[]) {
   await Promise.all(
     keys.map(async (key) => {
       const res = await client.fetch(`${bucketUrl}/${key}`, { method: "DELETE" }).catch((err: unknown) => err);

@@ -43,6 +43,8 @@
   --color-coral: #ff6b6b;
   --color-coral-strong: #e05252;
   --color-coral-soft: #fff0ee;
+  /* Destructive actions (leave, delete): unlike coral it holds white text at 4.5:1. */
+  --color-danger: #c53030;
   --color-amber: #ffb703;
   --color-amber-strong: #b07d00;
   --color-amber-ink: #7a5600;

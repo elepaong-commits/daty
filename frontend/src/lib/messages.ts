@@ -148,6 +148,24 @@ const ko = {
     issueResetCode: '재설정 코드 만들기',
     resetCodeHelp: (name: string, until: string) =>
       `${name}님에게 전달해 주세요. 로그인 화면의 '비밀번호를 잊었어요'에서 입력하면 돼요. ${until}까지 한 번만 쓸 수 있어요.`,
+    membershipTitle: '커플 연결',
+    removePartner: (name: string) => `${name}님과 연결 끊기`,
+    removePartnerBody: (name: string) =>
+      `${name}님은 더 이상 우리 기록을 볼 수 없어요. 기록은 지금처럼 남고, 초대 코드도 새로 바뀌어요.`,
+    leaveCouple: '커플에서 나가기',
+    leaveCoupleBody: (partner: string | null) =>
+      partner
+        ? `기록은 ${partner}님에게 남고, 나는 더 이상 볼 수 없어요. 내가 누른 반응은 지워지고 댓글과 메모는 남아요.`
+        : '혼자 남은 커플이라 나가면 장소·일정·앨범·사진이 모두 지워지고 되돌릴 수 없어요. 먼저 "기록 내보내기"와 앨범의 "모두 저장"으로 보관해 두세요.',
+    deleteAccount: '계정 삭제',
+    deleteAccountBody: (partner: string | null) =>
+      partner
+        ? `커플에서 나간 뒤 계정을 지워요. 기록은 ${partner}님에게 남고, 내가 쓴 댓글과 메모는 작성자 없이 남아요. 되돌릴 수 없어요.`
+        : '계정과 함께 커플의 장소·일정·앨범·사진이 모두 지워지고 되돌릴 수 없어요. 먼저 "기록 내보내기"와 앨범의 "모두 저장"으로 보관해 두세요.',
+    deletePassword: '확인을 위해 비밀번호를 입력해 주세요',
+    confirmLeave: '나가기',
+    confirmRemove: '연결 끊기',
+    confirmDelete: '계정 삭제',
   },
   map: {
     eyebrow: (days: number | null) => (days === null ? '함께 걸은 곳들' : `D+${days} · 함께 걸은 곳들`),
@@ -551,6 +569,24 @@ const ja: Messages = {
     issueResetCode: '再設定コードを作る',
     resetCodeHelp: (name, until) =>
       `${name}さんに伝えてください。ログイン画面の「パスワードを忘れました」から入力できます。${until}まで1回だけ使えます。`,
+    membershipTitle: 'カップル連携',
+    removePartner: (name) => `${name}さんとの連携を解除`,
+    removePartnerBody: (name) =>
+      `${name}さんは二人の記録を見られなくなります。記録はそのまま残り、招待コードも新しくなります。`,
+    leaveCouple: 'カップルから抜ける',
+    leaveCoupleBody: (partner) =>
+      partner
+        ? `記録は${partner}さんに残り、自分は見られなくなります。自分のリアクションは消え、コメントとメモは残ります。`
+        : '一人だけのカップルなので、抜けると場所・予定・アルバム・写真がすべて消え、元に戻せません。先に「記録を書き出す」と各アルバムの「すべて保存」で保存してください。',
+    deleteAccount: 'アカウントを削除',
+    deleteAccountBody: (partner) =>
+      partner
+        ? `カップルから抜けてからアカウントを削除します。記録は${partner}さんに残り、自分のコメントとメモは作成者なしで残ります。元に戻せません。`
+        : 'アカウントと一緒に、カップルの場所・予定・アルバム・写真がすべて消え、元に戻せません。先に「記録を書き出す」と各アルバムの「すべて保存」で保存してください。',
+    deletePassword: '確認のためパスワードを入力してください',
+    confirmLeave: '抜ける',
+    confirmRemove: '解除する',
+    confirmDelete: '削除する',
   },
   map: {
     eyebrow: (days) => (days === null ? 'ふたりで歩いた場所' : `付き合って${days}日 · ふたりで歩いた場所`),

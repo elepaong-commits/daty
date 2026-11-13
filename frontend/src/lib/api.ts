@@ -75,12 +75,15 @@ export const api = {
   logout: () => post<void>('/api/auth/logout'),
   updateMe: (input: { nickname: string }) => patch<Me>('/api/auth/me', input),
   changePassword: (input: { currentPassword: string; newPassword: string }) => post<void>('/api/auth/password', input),
+  deleteAccount: (input: { password: string }) => del<void>('/api/auth/me', input),
   resetPassword: (input: { email: string; code: string; newPassword: string } | { token: string; newPassword: string }) =>
     post<Me>('/api/auth/reset-password', input),
   forgotPassword: (input: { email: string; lang: string }) => post<void>('/api/auth/forgot-password', input),
   issueResetCode: () => post<ResetCode>('/api/couple/reset-code'),
   createCouple: (input: { anniversaryDate: string }) => post<Me>('/api/couple', input),
   joinCouple: (input: { code: string }) => post<Me>('/api/couple/join', input),
+  leaveCouple: () => post<Me>('/api/couple/leave'),
+  removePartner: () => del<Me>('/api/couple/partner'),
   updateCouple: (input: { anniversaryDate: string }) => patch<Me>('/api/couple', input),
 
   places: () => request<Place[]>('/api/places'),

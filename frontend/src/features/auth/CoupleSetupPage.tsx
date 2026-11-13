@@ -5,6 +5,7 @@ import { errorMessage } from '../../lib/api'
 import { toDateInput } from '../../lib/dates'
 import { useCreateCouple, useJoinCouple, useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { MembershipSettings } from './MembershipSettings'
 
 type Mode = 'create' | 'join'
 
@@ -18,6 +19,7 @@ export function CoupleSetupPage() {
   const logout = useLogout()
   const [anniversary, setAnniversary] = useState('')
   const [code, setCode] = useState('')
+  const [showDelete, setShowDelete] = useState(false)
 
   const active = mode === 'create' ? createCouple : joinCouple
   const canSubmit = mode === 'create' ? anniversary !== '' : code.trim().length === 6
@@ -98,6 +100,15 @@ export function CoupleSetupPage() {
       <button type="button" onClick={() => logout.mutate()} className="mt-6 self-center text-[12px] text-muted underline">
         {t.couple.otherAccount}
       </button>
+      {showDelete ? (
+        <div className="mt-4">
+          <MembershipSettings inCouple={false} partnerName={null} />
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowDelete(true)} className="mt-3 self-center text-[12px] text-muted underline">
+          {t.account.deleteAccount}
+        </button>
+      )}
     </div>
   )
 }
