@@ -444,6 +444,8 @@ const ko = {
     topRated: '별점이 높았던 곳',
     times: (n: number) => `${n}번`,
     empty: '이 해에는 아직 다녀온 기록이 없어요',
+    share: '이미지로 공유',
+    imageName: (year: number) => `daty-${year}.png`,
   },
   notifications: {
     title: '알림',
@@ -908,6 +910,8 @@ const ja: Messages = {
     topRated: '評価が高かった場所',
     times: (n) => `${n}回`,
     empty: 'この年はまだ訪問の記録がありません',
+    share: '画像でシェア',
+    imageName: (year) => `daty-${year}.png`,
   },
   notifications: {
     title: '通知',
