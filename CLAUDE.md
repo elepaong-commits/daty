@@ -62,7 +62,7 @@
 - 나가기·삭제: `POST /api/couple/leave`(커플에서 나가기), `DELETE /api/couple/partner`(짝꿍 내보내기), `DELETE /api/auth/me`(`{ password }`, 계정 삭제 → 나간 뒤 사용자 행 삭제, 204). 모두 `src/lib/membership.ts`의 `removeFromCouple`을 거친다: 기록은 남은 사람에게 남고, 나간 사람의 반응과 둘 사이의 짝꿍 재설정 코드는 지우고, 쓴 메모·댓글은 남긴다(계정 삭제면 작성자 `null`). 초대 코드는 새로 바뀐다. 마지막 사람이 나가면 커플과 모든 데이터·R2 파일을 지운다
 - `GET /api/couple/storage`(R2 사용량. `Photo.sizeBytes`의 합이고, 크기가 없는 예전 사진은 조회할 때 60개씩 R2 HEAD로 채운다), `GET /api/couple/export`(기록 전체 JSON 내려받기)
 - 오류 알림: API의 500과 브라우저 오류(`POST /api/client-errors`, 프론트 `src/lib/reportError.ts`가 보냄)는 `src/lib/alerts.ts`의 `reportError`로 로그에 남기고 `ADMIN_EMAIL`로 메일(종류별 한 시간에 한 통)
-- `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다)
+- `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다). 짝꿍에게는 반응·댓글 말고도 새 일정·기록, 가고 싶은 곳 추가, 사진 업로드(`notifyPhotosAdded`: 올라오는 대로 세다가 2분 조용하면 한 번)를 `notifyPartner`로 알린다. 테스트에서는 `pushOutbox`에 쌓인다
 - `GET /api/memories?date=&tz=`(N년 전 오늘의 방문·앨범), `GET /api/recap?year=&tz=`(연말 결산) — 날짜는 보는 사람 시간대(`tz`, IANA 이름)의 달력으로 센다. 동네 이름은 주소에서 읽는다(`src/lib/area.ts`, 한국·일본 주소)
 - 반응·댓글: `PUT|DELETE /api/albums/:id/photos/:photoId/reaction`, `POST .../comments`, `DELETE .../comments/:commentId`, 장소 메모는 `/api/places/:id/notes/:noteId/...`로 같다. 응답은 그 대상의 `{ reactions, comments }`. 댓글은 쓴 사람만 지운다
 - `GET /api/albums/:id/photos/downloads` — 파일마다 저장용 서명 URL(`response-content-disposition=attachment`, 1시간)

@@ -3,7 +3,9 @@ import { z } from "zod";
 import { PlaceCategory, Prisma, RecordType } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { idParam } from "../lib/http.js";
+import { nicknameOf } from "../lib/feedback.js";
 import { prisma } from "../lib/prisma.js";
+import { notifyPartner } from "../lib/push.js";
 
 export const recordsRouter = Router();
 
@@ -125,6 +127,7 @@ recordsRouter.post("/", async (req, res) => {
     return tx.dateRecord.create({
       data: {
         coupleId,
+        writerId: req.userId,
         placeId: place.id,
         type: body.type,
         title: body.title ?? place.name,
@@ -136,6 +139,17 @@ recordsRouter.post("/", async (req, res) => {
       include: recordInclude,
     });
   });
+  const nickname = await nicknameOf(req.userId);
+  const planned = record.type === RecordType.PLAN;
+  notifyPartner(coupleId, req.userId, (locale) => ({
+    title:
+      locale === "ja"
+        ? `${nickname}さんが${planned ? "新しい予定を入れました" : "デートの記録を残しました"}`
+        : `${nickname}님이 ${planned ? "새 일정을 잡았어요" : "데이트 기록을 남겼어요"}`,
+    body: record.place?.name ?? record.title,
+    url: "/calendar",
+    tag: `record-${record.id}`,
+  }));
   res.status(201).json(record);
 });
 

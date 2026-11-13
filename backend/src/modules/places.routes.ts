@@ -100,6 +100,14 @@ placesRouter.post("/", async (req, res) => {
       },
       include: visitsInclude,
     });
+    if (place.status === "WISH") {
+      const nickname = await nicknameOf(userId);
+      notifyPartner(coupleId, userId, (locale) => ({
+        title: locale === "ja" ? `${nickname}さんが行きたい場所を追加しました` : `${nickname}님이 가고 싶은 곳을 추가했어요`,
+        body: place.name,
+        url: `/places/${place.id}`,
+      }));
+    }
     res.status(201).json(serializePlace(place));
   } catch (err) {
     // The same Google place is already on the couple's map.

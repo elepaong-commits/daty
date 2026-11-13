@@ -57,8 +57,35 @@ export async function sendPush(targets: Target[], build: (locale: Locale) => Pus
   );
 }
 
+/** Partner notifications during tests, in Korean, newest last; nothing is sent there. */
+export const pushOutbox: (PushMessage & { coupleId: number; fromUserId: number })[] = [];
+
+// Photos are recorded one by one as they land, so their notification waits until the uploads go
+// quiet and then says how many came in: one notification per batch, not one per photo.
+const PHOTO_QUIET_MS = 2 * 60 * 1000;
+const photoBatches = new Map<string, { count: number; timer: NodeJS.Timeout }>();
+
+/** Counts photos `fromUserId` added to an album and tells the partner once they stop coming. */
+export function notifyPhotosAdded(
+  { coupleId, fromUserId, albumId, count }: { coupleId: number; fromUserId: number; albumId: number; count: number },
+  build: (locale: Locale, count: number) => PushMessage,
+  quietMs = PHOTO_QUIET_MS,
+) {
+  const key = `${fromUserId}:${albumId}`;
+  const batch = photoBatches.get(key);
+  if (batch) clearTimeout(batch.timer);
+  const total = (batch?.count ?? 0) + count;
+  const timer = setTimeout(() => {
+    photoBatches.delete(key);
+    notifyPartner(coupleId, fromUserId, (locale) => build(locale, total));
+  }, quietMs);
+  timer.unref();
+  photoBatches.set(key, { count: total, timer });
+}
+
 /** Tells the other half of the couple about something `fromUserId` just did. Never throws. */
 export function notifyPartner(coupleId: number, fromUserId: number, build: (locale: Locale) => PushMessage) {
+  if (env.NODE_ENV === "test") pushOutbox.push({ ...build("ko"), coupleId, fromUserId });
   if (!configured) return;
   prisma.pushSubscription
     .findMany({ where: { userId: { not: fromUserId }, user: { coupleId } } })

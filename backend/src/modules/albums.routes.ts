@@ -16,7 +16,7 @@ import {
 } from "../lib/feedback.js";
 import { idParam, toDateOnly } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import { notifyPartner } from "../lib/push.js";
+import { notifyPartner, notifyPhotosAdded } from "../lib/push.js";
 import {
   deleteObjects,
   photoObjectKeys,
@@ -424,6 +424,15 @@ albumsRouter.post("/:id/photos", async (req, res) => {
     });
     return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
   });
+  if (items.length > 0) {
+    const nickname = await nicknameOf(req.userId);
+    notifyPhotosAdded({ coupleId, fromUserId: req.userId, albumId: id, count: items.length }, (locale, count) => ({
+      title: locale === "ja" ? `${nickname}さんが写真・動画を${count}件追加しました` : `${nickname}님이 사진·동영상 ${count}개를 올렸어요`,
+      body: album.title,
+      url: `/albums/${id}`,
+      tag: `album-photos-${id}`,
+    }));
+  }
   res.status(201).json(await serializeAlbum(album));
 });
 
