@@ -6,6 +6,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { feedbackInclude } from "../lib/feedback.js";
+import { withAvatarUrls } from "../lib/avatar.js";
 import { removeFromCouple } from "../lib/membership.js";
 import { prisma } from "../lib/prisma.js";
 import { statObject, storageEnabled } from "../lib/storage.js";
@@ -37,7 +38,7 @@ coupleRouter.get("/", requireCouple, async (req, res) => {
     id: couple.id,
     coupleCode: couple.coupleCode,
     anniversaryDate: toDateOnly(couple.anniversaryDate),
-    users: couple.users,
+    users: await withAvatarUrls(couple.users),
   });
 });
 

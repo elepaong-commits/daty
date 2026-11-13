@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, ImageError, uploadToStorage, withRetry } from './api'
 import { fileFingerprint } from './fingerprint'
-import { prepareImage } from './images'
+import { prepareImage, prepareAvatar } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
 import type { Album, AlbumBase, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
@@ -64,6 +64,16 @@ export function useUpdateMe() {
 }
 
 export const useUpdateCouple = () => useMeMutation(api.updateCouple)
+
+/** Shrinks the picked photo, puts it straight into storage and makes it the profile photo. */
+export const useSetAvatar = () =>
+  useMeMutation(async (file: File) => {
+    const blob = await prepareAvatar(file)
+    const upload = await withRetry(api.avatarUpload)
+    await withRetry(() => uploadToStorage(upload, blob))
+    return api.setAvatar(upload.key)
+  })
+export const useRemoveAvatar = () => useMeMutation(api.removeAvatar)
 export const useChangePassword = () => useMutation({ mutationFn: api.changePassword })
 export const useForgotPassword = () => useMutation({ mutationFn: api.forgotPassword })
 export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })

@@ -52,8 +52,8 @@ export function Sidebar() {
         ) : (
           <div className="flex items-center justify-between gap-2">
             <div className="flex">
-              <Initial name={user.nickname} className="bg-brand-soft text-brand-strong" />
-              {partner && <Initial name={partner.nickname} className="-ml-2 bg-coral-soft text-coral-strong" />}
+              <Initial name={user.nickname} src={user.profileImageUrl} className="bg-brand-soft text-brand-strong" />
+              {partner && <Initial name={partner.nickname} src={partner.profileImageUrl} className="-ml-2 bg-coral-soft text-coral-strong" />}
             </div>
             <span className="min-w-0 truncate text-[11px] font-semibold text-muted">
               {partner ? `${user.nickname} ♥ ${partner.nickname}` : user.nickname}
@@ -119,7 +119,7 @@ export function Sidebar() {
           className="flex items-center gap-2.5 rounded-[14px] border border-card-border p-2.5 text-left hover:bg-sand-soft retro:rounded-none retro:border-0 retro:bg-white retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-handle)]"
           aria-label={t.common.myInfo}
         >
-          <Initial name={user.nickname} size={34} className="bg-brand-soft text-brand-strong" />
+          <Initial name={user.nickname} src={user.profileImageUrl} size={34} className="bg-brand-soft text-brand-strong" />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[13px] font-bold ui-label retro:text-[12px]">{user.nickname}</span>
             <span className="truncate text-[11px] text-muted">{user.email}</span>
@@ -139,7 +139,17 @@ export function Sidebar() {
   )
 }
 
-function Initial({ name, size = 30, className }: { name: string; size?: number; className: string }) {
+function Initial({ name, src, size = 30, className }: { name: string; src: string | null; size?: number; className: string }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        style={{ width: size, height: size }}
+        className={`shrink-0 rounded-full border-2 border-white object-cover retro:rounded-none retro:border-0 retro:pixel-outline retro:pixel-thin ${className}`}
+      />
+    )
+  }
   return (
     <span
       style={{ width: size, height: size }}

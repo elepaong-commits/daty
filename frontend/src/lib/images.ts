@@ -60,3 +60,27 @@ async function readTakenAt(file: File) {
     return null
   }
 }
+
+const AVATAR_EDGE = 320
+
+/** A profile photo: the middle square of the picture as a small JPEG. */
+export async function prepareAvatar(file: File) {
+  const bitmap = await createImageBitmap(file).catch(() => {
+    throw new ImageError(file.name, 'IMAGE_UNREADABLE')
+  })
+  try {
+    const side = Math.min(bitmap.width, bitmap.height)
+    const edge = Math.min(AVATAR_EDGE, side)
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = edge
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, edge, edge)
+    ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, edge, edge)
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
+    if (!blob) throw new ImageError(file.name, 'IMAGE_ENCODE_FAILED')
+    return blob
+  } finally {
+    bitmap.close()
+  }
+}

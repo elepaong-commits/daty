@@ -1,4 +1,4 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
@@ -7,7 +7,9 @@ import { Prisma } from "../generated/prisma/client.js";
 import { hashCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { appUrl, mailEnabled, sendMail } from "../lib/mail.js";
+import { AVATAR_MAX_BYTES, avatarKeyPattern, isAvatarKey, withAvatarUrls } from "../lib/avatar.js";
 import { removeFromCouple } from "../lib/membership.js";
+import { deleteObjects, presignUpload, statObject } from "../lib/storage.js";
 import { getDummyHash, hashPassword, verifyPassword } from "../lib/password.js";
 import { prisma } from "../lib/prisma.js";
 import { endSession, startSession } from "../lib/session.js";
@@ -55,9 +57,10 @@ export async function loadMe(userId: number) {
   });
   if (!user) throw new HttpError(401, "Unauthorized", "UNAUTHENTICATED");
   const { couple, ...rest } = user;
+  const [me] = await withAvatarUrls([rest]);
   return {
-    user: rest,
-    couple: couple && { ...couple, anniversaryDate: toDateOnly(couple.anniversaryDate) },
+    user: me!,
+    couple: couple && { ...couple, anniversaryDate: toDateOnly(couple.anniversaryDate), users: await withAvatarUrls(couple.users) },
   };
 }
 
@@ -118,9 +121,41 @@ authRouter.delete("/me", credentialsLimiter, requireAuth, async (req, res) => {
   if (!(await verifyPassword(password, user.passwordHash))) throw new HttpError(400, "Password is wrong", "WRONG_PASSWORD");
   await removeFromCouple(user.id);
   await prisma.user.delete({ where: { id: user.id } });
+  if (isAvatarKey(user.profileImageUrl)) await deleteObjects([user.profileImageUrl]);
   endSession(res);
   res.status(204).end();
 });
+
+// Profile photo: the browser shrinks it to a small JPEG, PUTs it straight to R2, then confirms the key.
+
+authRouter.post("/me/avatar/upload", requireAuth, async (req, res) => {
+  const key = `avatars/${req.userId}/${randomUUID()}.jpg`;
+  res.json({ key, uploadUrl: await presignUpload(key), headers: { "Content-Type": "image/jpeg" } });
+});
+
+authRouter.put("/me/avatar", requireAuth, async (req, res) => {
+  const { key } = z.object({ key: z.string().max(200) }).parse(req.body);
+  if (!avatarKeyPattern(req.userId).test(key)) throw new HttpError(400, "Unknown avatar key", "INVALID_UPLOAD");
+  const stat = await statObject(key);
+  if (!stat || stat.size > AVATAR_MAX_BYTES || !stat.contentType.startsWith("image/")) {
+    if (stat) await deleteObjects([key]);
+    throw new HttpError(400, "Upload missing, of the wrong type or too large", "INVALID_UPLOAD");
+  }
+  await replaceAvatar(req.userId, key);
+  res.json(await loadMe(req.userId));
+});
+
+authRouter.delete("/me/avatar", requireAuth, async (req, res) => {
+  await replaceAvatar(req.userId, null);
+  res.json(await loadMe(req.userId));
+});
+
+/** Sets the avatar and deletes the photo it replaces. */
+async function replaceAvatar(userId: number, key: string | null) {
+  const { profileImageUrl: previous } = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { profileImageUrl: true } });
+  await prisma.user.update({ where: { id: userId }, data: { profileImageUrl: key } });
+  if (isAvatarKey(previous) && previous !== key) await deleteObjects([previous]);
+}
 
 /** New hash plus the change time, which logs out every session issued before it (see requireAuth). */
 const passwordUpdate = async (newPassword: string) => ({
