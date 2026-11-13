@@ -1,5 +1,7 @@
-// Dumps the database and puts the dump in the R2 bucket under backups/, then drops dumps older than
-// BACKUP_KEEP_DAYS. Meant for a daily cron on the server (docs/operations.md):
+// Dumps the database and puts the dump in its own R2 bucket (BACKUP_R2_BUCKET, with a token that can
+// reach only that bucket) under backups/, then drops dumps older than BACKUP_KEEP_DAYS. Without the
+// BACKUP_R2_* settings it falls back to the photo bucket. A failure mails ADMIN_EMAIL when mail is set up.
+// Meant for a daily cron on the server (docs/operations.md):
 //
 //   node --env-file=.env scripts/backup.mjs
 //
@@ -13,6 +15,14 @@ const {
   R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY,
   R2_BUCKET,
+  // A bucket of its own, so a leaked photo key can't touch the backups (and the reverse).
+  BACKUP_R2_BUCKET,
+  BACKUP_R2_ACCESS_KEY_ID,
+  BACKUP_R2_SECRET_ACCESS_KEY,
+  // Failure mail, through the same Resend settings the API uses.
+  RESEND_API_KEY,
+  MAIL_FROM,
+  ADMIN_EMAIL,
   // The Postgres container pg_dump runs in. Set to an empty string to use a pg_dump installed on this machine.
   BACKUP_DB_CONTAINER = "date_app_postgres",
   BACKUP_KEEP_DAYS = "14",
@@ -23,13 +33,37 @@ const {
 const PREFIX = "backups/";
 const DAY_MS = 86_400_000;
 
-function fail(message) {
+/** Mails ADMIN_EMAIL about a failed backup; a backup that quietly stops is the one nobody notices. */
+async function alert(message) {
+  if (!RESEND_API_KEY || !MAIL_FROM || !ADMIN_EMAIL) return;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
+      body: JSON.stringify({ from: MAIL_FROM, to: [ADMIN_EMAIL], subject: "[daty] backup failed", text: `${message}\n\n${new Date().toISOString()}` }),
+    });
+    if (!res.ok) console.error(`[backup] alert mail answered ${res.status}`);
+  } catch (err) {
+    console.error(`[backup] alert mail failed: ${err}`);
+  }
+}
+
+async function fail(message) {
   console.error(`[backup] ${message}`);
+  await alert(message);
   process.exit(1);
 }
 
-if (!DATABASE_URL) fail("DATABASE_URL is not set");
-if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET) fail("R2 settings are missing, nowhere to put the backup");
+const separate = Boolean(BACKUP_R2_BUCKET || BACKUP_R2_ACCESS_KEY_ID || BACKUP_R2_SECRET_ACCESS_KEY);
+const bucket = separate
+  ? { name: BACKUP_R2_BUCKET, accessKeyId: BACKUP_R2_ACCESS_KEY_ID, secretAccessKey: BACKUP_R2_SECRET_ACCESS_KEY }
+  : { name: R2_BUCKET, accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY };
+
+if (!DATABASE_URL) await fail("DATABASE_URL is not set");
+if (!R2_ACCOUNT_ID || !bucket.name || !bucket.accessKeyId || !bucket.secretAccessKey) {
+  await fail(separate ? "Set all of BACKUP_R2_BUCKET, BACKUP_R2_ACCESS_KEY_ID, BACKUP_R2_SECRET_ACCESS_KEY" : "R2 settings are missing, nowhere to put the backup");
+}
+if (!separate) console.warn("[backup] BACKUP_R2_* not set: storing in the photo bucket. See docs/operations.md");
 
 /** Custom-format dump (already compressed; restore with pg_restore). The password travels by environment, not arguments. */
 function dump() {
@@ -50,8 +84,8 @@ function dump() {
   });
 }
 
-const r2 = new AwsClient({ accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY, service: "s3", region: "auto" });
-const bucketUrl = `${R2_ENDPOINT ?? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`}/${R2_BUCKET}`;
+const r2 = new AwsClient({ accessKeyId: bucket.accessKeyId, secretAccessKey: bucket.secretAccessKey, service: "s3", region: "auto" });
+const bucketUrl = `${R2_ENDPOINT ?? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`}/${bucket.name}`;
 
 async function r2Fetch(path, init) {
   const res = await r2.fetch(`${bucketUrl}${path}`, init);
@@ -79,5 +113,5 @@ try {
     console.log(`[backup] ${old} removed`);
   }
 } catch (err) {
-  fail(err instanceof Error ? err.message : String(err));
+  await fail(err instanceof Error ? err.message : String(err));
 }

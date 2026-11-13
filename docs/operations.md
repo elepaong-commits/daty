@@ -12,7 +12,14 @@ cd ~/daty && git pull && bash backend/scripts/server-setup.sh "<API를 재시작
 
 ## DB 백업
 
-`backend/scripts/backup.mjs`가 `pg_dump`(custom 형식) 결과를 R2 버킷의 `backups/`에 올리고, `BACKUP_KEEP_DAYS`(기본 14)일보다 오래된 덤프를 지운다. 사진과 같은 버킷을 쓰지만 `couples/`와 접두사가 달라 섞이지 않는다.
+`backend/scripts/backup.mjs`가 `pg_dump`(custom 형식) 결과를 백업 전용 R2 버킷의 `backups/`에 올리고, `BACKUP_KEEP_DAYS`(기본 14)일보다 오래된 덤프를 지운다. 실패하면 `ADMIN_EMAIL`로 메일을 보낸다(Resend 설정이 있을 때).
+
+백업 버킷은 사진 버킷과 따로 둔다. 사진용 키가 새어도 백업은 지울 수 없고, 반대도 마찬가지다.
+
+1. Cloudflare → R2 → Create bucket: 예) `daty-backups`
+2. R2 → Manage API tokens → Create token: 권한 Object Read & Write, **Apply to specific buckets only**로 `daty-backups`만 고른다. (사진용 토큰도 사진 버킷만 고르도록 되어 있는지 확인)
+3. 서버 `.env`에 `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`, `BACKUP_R2_SECRET_ACCESS_KEY`를 넣는다. 셋이 비어 있으면 예전처럼 사진 버킷에 저장하고 경고를 남긴다
+4. 사진 버킷의 예전 `backups/`는 새 버킷에 첫 백업이 쌓인 걸 확인한 뒤 지운다
 
 서버에서 한 번 실행해 보고 cron에 등록한다.
 
@@ -26,9 +33,9 @@ crontab -e
 15 4 * * * cd ~/daty/backend && /usr/bin/node --env-file=.env scripts/backup.mjs >> ~/daty-backup.log 2>&1
 ```
 
-- `.env`의 `DATABASE_URL`과 R2 값 4개를 쓴다. Postgres 컨테이너 이름이 `date_app_postgres`가 아니면 `BACKUP_DB_CONTAINER`로 알려 준다(빈 문자열이면 서버에 설치된 `pg_dump`를 쓴다)
+- `.env`의 `DATABASE_URL`, `R2_ACCOUNT_ID`, `BACKUP_R2_*` 3개를 쓴다. Postgres 컨테이너 이름이 `date_app_postgres`가 아니면 `BACKUP_DB_CONTAINER`로 알려 준다(빈 문자열이면 서버에 설치된 `pg_dump`를 쓴다)
 - R2 API 토큰에 Object Read & Write 권한이 있어야 한다(목록 조회와 삭제에 필요)
-- 실패하면 0이 아닌 코드로 끝나고 로그에 `[backup]`으로 시작하는 줄이 남는다
+- 실패하면 0이 아닌 코드로 끝나고 로그에 `[backup]`으로 시작하는 줄이 남으며, `ADMIN_EMAIL`로 메일이 간다
 
 복원:
 
@@ -70,6 +77,14 @@ cd backend && npx web-push generate-vapid-keys
 ## 이메일 비밀번호 재설정
 
 [Resend](https://resend.com) 무료 플랜을 쓴다. 발신 도메인을 Resend에 등록하고 안내하는 SPF/DKIM 레코드를 DNS에 추가한 뒤, 서버 `.env`에 `RESEND_API_KEY`, `MAIL_FROM`(예: `daty <no-reply@ourdaty.com>`), `APP_URL`(예: `https://ourdaty.com`)을 넣는다. 비워 두면 `503 MAIL_DISABLED`이고 짝꿍 코드 방식만 쓴다. 설계는 `docs/password-reset.md`.
+
+## 오류 알림
+
+서버 `.env`에 `ADMIN_EMAIL`을 넣으면(Resend 설정 필요) 다음을 메일로 받는다. 같은 종류는 한 시간에 한 통이고, 나머지는 서버 로그(`journalctl`)에만 남는다.
+
+- `[daty] server error`: API의 500 응답(요청 경로와 스택)
+- `[daty] app error`: 브라우저에서 잡히지 않은 오류와 화면이 깨진 경우(`POST /api/client-errors`, 로그인 없이 IP당 15분에 20회)
+- `[daty] backup failed`: 백업 스크립트 실패
 
 ## R2 버킷 CORS
 

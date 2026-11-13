@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "../generated/prisma/client.js";
+import { reportError } from "../lib/alerts.js";
 
 export class HttpError extends Error {
   constructor(
@@ -17,7 +18,7 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
   res.status(404).json({ error: "Not Found", code: "NOT_FOUND" });
 };
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message, code: err.code });
     return;
@@ -34,6 +35,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(409).json({ error: "Conflict, please retry", code: "CONFLICT" });
     return;
   }
-  console.error(err);
+  reportError("server error", `${req.method} ${req.originalUrl}\n${err instanceof Error ? (err.stack ?? err.message) : String(err)}`);
   res.status(500).json({ error: "Internal Server Error", code: "INTERNAL" });
 };

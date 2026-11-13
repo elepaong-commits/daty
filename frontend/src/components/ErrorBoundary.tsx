@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
+import { reportError } from '../lib/reportError'
 
 function CrashScreen() {
   const t = useT()
@@ -27,6 +28,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { crashed:
 
   componentDidCatch(error: unknown) {
     console.error(error)
+    reportError(error)
   }
 
   render() {

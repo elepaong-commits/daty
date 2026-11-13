@@ -17,6 +17,7 @@ for (const key of [
   "VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
   "VAPID_SUBJECT",
+  "ADMIN_EMAIL",
 ]) {
   delete process.env[key];
 }

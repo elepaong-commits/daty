@@ -32,7 +32,7 @@
   - 로그인 쿠키가 SameSite=Lax라서 **API는 프론트와 같은 사이트에서 불러야 한다.** 배포 시 Vercel rewrite로 `/api/*`를 백엔드로 넘기거나 같은 상위 도메인(예: `app.example.com` + `api.example.com`)을 쓴다. 서로 다른 도메인에서 직접 호출하면 쿠키가 전송되지 않는다
 - **Backend 배포:** Google Cloud VM (x86_64, **메모리 1GB** 기준, Ubuntu 22.04). 지금은 무료 체험 크레딧으로 돌고, 끝나기 전에 Always Free `e2-micro`(미국 리전)로 옮긴다. GitHub Actions가 빌드한 `dist/`를 서버로 보내고 서버는 `git pull`·마이그레이션·재시작만 한다(`deploy-backend.yml`, 저장소 변수 `DEPLOY_HOST`가 있어야 켜진다). 백업·배포·이전 절차는 `docs/operations.md`. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
 - **로컬 개발 DB:** Mac의 OrbStack(Docker)에서 `backend/compose.yaml`로 구동 (`npm run db:up`). `localhost:5433`, 계정 `daty`/`daty`, DB `daty_dev`. 개발과 테스트는 이 DB로 하고, 운영 DB에는 붙지 않는다.
-- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 매일 `backend/scripts/backup.mjs`(cron)가 덤프를 R2 `backups/`에 올린다. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
+- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 매일 `backend/scripts/backup.mjs`(cron)가 덤프를 백업 전용 R2 버킷(`BACKUP_R2_*`, 그 버킷에만 쓸 수 있는 토큰)의 `backups/`에 올리고, 실패하면 `ADMIN_EMAIL`로 메일을 보낸다. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
 - **이미지 저장:** Cloudflare R2.
 
 ## 데이터 모델 (`backend/prisma/schema.prisma`)
@@ -60,6 +60,7 @@
 - 비밀번호: `POST /api/auth/password`(로그인 상태에서 변경), `POST /api/couple/reset-code`(짝꿍이 상대의 10분짜리 일회용 코드 발급) → `POST /api/auth/reset-password`(코드로 재설정 후 로그인). 이메일 링크 방식도 있다: `POST /api/auth/forgot-password`(`{ email, lang }`, 항상 `204`) → 메일의 `/reset-password?token=` → 같은 `reset-password`에 `{ token, newPassword }`. Resend 환경 변수가 비어 있으면 `503 MAIL_DISABLED`. 설계는 `docs/password-reset.md`
 - 나가기·삭제: `POST /api/couple/leave`(커플에서 나가기), `DELETE /api/couple/partner`(짝꿍 내보내기), `DELETE /api/auth/me`(`{ password }`, 계정 삭제 → 나간 뒤 사용자 행 삭제, 204). 모두 `src/lib/membership.ts`의 `removeFromCouple`을 거친다: 기록은 남은 사람에게 남고, 나간 사람의 반응과 둘 사이의 짝꿍 재설정 코드는 지우고, 쓴 메모·댓글은 남긴다(계정 삭제면 작성자 `null`). 초대 코드는 새로 바뀐다. 마지막 사람이 나가면 커플과 모든 데이터·R2 파일을 지운다
 - `GET /api/couple/storage`(R2 사용량. `Photo.sizeBytes`의 합이고, 크기가 없는 예전 사진은 조회할 때 60개씩 R2 HEAD로 채운다), `GET /api/couple/export`(기록 전체 JSON 내려받기)
+- 오류 알림: API의 500과 브라우저 오류(`POST /api/client-errors`, 프론트 `src/lib/reportError.ts`가 보냄)는 `src/lib/alerts.ts`의 `reportError`로 로그에 남기고 `ADMIN_EMAIL`로 메일(종류별 한 시간에 한 통)
 - `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다)
 - `GET /api/memories?date=&tz=`(N년 전 오늘의 방문·앨범), `GET /api/recap?year=&tz=`(연말 결산) — 날짜는 보는 사람 시간대(`tz`, IANA 이름)의 달력으로 센다. 동네 이름은 주소에서 읽는다(`src/lib/area.ts`, 한국·일본 주소)
 - 반응·댓글: `PUT|DELETE /api/albums/:id/photos/:photoId/reaction`, `POST .../comments`, `DELETE .../comments/:commentId`, 장소 메모는 `/api/places/:id/notes/:noteId/...`로 같다. 응답은 그 대상의 `{ reactions, comments }`. 댓글은 쓴 사람만 지운다
