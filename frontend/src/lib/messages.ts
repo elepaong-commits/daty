@@ -91,6 +91,7 @@ const ko = {
     MAIL_DISABLED: '이메일 재설정은 아직 쓸 수 없어요. 짝꿍에게 코드를 받아 주세요',
     PUSH_DISABLED: '알림이 아직 설정되지 않았어요',
     CONFLICT: '동시에 바뀐 내용이 있어요. 다시 시도해 주세요',
+    NOT_WRITER: '쓴 사람만 고치거나 지울 수 있어요',
   } as Record<string, string>,
   // Failures without a message of their own (see errorMessage).
   failures: {
@@ -289,6 +290,7 @@ const ko = {
     newNote: '새 메모',
     addNote: '메모 추가',
     deleteNote: '메모 삭제',
+    editNote: '메모 수정',
     confirmDeleteNote: '이 메모를 삭제할까요?',
     photos: '함께 남긴 사진',
     viewAlbum: '앨범 보기 ›',
@@ -529,6 +531,7 @@ const ja: Messages = {
     MAIL_DISABLED: 'メールでの再設定はまだ使えません。パートナーにコードをもらってください',
     PUSH_DISABLED: '通知はまだ設定されていません',
     CONFLICT: '同時に変更がありました。もう一度お試しください',
+    NOT_WRITER: '書いた人だけが編集・削除できます',
   },
   failures: {
     network: 'インターネット接続を確認して、もう一度お試しください',
@@ -725,6 +728,7 @@ const ja: Messages = {
     newNote: '新しいメモ',
     addNote: 'メモを追加',
     deleteNote: 'メモを削除',
+    editNote: 'メモを編集',
     confirmDeleteNote: 'このメモを削除しますか？',
     photos: '一緒に残した写真',
     viewAlbum: 'アルバムを見る ›',

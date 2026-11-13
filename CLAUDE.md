@@ -68,7 +68,7 @@
 - `GET|POST /api/places`, `GET|PATCH|DELETE /api/places/:id` — `?status=&category=` 필터. 응답에 방문 횟수, 평균 평점, 마지막 방문일 포함
   - 목록 응답의 `latestNote`는 가장 최근 메모. `POST`는 `note`로 첫 메모를 함께 만들 수 있고, 같은 `googlePlaceId`가 이미 있으면 `409 PLACE_EXISTS`
   - `GET /:id`는 최근 방문(`latestVisit`), 메모(`notes`, 최신순), 방문 기록이 묶인 앨범(사진 3장)을 함께 준다
-  - `POST /api/places/:id/notes` (`{ content }`), `DELETE /api/places/:id/notes/:noteId`
+  - `POST /api/places/:id/notes` (`{ content }`), `PATCH|DELETE /api/places/:id/notes/:noteId` — 댓글처럼 쓴 사람만 고치고 지운다(`403 NOT_WRITER`). 작성자가 탈퇴한 메모(`writer: null`)는 둘 다 지울 수 있지만 고칠 수는 없다
   - `PATCH /:id`의 `visit: { scheduledAt, rating }`은 그 장소의 최근 방문 기록을 고치고, 방문 기록이 없으면 새로 만든다 (장소 자체에는 날짜·평점 컬럼이 없다)
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id` — 생성과 수정 모두 `resolvePlace`로 장소를 찾거나 만든다. 수정 시 장소 이름이 바뀌거나 검색으로 고르면 다른 장소로 옮긴다
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다

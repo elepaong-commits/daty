@@ -93,6 +93,8 @@ export const api = {
   updatePlace: (id: number, input: UpdatePlaceInput) => patch<Place>(`/api/places/${id}`, input),
   deletePlace: (id: number) => del<void>(`/api/places/${id}`),
   addPlaceNote: (placeId: number, content: string) => post<PlaceNote>(`/api/places/${placeId}/notes`, { content }),
+  updatePlaceNote: (placeId: number, noteId: number, content: string) =>
+    patch<PlaceNote>(`/api/places/${placeId}/notes/${noteId}`, { content }),
   deletePlaceNote: (placeId: number, noteId: number) => del<void>(`/api/places/${placeId}/notes/${noteId}`),
   records: (from: Date, to: Date) =>
     request<DateRecord[]>(

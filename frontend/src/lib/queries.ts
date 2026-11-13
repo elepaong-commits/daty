@@ -197,6 +197,14 @@ export function useAddPlaceNote(placeId: number) {
   })
 }
 
+export function useUpdatePlaceNote(placeId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ noteId, content }: { noteId: number; content: string }) => api.updatePlaceNote(placeId, noteId, content),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.places }),
+  })
+}
+
 export function useDeletePlaceNote(placeId: number) {
   const queryClient = useQueryClient()
   return useMutation({

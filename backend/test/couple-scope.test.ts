@@ -53,6 +53,7 @@ describe("another couple's ids are not found", () => {
     ["PATCH", () => `/places/${own.placeId}`, { name: "taken" }],
     ["DELETE", () => `/places/${own.placeId}`],
     ["POST", () => `/places/${own.placeId}/notes`, { content: "hi" }],
+    ["PATCH", () => `/places/${own.placeId}/notes/${own.noteId}`, { content: "taken" }],
     ["DELETE", () => `/places/${own.placeId}/notes/${own.noteId}`],
     ["PATCH", () => `/records/${own.recordId}`, { memo: "taken" }],
     ["DELETE", () => `/records/${own.recordId}`],
