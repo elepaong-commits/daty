@@ -200,6 +200,7 @@ const ko = {
     zoomIn: '확대',
     zoomOut: '축소',
     locate: '현재 위치로 이동',
+    myLocation: '내 위치',
     // The count is wrapped in its own span, so the heading comes as the text before and after it.
     sheetHeading: { VISITED: ['갔던 ', '곳'], WISH: ['가고 싶은 ', '곳'] },
     expandList: '목록 펼치기',
@@ -666,6 +667,7 @@ const ja: Messages = {
     zoomIn: '拡大',
     zoomOut: '縮小',
     locate: '現在地に移動',
+    myLocation: '現在地',
     sheetHeading: { VISITED: ['行った場所 ', 'か所'], WISH: ['行きたい場所 ', 'か所'] },
     expandList: 'リストを開く',
     collapseList: 'リストを閉じる',

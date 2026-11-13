@@ -32,6 +32,8 @@ interface Props {
 }
 
 export function DateMap(props: Props) {
+  // Where this device is, once the locate button has been used; it then follows along.
+  const [me, setMe] = useState<google.maps.LatLngLiteral | null>(null)
   const t = useT()
   const retro = useIsRetro()
   const mapId = (retro ? (MAP_ID_RETRO ?? MAP_ID) : MAP_ID) ?? 'DEMO_MAP_ID'
@@ -63,8 +65,9 @@ export function DateMap(props: Props) {
         className="size-full"
       >
         <Pins {...props} />
+        {me && <MyLocation position={me} />}
       </Map>
-      <MapControls />
+      <MapControls onLocated={setMe} />
     </>
   )
 }
@@ -241,13 +244,44 @@ function RetroPlacePin({ place, dimmed, selected }: { place: Place; dimmed: bool
   )
 }
 
-function MapControls() {
+/** The blue dot: where this device is. */
+function MyLocation({ position }: { position: google.maps.LatLngLiteral }) {
+  const t = useT()
+  return (
+    <AdvancedMarker position={position} zIndex={1000} title={t.map.myLocation}>
+      <span className="relative flex size-5 translate-y-1/2 items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-brand/30 motion-safe:animate-ping retro:rounded-none retro:animate-none" />
+        <span className="relative size-3.5 rounded-full border-2 border-white bg-brand-strong shadow-md retro:rounded-none retro:border-0 retro:pixel-outline retro:pixel-thin" />
+      </span>
+    </AdvancedMarker>
+  )
+}
+
+function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLiteral) => void }) {
   const t = useT()
   const retro = useIsRetro()
   const map = useMap()
+  const watching = useRef<number | null>(null)
   const zoom = (delta: number) => map?.setZoom((map.getZoom() ?? 12) + delta)
-  const locate = () =>
-    navigator.geolocation?.getCurrentPosition(({ coords }) => map?.panTo({ lat: coords.latitude, lng: coords.longitude }))
+  // Moves the map to where the device is, then keeps the dot following it while the map is open.
+  const locate = () => {
+    const geo = navigator.geolocation
+    if (!geo) return
+    geo.getCurrentPosition(({ coords }) => {
+      const here = { lat: coords.latitude, lng: coords.longitude }
+      onLocated(here)
+      map?.panTo(here)
+    })
+    watching.current ??= geo.watchPosition(({ coords }) => onLocated({ lat: coords.latitude, lng: coords.longitude }), undefined, {
+      maximumAge: 30_000,
+    })
+  }
+  useEffect(
+    () => () => {
+      if (watching.current !== null) navigator.geolocation.clearWatch(watching.current)
+    },
+    [],
+  )
 
   return (
     <>
