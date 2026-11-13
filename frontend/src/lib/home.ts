@@ -10,7 +10,7 @@ const HOMES = {
  * saved, and which country wins when a search matches places in several. Read from the time zone,
  * which follows the phone abroad better than the app language does; the language decides elsewhere.
  */
-function homeOf(timeZone: string | undefined, lang: string) {
+export function homeOf(timeZone: string | undefined, lang: string) {
   if (timeZone === 'Asia/Tokyo') return HOMES.JP
   if (timeZone === 'Asia/Seoul') return HOMES.KR
   return lang === 'ja' ? HOMES.JP : HOMES.KR
