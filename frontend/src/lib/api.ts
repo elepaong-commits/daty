@@ -165,6 +165,25 @@ export async function uploadToStorage(upload: Omit<PhotoUpload, 'thumbnail'>, bo
   })
 }
 
+/**
+ * Runs `fn` again after a pause when it fails in a way that may pass: no answer at all (offline for a
+ * moment, a dropped connection) or a server-side error. Anything else (a refused or invalid request,
+ * an expired upload URL) fails straight away.
+ */
+export async function withRetry<T>(fn: () => Promise<T>, delaysMs = [1000, 3000]): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      const transient =
+        error instanceof TypeError ||
+        (error instanceof ApiError && (error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500))
+      if (!transient || attempt >= delaysMs.length) throw error
+      await new Promise((resolve) => setTimeout(resolve, delaysMs[attempt]))
+    }
+  }
+}
+
 /** A photo or video that could not be prepared for upload; `code` picks the message. */
 export class ImageError extends Error {
   readonly code: 'IMAGE_UNREADABLE' | 'IMAGE_ENCODE_FAILED' | 'VIDEO_UNSUPPORTED'
@@ -175,7 +194,6 @@ export class ImageError extends Error {
   }
 }
 
-/** Localized message for a failure, falling back to the raw error. */
 /**
  * What to tell the user about a failure, in their language: the backend's `code` when there is a
  * message for it, otherwise a plain one by kind (never the raw "Failed to fetch" or "Invalid request").
@@ -185,6 +203,7 @@ export function errorMessage(error: Error, t: Messages) {
   if (error instanceof ApiError) {
     const known = error.code && t.errors[error.code]
     if (known) return known
+    if (error.status === 0) return t.failures.network
     if (error.status === 400 || error.status === 422) return t.failures.invalid
     if (error.status === 404) return t.failures.notFound
     if (error.status === 409) return t.failures.conflict

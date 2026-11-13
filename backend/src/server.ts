@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { startNotifier } from "./lib/notifier.js";
+import { startOrphanSweep } from "./lib/orphans.js";
 import { prisma } from "./lib/prisma.js";
 
 const server = createApp().listen(env.PORT, env.HOST, () => {
@@ -8,6 +9,7 @@ const server = createApp().listen(env.PORT, env.HOST, () => {
 });
 
 startNotifier();
+startOrphanSweep();
 
 function shutdown(signal: string) {
   console.log(`${signal} received, shutting down`);

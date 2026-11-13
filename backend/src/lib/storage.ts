@@ -67,6 +67,36 @@ export function signedImageUrl(key: string) {
 export const signedDownloadUrl = (key: string, filename: string) =>
   presign(key, "GET", 60 * 60, { query: { "response-content-disposition": `attachment; filename="${filename}"` } });
 
+export interface StoredObject {
+  key: string;
+  lastModified: Date;
+}
+
+const xmlText = (s: string) =>
+  s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+
+/** Every object under `prefix`, a page (up to 1000) at a time, so a big bucket isn't held in memory at once. */
+export async function* listObjects(prefix: string): AsyncGenerator<StoredObject[]> {
+  const { client, bucketUrl } = requireR2();
+  let token: string | undefined;
+  do {
+    const url = new URL(bucketUrl);
+    url.searchParams.set("list-type", "2");
+    url.searchParams.set("prefix", prefix);
+    if (token) url.searchParams.set("continuation-token", token);
+    const res = await client.fetch(url.href);
+    if (!res.ok) throw new Error(`R2 list ${prefix} failed: ${res.status}`);
+    const xml = await res.text();
+    yield [...xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)].map(([, entry]) => ({
+      key: xmlText(/<Key>([\s\S]*?)<\/Key>/.exec(entry!)![1]!),
+      lastModified: new Date(/<LastModified>(.*?)<\/LastModified>/.exec(entry!)![1]!),
+    }));
+    token = /<IsTruncated>true<\/IsTruncated>/.test(xml)
+      ? xmlText(/<NextContinuationToken>(.*?)<\/NextContinuationToken>/.exec(xml)?.[1] ?? "") || undefined
+      : undefined;
+  } while (token);
+}
+
 /** Size and type of an uploaded object, or `null` if nothing was uploaded under the key. */
 export async function statObject(key: string) {
   const { client, bucketUrl } = requireR2();

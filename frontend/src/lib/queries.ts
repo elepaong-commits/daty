@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError, ImageError, uploadToStorage } from './api'
+import { api, ApiError, ImageError, uploadToStorage, withRetry } from './api'
 import { fileFingerprint } from './fingerprint'
 import { prepareImage } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
@@ -319,19 +319,20 @@ export function useUploadPhotos(albumId: number) {
       try {
         for (let start = 0; start < images.length; start += UPLOAD_BATCH) {
           const batch = images.slice(start, start + UPLOAD_BATCH)
-          const { uploads } = await api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' })))
+          const { uploads } = await withRetry(() => api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' }))))
           const results = await settleWithLimit(batch, UPLOAD_CONCURRENCY, async ({ file, fingerprint }, i) => {
             const upload = uploads[i]!
             const image = await prepareImage(file)
             // A failed thumbnail only costs some bandwidth later (the full image is shown), so it doesn't fail the photo.
             const [, thumbnailKey] = await Promise.all([
-              uploadToStorage(upload, image.blob),
-              uploadToStorage(upload.thumbnail, image.thumbnail).then(
+              withRetry(() => uploadToStorage(upload, image.blob)),
+              withRetry(() => uploadToStorage(upload.thumbnail, image.thumbnail)).then(
                 () => upload.thumbnail.key,
                 () => null,
               ),
             ])
-            await api.addPhotos(albumId, [{ key: upload.key, thumbnailKey, takenAt: image.takenAt, fingerprint }])
+            // A retried confirm of the same key is safe: the server records it once.
+            await withRetry(() => api.addPhotos(albumId, [{ key: upload.key, thumbnailKey, takenAt: image.takenAt, fingerprint }]))
             done++
             report()
           })
@@ -344,21 +345,23 @@ export function useUploadPhotos(albumId: number) {
             if (!contentType) throw new ImageError(file.name, 'VIDEO_UNSUPPORTED')
             const video = await prepareVideo(file)
             // Asked for right before the PUT: the URL is only good for 10 minutes and earlier videos may take longer.
-            const [upload] = (await api.photoUploads(albumId, [{ contentType }])).uploads
+            const [upload] = (await withRetry(() => api.photoUploads(albumId, [{ contentType }]))).uploads
             report(0)
             // Without a first frame the grid shows a video placeholder instead.
             const [, thumbnailKey] = await Promise.all([
-              uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100))),
+              withRetry(() => uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100)))),
               video.thumbnail
-                ? uploadToStorage(upload!.thumbnail, video.thumbnail).then(
+                ? withRetry(() => uploadToStorage(upload!.thumbnail, video.thumbnail!)).then(
                     () => upload!.thumbnail.key,
                     () => null,
                   )
                 : null,
             ])
-            await api.addPhotos(albumId, [
-              { key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec, fingerprint },
-            ])
+            await withRetry(() =>
+              api.addPhotos(albumId, [
+                { key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec, fingerprint },
+              ]),
+            )
           } catch (error) {
             failed++
             firstError ??= error
