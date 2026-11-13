@@ -1,6 +1,6 @@
 import { m, useIsPresent } from 'motion/react'
-import { useEffect } from 'react'
 import { useMotionPreset } from '../lib/motion'
+import { useDialogFocus } from '../lib/useDialogFocus'
 
 interface Props {
   title: string
@@ -20,17 +20,15 @@ interface Props {
 
 /** Small centered yes/no popup over the current screen. Render it inside `AnimatePresence` so it also animates out. */
 export function ConfirmDialog({ title, message, confirmLabel, cancelLabel, error, busy, danger, fixed, onConfirm, onCancel }: Props) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onCancel])
+  const focusRef = useDialogFocus<HTMLDivElement>(onCancel)
   const isPresent = useIsPresent()
   const motion = useMotionPreset()
 
   return (
     <div
-      className={`${fixed ? 'fixed' : 'absolute lg:fixed'} inset-0 z-[60] flex items-center justify-center px-8 ${isPresent ? '' : 'pointer-events-none'}`}
+      ref={focusRef}
+      tabIndex={-1}
+      className={`outline-none ${fixed ? 'fixed' : 'absolute lg:fixed'} inset-0 z-[60] flex items-center justify-center px-8 ${isPresent ? '' : 'pointer-events-none'}`}
       role="alertdialog"
       aria-modal="true"
       aria-label={title}

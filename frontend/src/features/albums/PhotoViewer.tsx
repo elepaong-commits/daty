@@ -11,6 +11,7 @@ import { useMotionPreset } from '../../lib/motion'
 import { useIsRetro } from '../../lib/theme'
 import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
+import { isTopModal, useDialogFocus } from '../../lib/useDialogFocus'
 
 interface Props {
   albumId: number
@@ -34,6 +35,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const stage = useRef<HTMLDivElement>(null)
   const flyer = useRef<HTMLDivElement>(null)
   const [scope, animate] = useAnimate<HTMLDivElement>()
+  useDialogFocus(onClose, scope)
   const [isPresent, safeToRemove] = usePresence()
   const reduceMotion = useReducedMotion()
   const motion = useMotionPreset()
@@ -91,15 +93,14 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Arrow keys move the cursor while a comment is being typed.
-      if (e.target instanceof HTMLInputElement && e.key !== 'Escape') return
-      if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowLeft') scrollToPhoto(strip.current, index - 1, photos.length)
+      // Arrow keys move the cursor while a comment is being typed; a confirm on top has them too.
+      if (e.target instanceof HTMLInputElement || !isTopModal(scope.current)) return
+      if (e.key === 'ArrowLeft') scrollToPhoto(strip.current, index - 1, photos.length)
       else if (e.key === 'ArrowRight') scrollToPhoto(strip.current, index + 1, photos.length)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [index, photos.length, onClose])
+  }, [index, photos.length, scope])
 
   function onScroll() {
     const el = strip.current
@@ -126,7 +127,8 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   return (
     <div
       ref={scope}
-      className={`absolute inset-0 z-50 flex flex-col text-white lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
+      tabIndex={-1}
+      className={`absolute inset-0 z-50 flex flex-col text-white outline-none lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
       aria-label={t.albums.viewer}

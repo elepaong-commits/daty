@@ -1,11 +1,12 @@
 import { X } from 'lucide-react'
 import { m, useDragControls, useIsPresent, type PanInfo } from 'motion/react'
-import { useEffect, type PointerEvent, type ReactNode } from 'react'
+import { type PointerEvent, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
 import { useMotionPreset } from '../lib/motion'
 import { useIsRetro } from '../lib/theme'
 import { PixelSprite } from './PixelSprite'
 import { useIsDesktop } from '../lib/useIsDesktop'
+import { useDialogFocus } from '../lib/useDialogFocus'
 
 interface Props {
   title: string
@@ -30,11 +31,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
   const motion = useMotionPreset()
   const retro = useIsRetro()
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const focusRef = useDialogFocus<HTMLDivElement>(onClose)
 
   // Drags start only from the top bar, so the form below still scrolls and its fields take taps.
   const startDrag = (e: PointerEvent) => {
@@ -48,7 +45,9 @@ export function BottomSheet({ title, onClose, children }: Props) {
 
   return (
     <div
-      className={`absolute inset-0 z-50 flex flex-col justify-end lg:fixed lg:items-center lg:justify-center lg:p-8 ${
+      ref={focusRef}
+      tabIndex={-1}
+      className={`absolute inset-0 z-50 flex flex-col justify-end outline-none lg:fixed lg:items-center lg:justify-center lg:p-8 ${
         isPresent ? '' : 'pointer-events-none'
       }`}
       role="dialog"

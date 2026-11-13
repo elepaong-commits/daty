@@ -202,6 +202,18 @@
   button {
     cursor: pointer;
   }
+
+  /*
+   * Where keyboard focus is. Only for keyboard use (not taps), and fields that draw their own focus
+   * border opt out with `outline-none`. Pixel design: a dashed ink ring, like a cursor box.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-strong);
+    outline-offset: 2px;
+  }
+  [data-theme="retro"] :focus-visible {
+    outline: 2px dashed var(--color-ink);
+  }
 }
 
 /*
