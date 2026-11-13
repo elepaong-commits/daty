@@ -19,7 +19,7 @@
   - 개발 중에는 Vite가 `/api`를 `127.0.0.1:4000`(백엔드)으로 프록시한다. 운영 빌드는 `VITE_API_URL`
   - 디자인 원본: Figma `7Qc5QDKQEeFWbnAeSbhEA7` (지도 `1:797`, 캘린더 `1:538`, 앨범 `1:329`, 일정 등록 `1:2`, 장소 상세 `17:1531`, 장소 수정 `17:1598`, 일정 수정 `17:1684`, 앨범 상세 `17:1807`)
 - `backend/` — Express 5 + Prisma 7 (PostgreSQL) + TypeScript (ESM, `NodeNext`). 개발 실행은 `tsx`, 환경 변수 검증과 요청 검증은 `zod`
-  - `src/server.ts` 진입점, `src/app.ts` 앱 구성, `src/routes/` 라우터, `src/middlewares/` 공통 미들웨어, `src/config/env.ts` 환경 변수
+  - `src/server.ts` 진입점, `src/app.ts` 앱 구성, `src/modules/` 라우터(`*.routes.ts`), `src/lib/` 공용 로직, `src/middlewares/` 공통 미들웨어, `src/config/env.ts` 환경 변수
   - Prisma Client는 `prisma-client` 생성기로 `src/generated/prisma`에 생성되며 커밋하지 않는다 (`npm install` 시 자동 생성). `@prisma/adapter-pg` 드라이버 어댑터 사용
   - ESM이므로 상대 경로 import에는 `.js` 확장자를 붙인다
 - 프론트와 백엔드가 같이 쓰는 API 타입이 생기면 `shared/`로 분리를 검토
@@ -32,7 +32,7 @@
   - 로그인 쿠키가 SameSite=Lax라서 **API는 프론트와 같은 사이트에서 불러야 한다.** 배포 시 Vercel rewrite로 `/api/*`를 백엔드로 넘기거나 같은 상위 도메인(예: `app.example.com` + `api.example.com`)을 쓴다. 서로 다른 도메인에서 직접 호출하면 쿠키가 전송되지 않는다
 - **Backend 배포:** Google Cloud VM (x86_64, **메모리 1GB** 기준, Ubuntu 22.04). 지금은 무료 체험 크레딧으로 돌고, 끝나기 전에 Always Free `e2-micro`(미국 리전)로 옮긴다. GitHub Actions가 빌드한 `dist/`를 서버로 보내고 서버는 `git pull`·마이그레이션·재시작만 한다(`deploy-backend.yml`, 저장소 변수 `DEPLOY_HOST`가 있어야 켜진다). 백업·배포·이전 절차는 `docs/operations.md`. Node, PostgreSQL, Nginx가 한 대에서 같이 돌기 때문에 메모리를 아껴 쓴다 (서버에서 TypeScript 빌드나 무거운 작업은 피하고, 프로세스는 하나만 띄운다).
 - **로컬 개발 DB:** Mac의 OrbStack(Docker)에서 `backend/compose.yaml`로 구동 (`npm run db:up`). `localhost:5433`, 계정 `daty`/`daty`, DB `daty_dev`. 개발과 테스트는 이 DB로 하고, 운영 DB에는 붙지 않는다.
-- **DB:** PostgreSQL 15, 같은 Oracle VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 매일 `backend/scripts/backup.mjs`(cron)가 덤프를 백업 전용 R2 버킷(`BACKUP_R2_*`, 그 버킷에만 쓸 수 있는 토큰)의 `backups/`에 올리고, 실패하면 `ADMIN_EMAIL`로 메일을 보낸다. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 oracle-server`)로 접속한다.
+- **DB:** PostgreSQL 15, 백엔드와 같은 VM의 Docker 컨테이너(`date_app_postgres`, compose 파일은 서버의 `~/app-db/`)로 구동. 매일 `backend/scripts/backup.mjs`(cron)가 덤프를 백업 전용 R2 버킷(`BACKUP_R2_*`, 그 버킷에만 쓸 수 있는 토큰)의 `backups/`에 올리고, 실패하면 `ADMIN_EMAIL`로 메일을 보낸다. 포트는 `127.0.0.1:5432`에만 열려 있어 로컬에서는 SSH 터널(`ssh -L 5432:localhost:5432 <서버>`)로 접속한다.
 - **이미지 저장:** Cloudflare R2.
 
 ## 데이터 모델 (`backend/prisma/schema.prisma`)
@@ -84,7 +84,7 @@
 
 ## 이미지 업로드 패턴
 
-오라클 서버의 I/O 부하를 피하기 위해 이미지 파일은 백엔드를 거치지 않는다.
+1GB 서버의 메모리·I/O 부하를 피하기 위해 이미지 파일은 백엔드를 거치지 않는다.
 
 1. 클라이언트가 백엔드에 Presigned Upload URL을 요청
 2. 클라이언트가 그 URL로 R2에 직접 PUT
