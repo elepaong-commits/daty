@@ -1,5 +1,6 @@
 import type { PlaceCategory, PlaceStatus, TipType } from './types'
 import type { SaveMode } from './download'
+import type { Milestone } from './anniversary'
 
 export type Lang = 'ko' | 'ja'
 export const LANGS: { value: Lang; short: string }[] = [
@@ -211,6 +212,8 @@ const ko = {
   },
   calendar: {
     eyebrow: '우리 둘의 캘린더',
+    milestone: (m: Milestone) => (m.kind === 'days' ? `${m.count}일` : `${m.count}주년`),
+    milestoneDay: (label: string) => `${label} 🎉 함께한 날들을 축하해요`,
     today: '오늘',
     prevMonth: '이전 달',
     nextMonth: '다음 달',
@@ -654,6 +657,8 @@ const ja: Messages = {
     nearbyFailed: '現在地を取得できませんでした。位置情報の許可を確認してください',
   },
   calendar: {
+    milestone: (m) => (m.kind === 'days' ? `${m.count}日` : `${m.count}周年`),
+    milestoneDay: (label) => `${label} 🎉 一緒に過ごした日々をお祝いしましょう`,
     eyebrow: 'ふたりのカレンダー',
     today: '今日',
     prevMonth: '前の月',

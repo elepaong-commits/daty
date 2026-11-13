@@ -11,7 +11,8 @@ import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
 import { addMonths, isSameDay, monthGrid, parseDateOnly, startOfDay, startOfMonth, toDateInput } from '../../lib/dates'
-import { useAddRecordToAlbum, useAlbums, useMonthRecords } from '../../lib/queries'
+import { useAddRecordToAlbum, useAlbums, useMe, useMonthRecords } from '../../lib/queries'
+import { milestonesOn, type Milestone } from '../../lib/anniversary'
 import type { DateRecord } from '../../lib/types'
 import type { NewAlbumDraft } from '../albums/CreateAlbumSheet'
 import { ScheduleSheet } from '../records/ScheduleSheet'
@@ -48,6 +49,8 @@ export function CalendarPage() {
   const completedDay = completed && toDateInput(new Date(completed.scheduledAt))
   const dayAlbum = completedDay ? albums.find((a) => !a.monthly && a.albumDate <= completedDay && completedDay <= a.albumEndDate) : undefined
   const { data: records = [], isLoading, error } = useMonthRecords(month)
+  const anniversaryDate = useMe().data?.couple?.anniversaryDate
+  const milestonesFor = (day: Date) => (anniversaryDate ? milestonesOn(anniversaryDate, toDateInput(day)) : [])
 
   const byDay = useMemo(() => {
     const map = new Map<string, DateRecord[]>()
@@ -136,6 +139,7 @@ export function CalendarPage() {
                     isToday={isSameDay(day, today)}
                     isSelected={isSameDay(day, selected)}
                     records={byDay.get(toDateInput(day)) ?? []}
+                    milestones={milestonesFor(day)}
                     onSelect={() => setSelected(day)}
                   />
                 ))}
@@ -148,7 +152,7 @@ export function CalendarPage() {
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
-            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} onComplete={setCompleted} />
+            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} milestones={milestonesFor(selected)} onEdit={setEditing} onComplete={setCompleted} />
           )}
         </div>
         </div>
@@ -222,6 +226,7 @@ function DayCell({
   isToday,
   isSelected,
   records,
+  milestones,
   onSelect,
 }: {
   day: Date
@@ -229,6 +234,8 @@ function DayCell({
   isToday: boolean
   isSelected: boolean
   records: DateRecord[]
+  /** 100th days and anniversaries, shown before the dates and taking one of their slots. */
+  milestones: Milestone[]
   onSelect: () => void
 }) {
   const t = useT()
@@ -243,7 +250,8 @@ function DayCell({
         : weekday === 6
           ? 'text-brand-strong'
           : 'text-ink'
-  const visible = inMonth ? records.slice(0, isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) : []
+  const shownMilestones = inMonth ? milestones.slice(0, 1) : []
+  const visible = inMonth ? records.slice(0, (isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) - shownMilestones.length) : []
   const hidden = inMonth ? records.length - visible.length : 0
 
   return (
@@ -252,7 +260,7 @@ function DayCell({
       onClick={onSelect}
       disabled={!inMonth}
       aria-pressed={isSelected}
-      aria-label={t.calendar.dayLabel(t.dates.monthDay(day), records.length)}
+      aria-label={[t.calendar.dayLabel(t.dates.monthDay(day), records.length), ...milestones.map(t.calendar.milestone)].join(', ')}
       className={`ui-pop flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
         isSelected ? 'bg-brand-soft lg:border-brand' : 'lg:border-card-border'
       } ${inMonth && !isSelected ? 'lg:hover:bg-cream' : ''}`}
@@ -264,6 +272,15 @@ function DayCell({
       >
         {day.getDate()}
       </span>
+      {shownMilestones.map((m) => (
+        <span
+          key={`${m.kind}-${m.count}`}
+          className="h-3.5 truncate rounded bg-amber-soft px-1 text-left text-[9px] leading-[1.556] font-bold text-amber-ink lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px]"
+        >
+          <span className="hidden lg:inline">♥ </span>
+          {t.calendar.milestone(m)}
+        </span>
+      ))}
       {visible.map((r) => (
         <span
           key={r.id}

@@ -9,6 +9,7 @@ import { daysBetween, isSameDay, toTimeInput } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
 import { useUpdateRecord } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
+import type { Milestone } from '../../lib/anniversary'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
 
@@ -16,12 +17,14 @@ export function DayTimeline({
   day,
   today,
   records,
+  milestones,
   onEdit,
   onComplete,
 }: {
   day: Date
   today: Date
   records: DateRecord[]
+  milestones: Milestone[]
   onEdit: (record: DateRecord) => void
   /** A plan was marked as done (it is now a record). */
   onComplete: (record: DateRecord) => void
@@ -36,6 +39,15 @@ export function DayTimeline({
         </h2>
         <span className="text-[12px] text-muted">{t.calendar.scheduleCount(records.length)}</span>
       </div>
+
+      {milestones.map((m) => (
+        <p
+          key={`${m.kind}-${m.count}`}
+          className="ui-box-thin rounded-2xl bg-amber-soft px-4 py-3 text-[14px] font-semibold text-amber-ink retro:text-[12px]"
+        >
+          {t.calendar.milestoneDay(t.calendar.milestone(m))}
+        </p>
+      ))}
 
       {records.length === 0 ? (
         <p className="ui-empty rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
