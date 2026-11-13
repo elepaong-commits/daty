@@ -7,6 +7,7 @@ import { isVideoFile, prepareVideo, videoContentType } from './videos'
 import type { Album, AlbumBase, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
 import { keepScreenOn } from './wakeLock'
+import { clearOfflineData } from './offline'
 
 export const keys = {
   me: ['me'] as const,
@@ -85,6 +86,7 @@ export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetC
 function useSwitchMe() {
   const queryClient = useQueryClient()
   return (me: Me | null) => {
+    clearOfflineData()
     queryClient.setQueryData(keys.me, me)
     queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
   }

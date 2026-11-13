@@ -13,13 +13,14 @@ import { MapPage } from './features/map/MapPage'
 import { PlaceDetailPage } from './features/places/PlaceDetailPage'
 import { ApiError } from './lib/api'
 import { MapsProvider } from './lib/maps'
-import { useI18n } from './lib/i18n'
+import { useI18n, useT } from './lib/i18n'
 import { useMotionPreset } from './lib/motion'
 import { refreshPush } from './lib/push'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
 import { useTheme } from './lib/theme'
 import { ConfirmProvider } from './components/ConfirmProvider'
+import { useOnline } from './lib/offline'
 
 // The map (and the place column inside it) is the home screen and loads up front; the other
 // screens, and login/setup that a signed-in user never sees, load when first opened.
@@ -43,10 +44,15 @@ function onApiError(error: Error) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // Ask even when offline: the service worker answers with what it kept (see public/sw.js).
+      networkMode: 'offlineFirst',
       staleTime: 30_000,
       retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 1,
     },
+    // Saves are tried offline too, and fail with the connection message instead of waiting silently.
+    mutations: { networkMode: 'offlineFirst' },
   },
+  // Saves try too, and fail with the connection message instead of waiting silently.
   queryCache: new QueryCache({ onError: onApiError }),
   mutationCache: new MutationCache({ onError: onApiError }),
 })
@@ -94,6 +100,7 @@ function AppShell() {
       <Frame wide>
         <Sidebar />
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          <OfflineBanner />
           <Suspense fallback={<QueryState isLoading error={null} />}>
             <Screen />
           </Suspense>
@@ -186,5 +193,16 @@ export default function App() {
         </QueryClientProvider>
       </ThemeProvider>
     </I18nProvider>
+  )
+}
+
+/** While offline the screens show what this device kept; this says so. */
+function OfflineBanner() {
+  const t = useT()
+  if (useOnline()) return null
+  return (
+    <p role="status" className="shrink-0 bg-ink px-4 py-1.5 text-center text-[12px] text-white retro:font-pixel retro:pixel-crisp">
+      {t.common.offline}
+    </p>
   )
 }
