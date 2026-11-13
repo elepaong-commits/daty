@@ -267,6 +267,47 @@ export function useUpdateAlbum(id: number) {
   return useMutation({ mutationFn: (input: UpdateAlbumInput) => api.updateAlbum(id, input), onSuccess: invalidate })
 }
 
+export function useCaptionPhoto(albumId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ photoId, caption }: { photoId: number; caption: string }) => api.updatePhoto(albumId, photoId, { caption }),
+    onSuccess: (album) => queryClient.setQueryData(keys.album(albumId), album),
+  })
+}
+
+/** Puts the photos first, keeping their order and that of the rest. */
+export function useMovePhotosToFront(albumId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ order, photoIds }: { order: number[]; photoIds: Set<number> }) =>
+      api.reorderPhotos(albumId, [...order.filter((id) => photoIds.has(id)), ...order.filter((id) => !photoIds.has(id))]),
+    onSuccess: (album) => {
+      queryClient.setQueryData(keys.album(albumId), album)
+      return queryClient.invalidateQueries({ queryKey: keys.albums, exact: true })
+    },
+  })
+}
+
+/** Moves photos to another album one by one; a file that album already has stays and is counted. */
+export function useMovePhotos(albumId: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({
+    mutationFn: async ({ photoIds, targetId }: { photoIds: number[]; targetId: number }) => {
+      let skipped = 0
+      for (const photoId of photoIds) {
+        try {
+          await api.updatePhoto(albumId, photoId, { albumId: targetId })
+        } catch (error) {
+          if (!(error instanceof ApiError && error.code === 'PHOTO_EXISTS')) throw error
+          skipped++
+        }
+      }
+      return { moved: photoIds.length - skipped, skipped }
+    },
+    onSettled: invalidate,
+  })
+}
+
 export function useDeletePhotos(albumId: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({

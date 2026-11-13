@@ -109,6 +109,7 @@ export interface Photo {
   thumbnailUrl: string | null
   displayOrder: number
   takenAt: string | null
+  caption: string | null
   durationSec: number | null // videos only
   fingerprint: string | null // hash of the original file, to skip it if picked again
   sizeBytes: number | null // what it takes up in storage; null for files uploaded before sizes were kept

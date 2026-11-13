@@ -506,6 +506,60 @@ albumsRouter.delete("/:id/photos/:photoId/comments/:commentId", async (req, res)
   res.json(await loadFeedback(target));
 });
 
+const photoUpdateBody = z.object({
+  caption: z.string().trim().max(300).nullable().optional(),
+  // Moves the photo (with its reactions and comments) into another of the couple's albums.
+  albumId: z.number().int().positive().optional(),
+});
+
+/** Caption a photo or move it to another album. Answers with the album it was in, as it now stands. */
+albumsRouter.patch("/:id/photos/:photoId", async (req, res) => {
+  const { id, photoId } = photoParams.parse(req.params);
+  const { caption, albumId: targetId } = photoUpdateBody.parse(req.body);
+  const { coupleId } = req;
+  const album = await prisma.$transaction(async (tx) => {
+    const source = await tx.album.findFirstOrThrow({ where: { id, coupleId } });
+    const photo = await tx.photo.findFirstOrThrow({ where: { id: photoId, albumId: id } });
+    const moving = targetId !== undefined && targetId !== id;
+    let displayOrder: number | undefined;
+    if (moving) {
+      await tx.album.findFirstOrThrow({ where: { id: targetId, coupleId }, select: { id: true } });
+      if (photo.fingerprint) {
+        const twin = await tx.photo.findFirst({ where: { albumId: targetId, fingerprint: photo.fingerprint }, select: { id: true } });
+        if (twin) throw new HttpError(409, "That album already has this file", "PHOTO_EXISTS");
+      }
+      const { _max } = await tx.photo.aggregate({ where: { albumId: targetId }, _max: { displayOrder: true } });
+      displayOrder = (_max.displayOrder ?? 0) + 1;
+      if (source.coverPhotoId === photoId) await tx.album.update({ where: { id }, data: { coverPhotoId: null } });
+    }
+    await tx.photo.update({
+      where: { id: photoId },
+      data: { caption: caption === undefined ? undefined : caption || null, ...(moving && { albumId: targetId, displayOrder }) },
+    });
+    return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
+  });
+  res.json(await serializeAlbum(album));
+});
+
+const orderBody = z.object({ photoIds: z.array(z.number().int().positive()).min(1).max(5000) });
+
+/** The album's own order (what "album order" shows): every one of its photos, first to last. */
+albumsRouter.put("/:id/photos/order", async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const { photoIds } = orderBody.parse(req.body);
+  const album = await prisma.$transaction(async (tx) => {
+    await tx.album.findFirstOrThrow({ where: { id, coupleId: req.coupleId }, select: { id: true } });
+    const current = await tx.photo.findMany({ where: { albumId: id }, select: { id: true } });
+    const given = new Set(photoIds);
+    if (given.size !== photoIds.length || current.length !== given.size || current.some((p) => !given.has(p.id))) {
+      throw new HttpError(400, "Give every photo of the album once", "INVALID_REQUEST");
+    }
+    await Promise.all(photoIds.map((photoId, i) => tx.photo.update({ where: { id: photoId }, data: { displayOrder: i + 1 } })));
+    return tx.album.findUniqueOrThrow({ where: { id }, include: albumInclude });
+  });
+  res.json(await serializeAlbum(album));
+});
+
 albumsRouter.delete("/:id/photos/:photoId", async (req, res) => {
   const { id, photoId } = photoParams.parse(req.params);
   const photo = await prisma.$transaction(async (tx) => {

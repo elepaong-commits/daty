@@ -110,6 +110,10 @@ export const api = {
   album: (id: number) => request<Album>(`/api/albums/${id}`),
   updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
   deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),
+  /** Caption it or move it to another album; answers with the album it was in. */
+  updatePhoto: (albumId: number, photoId: number, input: { caption?: string | null; albumId?: number }) =>
+    patch<Album>(`/api/albums/${albumId}/photos/${photoId}`, input),
+  reorderPhotos: (albumId: number, photoIds: number[]) => put<Album>(`/api/albums/${albumId}/photos/order`, { photoIds }),
   createAlbum: (input: CreateAlbumInput) => post<Album>('/api/albums', input),
   photoUploads: (albumId: number, files: { contentType: string }[]) =>
     post<{ uploads: PhotoUpload[] }>(`/api/albums/${albumId}/photos/uploads`, { files }),

@@ -5,7 +5,7 @@ import { FeedbackPanel } from '../../components/FeedbackPanel'
 import { formatDotted, toTimeInput } from '../../lib/dates'
 import { useSaveFiles } from '../../lib/useSaveFiles'
 import { SaveReadyBar } from './SaveReadyBar'
-import { useAlbumDownloads } from '../../lib/queries'
+import { useAlbumDownloads, useCaptionPhoto } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { PixelSprite } from '../../components/PixelSprite'
 import { useMotionPreset } from '../../lib/motion'
@@ -196,6 +196,12 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
         </div>
       )}
 
+      {photo && (
+        <div data-viewer-fade className="relative shrink-0 px-4 pt-2">
+          <Caption key={photo.id} albumId={albumId} photo={photo} />
+        </div>
+      )}
+
       <div data-viewer-fade className="relative flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
         <span className="min-w-0 truncate">{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
         {photo && (
@@ -348,5 +354,51 @@ function ViewerPhoto({
       <TriangleAlert size={24} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>
+  )
+}
+
+/** The photo's one-line caption; tapping it (or "write one") edits it in place. */
+function Caption({ albumId, photo }: { albumId: number; photo: Photo }) {
+  const t = useT()
+  const save = useCaptionPhoto(albumId)
+  const [draft, setDraft] = useState<string | null>(null)
+
+  function commit() {
+    if (draft === null) return
+    const caption = draft.trim()
+    setDraft(null)
+    if (caption !== (photo.caption ?? '')) save.mutate({ photoId: photo.id, caption })
+  }
+
+  if (draft !== null) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        maxLength={300}
+        aria-label={t.albums.caption}
+        placeholder={t.albums.captionPlaceholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') {
+            // Only the edit is cancelled, not the viewer.
+            e.stopPropagation()
+            setDraft(null)
+          }
+        }}
+        className="ui-prose h-10 w-full rounded-xl bg-white/15 px-3 text-[16px] text-white outline-none placeholder:text-white/50"
+      />
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setDraft(photo.caption ?? '')}
+      className={`ui-prose w-full text-left text-[14px] leading-normal ${photo.caption ? 'text-white' : 'text-white/60'}`}
+    >
+      {save.isPending ? t.common.saving : photo.caption || `✎ ${t.albums.editCaption}`}
+    </button>
   )
 }

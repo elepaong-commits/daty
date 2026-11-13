@@ -9,10 +9,11 @@ import { api, errorMessage } from '../../lib/api'
 import { saveMode } from '../../lib/download'
 import { useSaveFiles } from '../../lib/useSaveFiles'
 import { SaveReadyBar } from './SaveReadyBar'
+import { MovePhotosSheet } from './MovePhotosSheet'
 import { formatBytes } from '../../lib/format'
 import { albumHeading, daysBetween, formatDotted, formatDuration, formatMonthDay, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
-import { keys, useAlbum, useAlbumDownloads, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
+import { keys, useAlbum, useAlbumDownloads, useDeletePhotos, useMovePhotos, useMovePhotosToFront, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { isVideoFile } from '../../lib/videos'
 import { useT } from '../../lib/i18n'
 import type { MediaType, Photo } from '../../lib/types'
@@ -70,6 +71,9 @@ export function AlbumDetailPage() {
   const confirm = useConfirm()
   const updateAlbum = useUpdateAlbum(id)
   const deletePhotos = useDeletePhotos(id)
+  const toFront = useMovePhotosToFront(id)
+  const movePhotos = useMovePhotos(id)
+  const [moving, setMoving] = useState(false)
   const uploadPhotos = useUploadPhotos(id)
   const fileInput = useRef<HTMLInputElement>(null)
   const [selecting, setSelecting] = useState(false)
@@ -189,7 +193,7 @@ export function AlbumDetailPage() {
       ? dayHeading(start, formatDotted(start))
       : `${dayHeading(start, formatDotted(start))} ~ ${dayHeading(end, start.getFullYear() === end.getFullYear() ? formatMonthDay(end) : formatDotted(end))} · ${t.albums.tripLength(days - 1, days)}`
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
-  const actionError = updateAlbum.error ?? deletePhotos.error ?? saveError
+  const actionError = updateAlbum.error ?? deletePhotos.error ?? toFront.error ?? movePhotos.error ?? saveError
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
@@ -287,6 +291,9 @@ export function AlbumDetailPage() {
         <SaveReadyBar saver={saver} />
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
+        )}
+        {movePhotos.data && movePhotos.data.skipped > 0 && (
+          <p className="text-[12px] text-muted">{t.albums.moveSkipped(movePhotos.data.skipped)}</p>
         )}
         {uploadPhotos.data && uploadPhotos.data.skipped > 0 && (
           <p className="text-[12px] text-muted">{t.albums.uploadSkipped(uploadPhotos.data.skipped)}</p>
@@ -429,10 +436,53 @@ export function AlbumDetailPage() {
               {selected.size > 0 && ` (${selected.size})`}
             </button>
           </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                // Shown in album order, where the move is visible.
+                changeSort('UPLOADED')
+                toFront.mutate({ order: album.photos.map((p) => p.id), photoIds: selected }, { onSuccess: toggleSelecting })
+              }}
+              disabled={selected.size === 0 || toFront.isPending}
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[14px] font-semibold disabled:opacity-40 retro:text-[13px]"
+            >
+              {t.albums.toFront}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMoving(true)}
+              disabled={selected.size === 0 || movePhotos.isPending}
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[14px] font-semibold disabled:opacity-40 retro:text-[13px]"
+            >
+              {t.albums.moveToAlbum}
+            </button>
+          </div>
         </div>
       )}
 
       <AnimatePresence>{editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {moving && (
+          <MovePhotosSheet
+            currentId={album.id}
+            count={selected.size}
+            busy={movePhotos.isPending}
+            onClose={() => setMoving(false)}
+            onPick={(targetId) =>
+              movePhotos.mutate(
+                { photoIds: [...selected], targetId },
+                {
+                  onSuccess: () => {
+                    setMoving(false)
+                    toggleSelecting()
+                  },
+                },
+              )
+            }
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {viewing !== null && (
           <PhotoViewer

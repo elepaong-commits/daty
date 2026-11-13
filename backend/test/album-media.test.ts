@@ -86,3 +86,36 @@ test("the album list carries a card's worth of photos, cover first, and the coun
   assert.equal(listed.photos, undefined);
   assert.equal(listed.previewPhotos[1].reactions, undefined);
 });
+
+test("photos can be captioned, reordered and moved to another album", async () => {
+  const from = await a.ok("POST", "/albums", { title: "From", albumDate: "2026-10-20" });
+  const to = await a.ok("POST", "/albums", { title: "To", albumDate: "2026-10-21" });
+  await prisma.photo.createMany({
+    data: [1, 2, 3].map((n) => ({ albumId: from.id, imageUrl: `https://example.com/m${n}.jpg`, displayOrder: n, fingerprint: `f${n}`.padEnd(64, "0") })),
+  });
+  const [p1, p2, p3] = await prisma.photo.findMany({ where: { albumId: from.id }, orderBy: { displayOrder: "asc" } });
+  const user = await prisma.user.findFirstOrThrow({ where: { email: "media@test.local" } });
+  await prisma.reaction.create({ data: { photoId: p3!.id, userId: user.id, coupleId: user.coupleId!, emoji: "❤️" } });
+  await a.ok("PATCH", `/albums/${from.id}`, { coverPhotoId: p3!.id });
+
+  const captioned = await a.ok("PATCH", `/albums/${from.id}/photos/${p1!.id}`, { caption: "  Sunset  " });
+  assert.equal(captioned.photos[0].caption, "Sunset");
+
+  const reordered = await a.ok("PUT", `/albums/${from.id}/photos/order`, { photoIds: [p3!.id, p1!.id, p2!.id] });
+  assert.deepEqual(reordered.photos.map((p: { id: number }) => p.id), [p3!.id, p1!.id, p2!.id]);
+  assert.equal((await a.request("PUT", `/albums/${from.id}/photos/order`, { photoIds: [p1!.id, p2!.id] })).status, 400);
+
+  // The cover moves out with its reactions; the album it left loses it as cover.
+  const left = await a.ok("PATCH", `/albums/${from.id}/photos/${p3!.id}`, { albumId: to.id });
+  assert.equal(left.coverPhotoId, null);
+  assert.equal(left.photos.length, 2);
+  const arrived = await a.ok("GET", `/albums/${to.id}`);
+  assert.equal(arrived.photos[0].id, p3!.id);
+  assert.equal(arrived.photos[0].reactions.length, 1);
+
+  // A file the target already has stays put.
+  await prisma.photo.create({ data: { albumId: to.id, imageUrl: "https://example.com/dup.jpg", fingerprint: p1!.fingerprint } });
+  const dup = await a.request("PATCH", `/albums/${from.id}/photos/${p1!.id}`, { albumId: to.id });
+  assert.equal(dup.status, 409);
+  assert.equal(dup.body.code, "PHOTO_EXISTS");
+});
