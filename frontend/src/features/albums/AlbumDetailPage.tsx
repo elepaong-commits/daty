@@ -330,7 +330,7 @@ export function AlbumDetailPage() {
                 type="button"
                 aria-pressed={sort === value}
                 onClick={() => changeSort(value)}
-                className={`ui-pop h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-text' : 'text-muted'}`}
+                className={`ui-pop ui-hit-y h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-text' : 'text-muted'}`}
               >
                 {t.albums.sort[value]}
               </button>
@@ -340,7 +340,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={flipDirection}
               aria-label={t.albums.directionLabel(t.albums.direction[direction])}
-              className="flex h-7 items-center gap-1 rounded-full px-2.5 font-semibold text-muted"
+              className="ui-hit-y flex h-7 items-center gap-1 rounded-full px-2.5 font-semibold text-muted"
             >
               {direction === 'ASC' ? <ArrowUp size={12} strokeWidth={1.75} /> : <ArrowDown size={12} strokeWidth={1.75} />} {t.albums.direction[direction]}
             </button>

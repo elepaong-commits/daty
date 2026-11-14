@@ -55,7 +55,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               disabled={react.isPending}
               aria-pressed={isMine}
               aria-label={t.feedback.react(emoji)}
-              className={`flex h-8 items-center gap-0.5 rounded-full px-2 text-[15px] leading-none transition-opacity ${
+              className={`ui-hit-y flex h-8 items-center gap-0.5 rounded-full px-2 text-[15px] leading-none transition-opacity ${
                 isMine
                   ? dark ? 'bg-surface text-ink' : 'bg-brand-soft ring-1 ring-brand'
                   : dark ? 'bg-white/15' : 'bg-surface/70'
@@ -67,7 +67,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
           )
         })}
         {collapsible && !open && (
-          <button type="button" onClick={() => setOpen(true)} className="ml-auto h-8 px-1 text-[12px] font-semibold text-muted">
+          <button type="button" onClick={() => setOpen(true)} className="ui-hit-y ml-auto h-8 px-1 text-[12px] font-semibold text-muted">
             {t.feedback.open(feedback.comments.length)}
           </button>
         )}
@@ -89,7 +89,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
                       onClick={() => remove(c.id)}
                       disabled={removeComment.isPending}
                       aria-label={t.feedback.deleteComment}
-                      className={`shrink-0 px-1 py-0.5 ${dark ? 'text-white/60' : 'text-muted'}`}
+                      className={`ui-hit shrink-0 px-1 py-0.5 ${dark ? 'text-white/60' : 'text-muted'}`}
                     >
                       <X size={13} strokeWidth={1.75} />
                     </button>

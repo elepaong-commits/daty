@@ -55,7 +55,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
                 {/* Like comments, a memo is the writer's to change; one left by a deleted account either can clear. */}
                 <span className="flex">
                   {note.writer?.id === myId && editingId !== note.id && (
-                    <button type="button" onClick={() => setEditingId(note.id)} aria-label={t.place.editNote} className="px-1">
+                    <button type="button" onClick={() => setEditingId(note.id)} aria-label={t.place.editNote} className="ui-hit-y px-2">
                       <Pencil size={13} strokeWidth={1.75} />
                     </button>
                   )}
@@ -65,7 +65,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
                       onClick={() => remove(note.id)}
                       disabled={deleteNote.isPending}
                       aria-label={t.place.deleteNote}
-                      className="px-1"
+                      className="ui-hit-y px-2"
                     >
                       <X size={14} strokeWidth={1.75} />
                     </button>

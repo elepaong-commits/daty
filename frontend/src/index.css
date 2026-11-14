@@ -417,6 +417,38 @@
   }
 }
 
+/*
+ * Small controls keep their look but take taps 44px tall (the touch-target guideline) with an invisible
+ * ::after. `ui-hit` also widens a lone control to 44px; `ui-hit-y` grows only the height, for controls
+ * sitting side by side (segments, sort buttons, reactions) so a neighbour's area doesn't cover them.
+ * Not for elements that are themselves `absolute`.
+ */
+@utility ui-hit {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+}
+
+@utility ui-hit-y {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: max(100%, 44px);
+    translate: 0 -50%;
+  }
+}
+
 /* Small language / design switch; `aria-pressed` marks the current one. */
 @utility ui-segment {
   @apply flex h-7 items-center gap-0.5 rounded-full bg-surface p-0.5;
@@ -426,7 +458,7 @@
 }
 
 @utility ui-segment-option {
-  @apply flex h-6 min-w-7 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-muted;
+  @apply flex h-6 min-w-7 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-muted ui-hit-y;
   &[aria-pressed="true"] {
     @apply bg-brand-strong text-white;
   }
