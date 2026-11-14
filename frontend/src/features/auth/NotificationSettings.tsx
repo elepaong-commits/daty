@@ -23,7 +23,7 @@ export function NotificationSettings() {
   const error = toggle.error ?? test.error
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-card-border p-4">
+    <div className="flex flex-col gap-2 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[12px] leading-normal font-semibold text-muted">{t.notifications.title}</p>
       <p className="text-[12px] leading-normal text-muted">{pushSupported ? t.notifications.help : t.notifications.unsupported}</p>
       {pushSupported && (

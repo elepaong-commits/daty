@@ -30,7 +30,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
   }
 
   const tabs = (
-    <div className="flex h-10 gap-1 rounded-2xl bg-segment p-1" role="tablist">
+    <div className="ui-seg flex h-10 gap-1 rounded-2xl bg-segment p-1" role="tablist">
       {(['code', 'email'] as const).map((value) => (
         <button
           key={value}
@@ -38,7 +38,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
           role="tab"
           aria-selected={method === value}
           onClick={() => setMethod(value)}
-          className={`flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
+          className={`ui-seg-option flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
         >
           {value === 'code' ? t.auth.resetByCode : t.auth.resetByEmail}
         </button>
@@ -48,7 +48,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
 
   if (method === 'email') {
     return (
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
+      <form onSubmit={submit} className="ui-box flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card retro:mx-0.5">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-[20px] leading-normal">{t.auth.resetTitle}</h2>
           <p className="text-[12px] leading-normal text-muted">{t.auth.resetEmailHelp}</p>
@@ -82,7 +82,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
+    <form onSubmit={submit} className="ui-box flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card retro:mx-0.5">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-[20px] leading-normal">{t.auth.resetTitle}</h2>
         <p className="text-[12px] leading-normal text-muted">{t.auth.resetHelp}</p>

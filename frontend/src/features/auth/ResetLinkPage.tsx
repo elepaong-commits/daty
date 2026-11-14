@@ -27,7 +27,7 @@ export function ResetLinkPage() {
         <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
+      <form onSubmit={submit} className="ui-box flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card retro:mx-0.5">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-[20px] leading-normal">{t.auth.linkTitle}</h2>
           <p className="text-[12px] leading-normal text-muted">{t.auth.linkHelp}</p>

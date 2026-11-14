@@ -32,7 +32,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
   return (
     <BottomSheet title={t.common.myInfo} onClose={onClose}>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2 rounded-2xl bg-field p-4">
+        <div className="ui-outline flex flex-col gap-2 rounded-2xl bg-field p-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -78,7 +78,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         {couple && (
-          <div className="rounded-2xl border border-card-border p-4">
+          <div className="ui-outline rounded-2xl border border-card-border p-4">
             <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
             {partner ? (
               <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
@@ -100,12 +100,12 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
+        <div className="flex items-center justify-between gap-3 ui-outline rounded-2xl border border-card-border p-4">
           <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
           <ThemeToggle />
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
+        <div className="flex items-center justify-between gap-3 ui-outline rounded-2xl border border-card-border p-4">
           <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.modeLabel}</p>
           <ColorModeToggle />
         </div>

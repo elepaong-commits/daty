@@ -48,7 +48,7 @@ export function ProfileSettings({ me }: { me: Me }) {
             setSaved(false)
             setOpen(true)
           }}
-          className="flex h-11 w-full items-center justify-between rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
+          className="flex h-11 w-full items-center justify-between ui-outline rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
         >
           {t.account.editProfile}
           <span className="text-muted">›</span>
@@ -59,7 +59,7 @@ export function ProfileSettings({ me }: { me: Me }) {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+    <form onSubmit={submit} className="flex flex-col gap-3 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[14px] font-semibold">{t.account.editProfile}</p>
       <Field label={t.auth.nickname}>
         <input

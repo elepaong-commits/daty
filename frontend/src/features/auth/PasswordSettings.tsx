@@ -38,7 +38,7 @@ export function ChangePassword() {
             change.reset()
             setOpen(true)
           }}
-          className="flex h-11 w-full items-center justify-between rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
+          className="flex h-11 w-full items-center justify-between ui-outline rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
         >
           {t.account.changePassword}
           <span className="text-muted">›</span>
@@ -49,7 +49,7 @@ export function ChangePassword() {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+    <form onSubmit={submit} className="flex flex-col gap-3 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[14px] font-semibold">{t.account.changePassword}</p>
       <Field label={t.account.currentPassword}>
         <PasswordInput
@@ -95,7 +95,7 @@ export function PartnerResetCode({ partnerName }: { partnerName: string }) {
   const expiresAt = issued && new Date(issued.expiresAt)
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-card-border p-4">
+    <div className="flex flex-col gap-2 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.resetCodeTitle(partnerName)}</p>
       {issued && expiresAt ? (
         <>

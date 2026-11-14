@@ -15,7 +15,7 @@ export function StorageUsage() {
   const over = usage.usedBytes > usage.freeBytes
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-card-border p-4">
+    <div className="flex flex-col gap-2 ui-outline rounded-2xl border border-card-border p-4">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-[12px] leading-normal font-semibold text-muted">{t.storage.title}</p>
         <p className="text-[13px] font-semibold tabular-nums">{t.storage.used(formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))}</p>
@@ -49,7 +49,7 @@ export function DataExport() {
   })
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-card-border p-4">
+    <div className="flex flex-col gap-2 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[12px] leading-normal font-semibold text-muted">{t.data.title}</p>
       <p className="text-[12px] leading-normal text-muted">{t.data.exportHelp}</p>
       <button

@@ -57,7 +57,7 @@ export function AuthPage() {
       ) : (
         <>
           {signupOpen && (
-            <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
+            <div className="ui-seg mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
               {(['login', 'signup'] as const).map((value) => (
                 <button
                   key={value}
@@ -65,7 +65,7 @@ export function AuthPage() {
                   role="tab"
                   aria-selected={mode === value}
                   onClick={() => switchMode(value)}
-                  className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
+                  className={`ui-seg-option flex-1 rounded-xl text-[14px] font-semibold retro:text-[13px] ${mode === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
                 >
                   {value === 'login' ? t.auth.login : t.auth.signup}
                 </button>
@@ -73,7 +73,7 @@ export function AuthPage() {
             </div>
           )}
 
-          <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
+          <form onSubmit={submit} className="ui-box flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card retro:mx-0.5">
             {mode === 'signup' && (
               <Field label={t.auth.nickname}>
                 <input
