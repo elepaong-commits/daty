@@ -1,5 +1,5 @@
 import { Camera, Heart } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
 import { ColorModeToggle, ThemeToggle } from '../../components/SettingToggles'
 import { useLogout, useMe, useRemoveAvatar, useSetAvatar } from '../../lib/queries'
@@ -31,7 +31,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <BottomSheet title={t.common.myInfo} onClose={onClose}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <div className="ui-outline flex flex-col gap-2 rounded-2xl bg-field p-4">
           <div className="flex items-center gap-3">
             <button
@@ -77,47 +77,61 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {couple && (
-          <div className="ui-outline rounded-2xl border border-card-border p-4">
-            <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
-            {partner ? (
-              <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
-                <Heart size={15} strokeWidth={1.75} className="text-coral-strong" /> {partner.nickname}
-              </p>
-            ) : (
-              <>
-                <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>
-                <button
-                  type="button"
-                  onClick={() => copyCode(couple.coupleCode)}
-                  className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
-                >
-                  <span className="text-[20px] font-bold tracking-[6px] text-brand-text">{couple.coupleCode}</span>
-                  <span className="text-[12px] font-semibold text-brand-text">{copied ? t.account.copied : t.account.copy}</span>
-                </button>
-              </>
-            )}
+        <Section title={t.account.sections.account}>
+          {couple && (
+            <div className="ui-outline rounded-2xl border border-card-border p-4">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
+              {partner ? (
+                <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
+                  <Heart size={15} strokeWidth={1.75} className="text-coral-strong" /> {partner.nickname}
+                </p>
+              ) : (
+                <>
+                  <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>
+                  <button
+                    type="button"
+                    onClick={() => copyCode(couple.coupleCode)}
+                    className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
+                  >
+                    <span className="text-[20px] font-bold tracking-[6px] text-brand-text">{couple.coupleCode}</span>
+                    <span className="text-[12px] font-semibold text-brand-text">{copied ? t.account.copied : t.account.copy}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <ProfileSettings me={me} />
+          <ChangePassword />
+          {partner && <PartnerResetCode partnerName={partner.nickname} />}
+        </Section>
+
+        <Section title={t.account.sections.display}>
+          <div className="ui-outline flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
+              <ThemeToggle />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.modeLabel}</p>
+              <ColorModeToggle />
+            </div>
           </div>
+        </Section>
+
+        <Section title={t.account.sections.notifications}>
+          <NotificationSettings />
+        </Section>
+
+        {couple && (
+          <Section title={t.account.sections.data}>
+            <StorageUsage />
+            <DataExport />
+          </Section>
         )}
 
-        <div className="flex items-center justify-between gap-3 ui-outline rounded-2xl border border-card-border p-4">
-          <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
-          <ThemeToggle />
-        </div>
-
-        <div className="flex items-center justify-between gap-3 ui-outline rounded-2xl border border-card-border p-4">
-          <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.modeLabel}</p>
-          <ColorModeToggle />
-        </div>
-
-        <NotificationSettings />
-        {couple && <StorageUsage />}
-
-        <ProfileSettings me={me} />
-        <ChangePassword />
-        {partner && <PartnerResetCode partnerName={partner.nickname} />}
-        {couple && <DataExport />}
-        <MembershipSettings inCouple={couple !== null} partnerName={partner?.nickname ?? null} />
+        <Section title={t.account.sections.membership}>
+          <MembershipSettings inCouple={couple !== null} partnerName={partner?.nickname ?? null} />
+        </Section>
 
         <button
           type="button"
@@ -151,5 +165,15 @@ export function Avatar({ name, src, size = 'md' }: { name: string; src?: string 
     >
       {name.slice(0, 1)}
     </span>
+  )
+}
+
+/** One group of the account sheet under a small heading. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="ui-eyebrow px-1">{title}</h3>
+      {children}
+    </section>
   )
 }
