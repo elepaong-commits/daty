@@ -39,7 +39,7 @@ export function DateMap(props: Props) {
   const mapId = (retro ? (MAP_ID_RETRO ?? MAP_ID) : MAP_ID) ?? 'DEMO_MAP_ID'
   if (!MAPS_API_KEY) {
     return (
-      <div className="flex size-full items-start justify-center bg-[#f1ebd6] pt-16 text-center text-[12px] text-muted">
+      <div className="flex size-full items-start justify-center bg-beige pt-16 text-center text-[12px] text-muted">
         {t.map.noApiKey[0]}
         <br />
         {t.map.noApiKey[1]}

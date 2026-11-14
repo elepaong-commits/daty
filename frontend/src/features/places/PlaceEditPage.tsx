@@ -179,7 +179,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                       aria-checked={rating === n}
                       aria-label={t.common.points(n)}
                       onClick={() => setRating(n)}
-                      className={`ui-pop ${rating !== null && n <= rating ? 'text-[#eaa300]' : 'text-chip-border'}`}
+                      className={`ui-pop ${rating !== null && n <= rating ? 'text-amber' : 'text-chip-border'}`}
                     >
                       {retro ? (
                         <PixelSprite name={rating !== null && n <= rating ? 'star' : 'starOff'} scale={3} className="mr-1" />
@@ -210,7 +210,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
             <button
               type="submit"
               disabled={!canSave}
-              className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-button disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
             >
               {updatePlace.isPending ? t.common.saving : t.common.saveChanges}
             </button>

@@ -304,7 +304,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
               <button
                 type="submit"
                 disabled={!canSave}
-                className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+                className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-button disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
               >
                 {updateRecord.isPending ? t.common.saving : t.common.saveChanges}
               </button>

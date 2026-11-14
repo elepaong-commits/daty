@@ -244,7 +244,7 @@ function DayCell({
   const isDesktop = useIsDesktop()
   const weekday = day.getDay()
   const numberColor = !inMonth
-    ? 'text-[rgba(203,213,224,0.6)]'
+    ? 'text-muted/35'
     : isSelected
       ? 'text-white'
       : weekday === 0

@@ -80,7 +80,7 @@ function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
       ))}
       <div className={print}>
         {layer(0)}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))] retro:hidden" />
+        <div className="absolute inset-0 bg-linear-to-b from-transparent from-55% to-night/20 retro:hidden" />
         {/* Classic: date top left, counts bottom right. Pixel: both as dark tags along the bottom left. */}
         <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[11px] retro:leading-[14px]">
           <span className="rounded-lg bg-surface/95 px-2 py-1 font-bold retro:bg-night/85 retro:px-1 retro:py-0 retro:font-normal retro:text-white">{date}</span>

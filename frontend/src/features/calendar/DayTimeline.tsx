@@ -117,7 +117,7 @@ function TimelineEntry({
         <img src={timelineConnector} alt="" width={18} height={28} className="shrink-0" />
       ) : (
         <span className="relative h-7 w-[18px] shrink-0">
-          <span className="absolute left-2 h-5 w-0.5 bg-[#e8e3d1]" />
+          <span className="absolute left-2 h-5 w-0.5 bg-chip-border" />
           <span className="absolute top-4 left-[3px] size-3 rounded-full bg-brand ring-2 ring-white" />
         </span>
       )}

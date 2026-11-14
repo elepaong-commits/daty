@@ -115,7 +115,7 @@ export function PlaceDetailPage() {
           <button
             type="button"
             onClick={edit}
-            className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] retro:mb-1.5 retro:text-[14px]"
+            className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-button retro:mb-1.5 retro:text-[14px]"
           >
             {t.place.editPlace}
           </button>

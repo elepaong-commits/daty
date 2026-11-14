@@ -151,8 +151,8 @@ function AuthHero() {
       </div>
 
       <div className="relative my-8 min-h-0 flex-1" aria-hidden="true">
-        <div className="absolute inset-x-[8%] top-[18%] bottom-[18%] rounded-3xl border-[3px] border-[#cdedea] bg-cream" />
-        <div className="absolute inset-x-[8%] top-1/2 h-5 -translate-y-1/2 bg-[#bfe3dc]/80" />
+        <div className="absolute inset-x-[8%] top-[18%] bottom-[18%] rounded-3xl border-[3px] border-brand-tint bg-cream" />
+        <div className="absolute inset-x-[8%] top-1/2 h-5 -translate-y-1/2 bg-brand-tint" />
         {prints.map(({ category, className }) => {
           const { Icon } = categoryOf(category)
           const [from, to] = PHOTO_GRADIENTS[category][0]!

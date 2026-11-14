@@ -183,7 +183,7 @@ export function MapPage() {
           <button
             type="button"
             onClick={() => startAdding(null)}
-            className="ui-icon-button bg-brand-strong shadow-[0_4px_10px_rgba(0,168,150,0.3)] hover:bg-brand-deep"
+            className="ui-icon-button bg-brand-strong shadow-button hover:bg-brand-deep"
             aria-label={t.map.addWish}
           >
             {retro ? <PixelSprite name="plus" scale={2} /> : <img src={plusIcon} alt="" width={20} height={20} />}

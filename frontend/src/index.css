@@ -40,6 +40,8 @@
   --color-brand-strong: #00796b;
   --color-brand-deep: #00695c;
   --color-brand-soft: #e6f7f5;
+  /* A deeper wash of the brand, for illustrations. */
+  --color-brand-tint: #cdedea;
   --color-coral: #ff6b6b;
   --color-coral-strong: #c43c3c;
   --color-coral-soft: #fff0ee;
@@ -86,6 +88,8 @@
   --shadow-photo: 0 5px 12px rgba(45, 55, 72, 0.25);
   --shadow-sheet: 0 -5px 20px rgba(45, 55, 72, 0.19);
   --shadow-cta: 0 8px 18px rgba(0, 168, 150, 0.44);
+  /* Full-width save buttons and round brand icon buttons: a softer glow than the CTA. */
+  --shadow-button: 0 6px 14px rgba(0, 168, 150, 0.25);
 
   /* List items rising in as they first appear; `backwards` so it never overrides their own transforms afterwards. */
   --animate-rise-in: rise-in 0.32s cubic-bezier(0, 0, 0.2, 1) backwards;
@@ -208,6 +212,7 @@
   --color-placeholder: #7d8798;
   --color-brand-text: #5fd4c4;
   --color-brand-soft: #123a36;
+  --color-brand-tint: #1b4d47;
   --color-coral-soft: #3a2024;
   --color-coral-strong: #ff8a8a;
   --color-amber-soft: #352b12;
