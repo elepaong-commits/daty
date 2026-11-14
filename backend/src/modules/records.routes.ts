@@ -3,7 +3,9 @@ import { z } from "zod";
 import { PlaceCategory, Prisma, RecordType } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { idParam } from "../lib/http.js";
+import { nicknameOf } from "../lib/feedback.js";
 import { prisma } from "../lib/prisma.js";
+import { notifyPartner } from "../lib/push.js";
 
 export const recordsRouter = Router();
 
@@ -34,6 +36,8 @@ const placeNote = z.string().trim().min(1).max(500).optional();
 const createBody = z.object({
   type: z.enum(RecordType),
   scheduledAt: z.iso.datetime({ offset: true }),
+  // When this stop ends (optional); together the day's records make the date's course.
+  endsAt: z.iso.datetime({ offset: true }).optional(),
   category: z.enum(PlaceCategory),
   ...placeFields,
   title: z.string().trim().min(1).max(100).optional(),
@@ -45,12 +49,18 @@ const createBody = z.object({
 const updateBody = z.object({
   type: z.enum(RecordType).optional(),
   scheduledAt: z.iso.datetime({ offset: true }).optional(),
+  endsAt: z.iso.datetime({ offset: true }).nullable().optional(),
   category: z.enum(PlaceCategory).optional(),
   ...placeFields,
   memo: z.string().trim().max(1000).nullable().optional(),
   placeNote,
   rating: z.number().int().min(1).max(5).nullable().optional(),
 });
+
+/** A stop ends after it starts. */
+function assertEndsAfter(scheduledAt: Date, endsAt: Date | null | undefined) {
+  if (endsAt && endsAt <= scheduledAt) throw new HttpError(400, "endsAt must be after scheduledAt", "ENDS_BEFORE_START");
+}
 
 type PlaceInput = z.infer<z.ZodObject<typeof placeFields>> & { category: PlaceCategory };
 
@@ -114,6 +124,8 @@ recordsRouter.post("/", async (req, res) => {
   if (!body.placeId && !body.placeName) {
     throw new HttpError(400, "placeId or placeName is required");
   }
+  const endsAt = body.endsAt ? new Date(body.endsAt) : undefined;
+  assertEndsAfter(new Date(body.scheduledAt), endsAt);
 
   const record = await prisma.$transaction(async (tx) => {
     const visited = body.type === RecordType.RECORD;
@@ -125,6 +137,7 @@ recordsRouter.post("/", async (req, res) => {
     return tx.dateRecord.create({
       data: {
         coupleId,
+        writerId: req.userId,
         placeId: place.id,
         type: body.type,
         title: body.title ?? place.name,
@@ -132,10 +145,22 @@ recordsRouter.post("/", async (req, res) => {
         category: body.category,
         rating: visited ? body.rating : undefined,
         scheduledAt: new Date(body.scheduledAt),
+        endsAt,
       },
       include: recordInclude,
     });
   });
+  const nickname = await nicknameOf(req.userId);
+  const planned = record.type === RecordType.PLAN;
+  notifyPartner(coupleId, req.userId, (locale) => ({
+    title:
+      locale === "ja"
+        ? `${nickname}さんが${planned ? "新しい予定を入れました" : "デートの記録を残しました"}`
+        : `${nickname}님이 ${planned ? "새 일정을 잡았어요" : "데이트 기록을 남겼어요"}`,
+    body: record.place?.name ?? record.title,
+    url: "/calendar",
+    tag: `record-${record.id}`,
+  }));
   res.status(201).json(record);
 });
 
@@ -148,6 +173,10 @@ recordsRouter.patch("/:id", async (req, res) => {
     const current = await tx.dateRecord.findFirst({ where: { id, coupleId }, include: { place: true } });
     if (!current) throw new HttpError(404, "Not Found");
     const type = body.type ?? current.type;
+    assertEndsAfter(
+      body.scheduledAt ? new Date(body.scheduledAt) : current.scheduledAt,
+      body.endsAt === undefined ? current.endsAt : body.endsAt === null ? null : new Date(body.endsAt),
+    );
     const category = body.category ?? current.category;
     const visited = type === RecordType.RECORD;
 
@@ -186,6 +215,7 @@ recordsRouter.patch("/:id", async (req, res) => {
         // Plans have no rating; a visit keeps its rating unless one is sent.
         rating: visited ? body.rating : null,
         scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : undefined,
+        endsAt: body.endsAt === undefined ? undefined : body.endsAt === null ? null : new Date(body.endsAt),
       },
       include: recordInclude,
     });

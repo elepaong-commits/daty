@@ -4,6 +4,7 @@ import { errorMessage } from '../lib/api'
 import { useT } from '../lib/i18n'
 import { useFeedback, useMe } from '../lib/queries'
 import type { Feedback, FeedbackTarget } from '../lib/types'
+import { useConfirm } from '../lib/confirm'
 
 /** The emoji the backend accepts (backend/src/lib/feedback.ts). */
 const EMOJIS = ['❤️', '😍', '😂', '🥹', '👍', '🔥']
@@ -20,6 +21,7 @@ interface Props {
 /** Emoji reactions and comments the two leave on a photo or a place memo. */
 export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = false }: Props) {
   const t = useT()
+  const confirm = useConfirm()
   const myId = useMe().data?.user.id
   const { react, comment, removeComment } = useFeedback(target)
   const [draft, setDraft] = useState('')
@@ -35,8 +37,8 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
     comment.mutate(content, { onSuccess: () => setDraft('') })
   }
 
-  function remove(commentId: number) {
-    if (window.confirm(t.feedback.confirmDelete)) removeComment.mutate(commentId)
+  async function remove(commentId: number) {
+    if (await confirm({ title: t.feedback.confirmDelete, confirmLabel: t.common.delete, danger: true })) removeComment.mutate(commentId)
   }
 
   return (
@@ -53,10 +55,10 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               disabled={react.isPending}
               aria-pressed={isMine}
               aria-label={t.feedback.react(emoji)}
-              className={`flex h-8 items-center gap-0.5 rounded-full px-2 text-[15px] leading-none transition-opacity ${
+              className={`ui-hit-y flex h-8 items-center gap-0.5 rounded-full px-2 text-[15px] leading-none transition-opacity ${
                 isMine
-                  ? dark ? 'bg-white text-ink' : 'bg-brand-soft ring-1 ring-brand'
-                  : dark ? 'bg-white/15' : 'bg-white/70'
+                  ? dark ? 'bg-surface text-ink' : 'bg-brand-soft ring-1 ring-brand'
+                  : dark ? 'bg-white/15' : 'bg-surface/70'
               } ${count === 0 ? 'opacity-55 hover:opacity-100' : ''}`}
             >
               {emoji}
@@ -65,7 +67,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
           )
         })}
         {collapsible && !open && (
-          <button type="button" onClick={() => setOpen(true)} className="ml-auto h-8 px-1 text-[12px] font-semibold text-muted">
+          <button type="button" onClick={() => setOpen(true)} className="ui-hit-y ml-auto h-8 px-1 text-[12px] font-semibold text-muted">
             {t.feedback.open(feedback.comments.length)}
           </button>
         )}
@@ -87,7 +89,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
                       onClick={() => remove(c.id)}
                       disabled={removeComment.isPending}
                       aria-label={t.feedback.deleteComment}
-                      className={`shrink-0 px-1 py-0.5 ${dark ? 'text-white/60' : 'text-muted'}`}
+                      className={`ui-hit shrink-0 px-1 py-0.5 ${dark ? 'text-white/60' : 'text-muted'}`}
                     >
                       <X size={13} strokeWidth={1.75} />
                     </button>
@@ -104,14 +106,14 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               placeholder={t.feedback.placeholder}
               aria-label={t.feedback.placeholder}
               className={`ui-prose h-9 min-w-0 flex-1 rounded-full px-3.5 text-[13px] outline-none retro:rounded-none ${
-                dark ? 'bg-white/15 text-white placeholder:text-white/50' : 'bg-white text-ink placeholder:text-faint'
+                dark ? 'bg-white/15 text-white placeholder:text-white/50' : 'bg-surface text-ink placeholder:text-faint'
               }`}
             />
             <button
               type="submit"
               disabled={!draft.trim() || comment.isPending}
               className={`h-9 shrink-0 rounded-full px-3.5 text-[13px] font-semibold disabled:opacity-40 retro:rounded-none ${
-                dark ? 'bg-white text-ink' : 'bg-brand text-white'
+                dark ? 'bg-surface text-ink' : 'bg-brand-strong text-white'
               }`}
             >
               {t.feedback.send}
@@ -119,7 +121,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
           </form>
         </>
       )}
-      {error && <p className={`text-[12px] ${dark ? 'text-coral' : 'text-coral-strong'}`}>{errorMessage(error, t)}</p>}
+      {error && <p className={`text-[12px] ${dark ? 'text-coral-strong' : 'text-coral-strong'}`}>{errorMessage(error, t)}</p>}
     </div>
   )
 }

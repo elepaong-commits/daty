@@ -16,6 +16,8 @@ const envSchema = z.object({
     ),
   // Signs session cookies. Generate with: openssl rand -base64 48
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
+  // New accounts. Closed unless "true": this is an app for two people, so open it only while someone signs up.
+  SIGNUP_ENABLED: z.stringbool().default(false),
   // Number of reverse proxies in front of the API (Nginx = 1), so rate limits see the real client IP.
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   // Cloudflare R2 (S3 API) for album photos. Leave all empty to run without photo uploads.
@@ -28,6 +30,9 @@ const envSchema = z.object({
   MAIL_FROM: z.string().optional(),
   // Where the frontend lives, for links in emails.
   APP_URL: z.url().optional(),
+  // Where alerts go (server errors, errors in the app, failed backups); needs the Resend settings above.
+  // Empty counts as unset, so the line copied from .env.example doesn't stop the server.
+  ADMIN_EMAIL: z.union([z.literal(""), z.email()]).optional().transform((v) => v || undefined),
   // Web push (VAPID). Generate a pair with: npx web-push generate-vapid-keys. Leave empty to run without notifications.
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),

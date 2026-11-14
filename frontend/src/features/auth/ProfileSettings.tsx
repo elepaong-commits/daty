@@ -48,18 +48,18 @@ export function ProfileSettings({ me }: { me: Me }) {
             setSaved(false)
             setOpen(true)
           }}
-          className="flex h-11 w-full items-center justify-between rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
+          className="flex h-11 w-full items-center justify-between ui-outline rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
         >
           {t.account.editProfile}
           <span className="text-muted">›</span>
         </button>
-        {saved && <p className="px-1 text-[12px] text-brand">{t.account.profileSaved}</p>}
+        {saved && <p className="px-1 text-[12px] text-brand-text">{t.account.profileSaved}</p>}
       </div>
     )
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+    <form onSubmit={submit} className="flex flex-col gap-3 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[14px] font-semibold">{t.account.editProfile}</p>
       <Field label={t.auth.nickname}>
         <input
@@ -91,7 +91,7 @@ export function ProfileSettings({ me }: { me: Me }) {
         <button
           type="submit"
           disabled={!canSubmit || pending}
-          className="h-11 flex-1 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+          className="h-11 flex-1 rounded-xl bg-brand-strong text-[14px] font-semibold text-white disabled:opacity-50"
         >
           {pending ? t.common.saving : t.common.saveChanges}
         </button>

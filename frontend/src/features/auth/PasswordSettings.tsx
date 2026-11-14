@@ -38,18 +38,18 @@ export function ChangePassword() {
             change.reset()
             setOpen(true)
           }}
-          className="flex h-11 w-full items-center justify-between rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
+          className="flex h-11 w-full items-center justify-between ui-outline rounded-2xl border border-card-border px-4 text-[14px] font-semibold"
         >
           {t.account.changePassword}
           <span className="text-muted">›</span>
         </button>
-        {change.isSuccess && <p className="px-1 text-[12px] text-brand">{t.account.passwordChanged}</p>}
+        {change.isSuccess && <p className="px-1 text-[12px] text-brand-text">{t.account.passwordChanged}</p>}
       </div>
     )
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+    <form onSubmit={submit} className="flex flex-col gap-3 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[14px] font-semibold">{t.account.changePassword}</p>
       <Field label={t.account.currentPassword}>
         <PasswordInput
@@ -78,7 +78,7 @@ export function ChangePassword() {
         <button
           type="submit"
           disabled={!canSubmit || change.isPending}
-          className="h-11 flex-1 rounded-xl bg-brand text-[14px] font-semibold text-white disabled:opacity-50"
+          className="h-11 flex-1 rounded-xl bg-brand-strong text-[14px] font-semibold text-white disabled:opacity-50"
         >
           {change.isPending ? t.common.wait : t.account.submitPassword}
         </button>
@@ -95,11 +95,11 @@ export function PartnerResetCode({ partnerName }: { partnerName: string }) {
   const expiresAt = issued && new Date(issued.expiresAt)
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-card-border p-4">
+    <div className="flex flex-col gap-2 ui-outline rounded-2xl border border-card-border p-4">
       <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.resetCodeTitle(partnerName)}</p>
       {issued && expiresAt ? (
         <>
-          <p className="rounded-xl bg-brand-soft px-4 py-3 text-center text-[22px] font-bold tracking-[6px] text-brand-strong select-all">
+          <p className="rounded-xl bg-brand-soft px-4 py-3 text-center text-[22px] font-bold tracking-[6px] text-brand-text select-all">
             {issued.code}
           </p>
           <p className="text-[12px] leading-normal text-muted">

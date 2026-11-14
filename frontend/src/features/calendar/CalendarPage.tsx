@@ -11,7 +11,8 @@ import { QueryState } from '../../components/Field'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { errorMessage } from '../../lib/api'
 import { addMonths, isSameDay, monthGrid, parseDateOnly, startOfDay, startOfMonth, toDateInput } from '../../lib/dates'
-import { useAddRecordToAlbum, useAlbums, useMonthRecords } from '../../lib/queries'
+import { useAddRecordToAlbum, useAlbums, useMe, useMonthRecords } from '../../lib/queries'
+import { milestonesOn, type Milestone } from '../../lib/anniversary'
 import type { DateRecord } from '../../lib/types'
 import type { NewAlbumDraft } from '../albums/CreateAlbumSheet'
 import { ScheduleSheet } from '../records/ScheduleSheet'
@@ -38,7 +39,8 @@ export function CalendarPage() {
     setMonth(startOfMonth(day))
     setSelected(day)
   }
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // Open with the start time to suggest (HH:MM), or `true` for the usual default.
+  const [sheetOpen, setSheetOpen] = useState<boolean | string>(false)
   const [editing, setEditing] = useState<DateRecord | null>(null)
   const [completed, setCompleted] = useState<DateRecord | null>(null)
   const navigate = useNavigate()
@@ -48,6 +50,8 @@ export function CalendarPage() {
   const completedDay = completed && toDateInput(new Date(completed.scheduledAt))
   const dayAlbum = completedDay ? albums.find((a) => !a.monthly && a.albumDate <= completedDay && completedDay <= a.albumEndDate) : undefined
   const { data: records = [], isLoading, error } = useMonthRecords(month)
+  const anniversaryDate = useMe().data?.couple?.anniversaryDate
+  const milestonesFor = (day: Date) => (anniversaryDate ? milestonesOn(anniversaryDate, toDateInput(day)) : [])
 
   const byDay = useMemo(() => {
     const map = new Map<string, DateRecord[]>()
@@ -89,13 +93,13 @@ export function CalendarPage() {
           title={t.dates.yearMonth(month)}
           actions={
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => goToMonth(today)} className="ui-btn-thin h-9 rounded-full bg-white px-3 text-[12px] font-semibold retro:mr-1.5 retro:font-normal">
+              <button type="button" onClick={() => goToMonth(today)} className="ui-btn-thin h-9 rounded-full bg-surface px-3 text-[12px] font-semibold retro:mr-1.5 retro:font-normal">
                 {t.calendar.today}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="ui-icon-button size-9 bg-white retro:mr-1.5" aria-label={t.calendar.prevMonth}>
+              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="ui-icon-button size-9 bg-surface retro:mr-1.5" aria-label={t.calendar.prevMonth}>
                 {retro ? <PixelSprite name="left" scale={2} /> : <img src={chevronLeft} alt="" width={16} height={16} />}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="ui-icon-button size-9 bg-white" aria-label={t.calendar.nextMonth}>
+              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="ui-icon-button size-9 bg-surface" aria-label={t.calendar.nextMonth}>
                 {retro ? <PixelSprite name="right" scale={2} /> : <img src={chevronRight} alt="" width={16} height={16} />}
               </button>
             </div>
@@ -104,7 +108,7 @@ export function CalendarPage() {
 
         {/* The day panel sits beside the month from xl; below it on narrower desktops so the cells keep their width. */}
         <div className="lg:px-5 xl:flex xl:items-start xl:gap-6">
-        <section className="ui-box mx-4 rounded-3xl bg-white p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
+        <section className="ui-box mx-4 rounded-3xl bg-surface p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
               {retro ? <span className="size-2 bg-brand" /> : <img src={markerRecord} alt="" width={8} height={8} />} {t.calendar.legendRecord}
@@ -119,7 +123,7 @@ export function CalendarPage() {
 
           <div className="grid grid-cols-7 pb-1 text-center text-[11px] leading-normal font-semibold">
             {t.weekdays.map((d, i) => (
-              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand' : ''}>
+              <span key={d} className={i === 0 ? 'text-coral-strong' : i === 6 ? 'text-brand-text' : ''}>
                 {d}
               </span>
             ))}
@@ -136,6 +140,7 @@ export function CalendarPage() {
                     isToday={isSameDay(day, today)}
                     isSelected={isSameDay(day, selected)}
                     records={byDay.get(toDateInput(day)) ?? []}
+                    milestones={milestonesFor(day)}
                     onSelect={() => setSelected(day)}
                   />
                 ))}
@@ -144,11 +149,11 @@ export function CalendarPage() {
           </div>
         </section>
 
-        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-white lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
+        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-surface lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
-            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} onEdit={setEditing} onComplete={setCompleted} />
+            <DayTimeline day={selected} today={today} records={byDay.get(toDateInput(selected)) ?? []} milestones={milestonesFor(selected)} onAddNext={(time) => setSheetOpen(time)} onEdit={setEditing} onComplete={setCompleted} />
           )}
         </div>
         </div>
@@ -158,7 +163,7 @@ export function CalendarPage() {
       <button
         type="button"
         onClick={() => setSheetOpen(true)}
-        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
+        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand-strong pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
       >
         {retro ? <PixelSprite name="plus" scale={2} /> : <span className="text-[24px] leading-none">+</span>}
         <span className="text-[16px] font-semibold retro:text-[13px]">{t.calendar.addSchedule}</span>
@@ -204,6 +209,7 @@ export function CalendarPage() {
         {sheetOpen && (
           <ScheduleSheet
             initialDate={selected}
+            initialTime={typeof sheetOpen === 'string' ? sheetOpen : undefined}
             onClose={() => setSheetOpen(false)}
             onSaved={(at) => {
               setMonth(startOfMonth(at))
@@ -222,6 +228,7 @@ function DayCell({
   isToday,
   isSelected,
   records,
+  milestones,
   onSelect,
 }: {
   day: Date
@@ -229,21 +236,24 @@ function DayCell({
   isToday: boolean
   isSelected: boolean
   records: DateRecord[]
+  /** 100th days and anniversaries, shown before the dates and taking one of their slots. */
+  milestones: Milestone[]
   onSelect: () => void
 }) {
   const t = useT()
   const isDesktop = useIsDesktop()
   const weekday = day.getDay()
   const numberColor = !inMonth
-    ? 'text-[rgba(203,213,224,0.6)]'
+    ? 'text-muted/35'
     : isSelected
       ? 'text-white'
       : weekday === 0
-        ? 'text-coral'
+        ? 'text-coral-strong'
         : weekday === 6
-          ? 'text-brand'
+          ? 'text-brand-text'
           : 'text-ink'
-  const visible = inMonth ? records.slice(0, isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) : []
+  const shownMilestones = inMonth ? milestones.slice(0, 1) : []
+  const visible = inMonth ? records.slice(0, (isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) - shownMilestones.length) : []
   const hidden = inMonth ? records.length - visible.length : 0
 
   return (
@@ -252,31 +262,40 @@ function DayCell({
       onClick={onSelect}
       disabled={!inMonth}
       aria-pressed={isSelected}
-      aria-label={t.calendar.dayLabel(t.dates.monthDay(day), records.length)}
+      aria-label={[t.calendar.dayLabel(t.dates.monthDay(day), records.length), ...milestones.map(t.calendar.milestone)].join(', ')}
       className={`ui-pop flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
         isSelected ? 'bg-brand-soft lg:border-brand' : 'lg:border-card-border'
       } ${inMonth && !isSelected ? 'lg:hover:bg-cream' : ''}`}
     >
       <span
         className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold lg:mx-0 ${numberColor} ${
-          isSelected ? 'bg-brand' : isToday ? 'ring-1 ring-brand' : ''
+          isSelected ? 'bg-brand-strong' : isToday ? 'ring-1 ring-brand' : ''
         }`}
       >
         {day.getDate()}
       </span>
+      {shownMilestones.map((m) => (
+        <span
+          key={`${m.kind}-${m.count}`}
+          className="h-4 truncate rounded bg-amber-soft px-1 text-left text-[10px] leading-4 font-bold text-amber-ink lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px]"
+        >
+          <span className="hidden lg:inline">♥ </span>
+          {t.calendar.milestone(m)}
+        </span>
+      ))}
       {visible.map((r) => (
         <span
           key={r.id}
-          className={`h-3.5 truncate rounded px-1 text-left text-[9px] leading-[1.556] font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
+          className={`h-4 truncate rounded px-1 text-left text-[10px] leading-4 font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
             r.type === 'RECORD'
-              ? 'border border-transparent bg-brand-soft text-brand-strong'
+              ? 'border border-transparent bg-brand-soft text-brand-text'
               : 'border border-coral/45 bg-coral-soft text-coral-strong'
           }`}
         >
           {r.place?.name ?? r.title}
         </span>
       ))}
-      {hidden > 0 && <span className="text-left text-[9px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
+      {hidden > 0 && <span className="text-left text-[10px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
     </button>
   )
 }

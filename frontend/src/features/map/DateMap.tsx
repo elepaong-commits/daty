@@ -9,13 +9,13 @@ import selectedHalo from '../../assets/icons/selected-halo.svg'
 import { PixelSprite } from '../../components/PixelSprite'
 import { categoryOf } from '../../lib/categories'
 import { MAP_ID, MAP_ID_RETRO, MAPS_API_KEY } from '../../lib/maps'
+import { HOME } from '../../lib/home'
 import { CATEGORY_SPRITES } from '../../lib/sprites'
 import { useIsRetro } from '../../lib/theme'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
 
-const SEOUL = { lat: 37.5563, lng: 126.9906 }
 const DEFAULT_ZOOM = 12
 const WORLD: [number, number, number, number] = [-180, -85, 180, 85]
 // Leave room for the place sheet that covers the bottom of the map (phones only).
@@ -32,12 +32,14 @@ interface Props {
 }
 
 export function DateMap(props: Props) {
+  // Where this device is, once the locate button has been used; it then follows along.
+  const [me, setMe] = useState<google.maps.LatLngLiteral | null>(null)
   const t = useT()
   const retro = useIsRetro()
   const mapId = (retro ? (MAP_ID_RETRO ?? MAP_ID) : MAP_ID) ?? 'DEMO_MAP_ID'
   if (!MAPS_API_KEY) {
     return (
-      <div className="flex size-full items-start justify-center bg-[#f1ebd6] pt-16 text-center text-[12px] text-muted">
+      <div className="flex size-full items-start justify-center bg-beige pt-16 text-center text-[12px] text-muted">
         {t.map.noApiKey[0]}
         <br />
         {t.map.noApiKey[1]}
@@ -50,7 +52,7 @@ export function DateMap(props: Props) {
       <Map
         key={mapId}
         mapId={mapId}
-        defaultCenter={SEOUL}
+        defaultCenter={HOME.center}
         defaultZoom={DEFAULT_ZOOM}
         disableDefaultUI
         gestureHandling="greedy"
@@ -63,8 +65,9 @@ export function DateMap(props: Props) {
         className="size-full"
       >
         <Pins {...props} />
+        {me && <MyLocation position={me} />}
       </Map>
-      <MapControls />
+      <MapControls onLocated={setMe} />
     </>
   )
 }
@@ -172,7 +175,7 @@ function ClusterPin({ count, status }: { count: number; status: PlaceStatus }) {
   return (
     <div
       className={`flex items-center justify-center rounded-full font-display text-[15px] leading-none shadow-md ${
-        status === 'VISITED' ? 'border-3 border-white bg-brand text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
+        status === 'VISITED' ? 'border-3 border-white bg-brand-strong text-white' : 'border-2 border-coral bg-coral-soft text-coral-strong'
       }`}
       style={{ width: size, height: size, transform: 'translateY(50%)' }}
     >
@@ -191,14 +194,14 @@ function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; 
       {selected && <img src={selectedHalo} alt="" width={53.5} height={53.5} className="absolute -top-1.5 -left-1.5 max-w-none" />}
       <div
         className={`absolute inset-0 -rotate-45 rounded-t-full rounded-br-full ${
-          visited ? 'border-3 border-white bg-brand' : 'border-2 border-coral bg-coral-soft'
+          visited ? 'border-3 border-white bg-brand-strong' : 'border-2 border-coral bg-coral-soft'
         }`}
       />
       <span className={`absolute inset-0 flex items-center justify-center ${visited ? 'text-white' : 'text-coral-strong'}`}>
         <Icon size={selected ? 18 : 15} strokeWidth={2} />
       </span>
       {selected && (
-        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-night px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
           {place.name}
         </span>
       )}
@@ -212,7 +215,7 @@ function RetroClusterPin({ count, status }: { count: number; status: PlaceStatus
   return (
     <div
       className={`flex items-center justify-center font-pixel-head text-[15px] leading-none pixel-box pixel-crisp ${
-        status === 'VISITED' ? 'bg-brand text-white' : 'bg-coral-soft text-coral-strong [--pixel-border:var(--color-coral-strong)]'
+        status === 'VISITED' ? 'bg-brand-strong text-white' : 'bg-coral-soft text-coral-strong [--pixel-border:var(--color-coral-strong)]'
       }`}
       style={{ width: size, height: size, transform: 'translateY(50%)' }}
     >
@@ -233,7 +236,7 @@ function RetroPlacePin({ place, dimmed, selected }: { place: Place; dimmed: bool
         <PixelSprite name={CATEGORY_SPRITES[place.category]} scale={selected ? 3 : 2} />
       </span>
       {selected && (
-        <span className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 bg-white px-2 py-1 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-box pixel-thin pixel-crisp">
+        <span className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 bg-surface px-2 py-1 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-box pixel-thin pixel-crisp">
           {place.name}
         </span>
       )}
@@ -241,17 +244,48 @@ function RetroPlacePin({ place, dimmed, selected }: { place: Place; dimmed: bool
   )
 }
 
-function MapControls() {
+/** The blue dot: where this device is. */
+function MyLocation({ position }: { position: google.maps.LatLngLiteral }) {
+  const t = useT()
+  return (
+    <AdvancedMarker position={position} zIndex={1000} title={t.map.myLocation}>
+      <span className="relative flex size-5 translate-y-1/2 items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-brand/30 motion-safe:animate-ping retro:rounded-none retro:animate-none" />
+        <span className="relative size-3.5 rounded-full border-2 border-white bg-brand-strong shadow-md retro:rounded-none retro:border-0 retro:pixel-outline retro:pixel-thin" />
+      </span>
+    </AdvancedMarker>
+  )
+}
+
+function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLiteral) => void }) {
   const t = useT()
   const retro = useIsRetro()
   const map = useMap()
+  const watching = useRef<number | null>(null)
   const zoom = (delta: number) => map?.setZoom((map.getZoom() ?? 12) + delta)
-  const locate = () =>
-    navigator.geolocation?.getCurrentPosition(({ coords }) => map?.panTo({ lat: coords.latitude, lng: coords.longitude }))
+  // Moves the map to where the device is, then keeps the dot following it while the map is open.
+  const locate = () => {
+    const geo = navigator.geolocation
+    if (!geo) return
+    geo.getCurrentPosition(({ coords }) => {
+      const here = { lat: coords.latitude, lng: coords.longitude }
+      onLocated(here)
+      map?.panTo(here)
+    })
+    watching.current ??= geo.watchPosition(({ coords }) => onLocated({ lat: coords.latitude, lng: coords.longitude }), undefined, {
+      maximumAge: 30_000,
+    })
+  }
+  useEffect(
+    () => () => {
+      if (watching.current !== null) navigator.geolocation.clearWatch(watching.current)
+    },
+    [],
+  )
 
   return (
     <>
-      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 lg:retro:top-5 lg:retro:left-5">
+      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-surface/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 lg:retro:top-5 lg:retro:left-5">
         <span className="flex items-center gap-1 retro:gap-1.5">
           {retro ? <span className="size-2 bg-brand" /> : <img src={dotVisited} alt="" width={10} height={10} />} {t.status.VISITED}
         </span>
@@ -260,7 +294,7 @@ function MapControls() {
         </span>
       </div>
       {/* One rounded block in the classic design; two separate pixel buttons in the pixel one. */}
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white lg:top-4 lg:right-4 lg:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none lg:retro:top-5 lg:retro:right-5">
+      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-surface lg:top-4 lg:right-4 lg:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none lg:retro:top-5 lg:retro:right-5">
         <button type="button" onClick={() => zoom(1)} className="ui-float-button flex size-9 items-center justify-center retro:size-8" aria-label={t.map.zoomIn}>
           {retro ? <PixelSprite name="plus" scale={2} /> : <Plus size={18} strokeWidth={1.75} />}
         </button>

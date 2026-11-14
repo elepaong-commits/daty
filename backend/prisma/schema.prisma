@@ -142,6 +142,8 @@ model DateRecord {
   category    PlaceCategory
   rating      Int?          @db.SmallInt // 1~5, CHECK는 마이그레이션 SQL로
   scheduledAt DateTime      @map("scheduled_at") @db.Timestamptz(3)
+  // When this stop of the date ends, if set; a day's records in time order make its course. CHECK: after scheduledAt
+  endsAt      DateTime?     @map("ends_at") @db.Timestamptz(3)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   couple      Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
@@ -183,6 +185,7 @@ model Photo {
   mediaType    MediaType @default(PHOTO) @map("media_type")
   durationSec  Float?    @map("duration_sec") // 동영상 길이. 브라우저가 못 읽은 동영상은 null
   sizeBytes    BigInt?   @map("size_bytes") // 원본 + 썸네일의 R2 용량. 예전 사진은 null이고 용량을 볼 때 채운다
+  caption      String?   @db.VarChar(300) // 사진 한 장에 붙인 짧은 설명
   fingerprint  String?   // 올리기 전 원본 파일의 SHA-256(크기·앞뒤 1MB). 같은 앨범에 같은 파일을 두 번 넣지 않는다
   createdAt    DateTime  @default(now()) @map("created_at")
   album        Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)

@@ -76,3 +76,28 @@ test("the album and the place carry the feedback, and deleting them takes it alo
   assert.equal(await prisma.comment.count(), 0);
   assert.equal(await prisma.reaction.count(), 0);
 });
+
+test("a memo is edited or deleted only by whoever wrote it", async () => {
+  const place = await a.ok("POST", "/places", { name: "Memo bar", category: "FOOD" });
+  const note = await a.ok("POST", `/places/${place.id}/notes`, { content: "Mine" });
+  const path = `/places/${place.id}/notes/${note.id}`;
+
+  const edit = await b.request("PATCH", path, { content: "Not yours" });
+  assert.equal(edit.status, 403);
+  assert.equal(edit.body.code, "NOT_WRITER");
+  assert.equal((await b.request("DELETE", path)).body.code, "NOT_WRITER");
+
+  const edited = await a.ok("PATCH", path, { content: "  Mine, edited  " });
+  assert.equal(edited.content, "Mine, edited");
+  assert.equal(edited.writer.nickname, "a");
+  assert.equal((await a.request("DELETE", path)).status, 204);
+});
+
+test("a memo whose writer is gone can be deleted by either partner, not rewritten", async () => {
+  const place = await a.ok("POST", "/places", { name: "Orphan bar", category: "FOOD" });
+  const note = await a.ok("POST", `/places/${place.id}/notes`, { content: "Orphaned" });
+  await prisma.placeNote.update({ where: { id: note.id }, data: { writerId: null } });
+  const path = `/places/${place.id}/notes/${note.id}`;
+  assert.equal((await b.request("PATCH", path, { content: "Taken over" })).status, 403);
+  assert.equal((await b.request("DELETE", path)).status, 204);
+});

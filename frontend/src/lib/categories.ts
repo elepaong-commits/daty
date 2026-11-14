@@ -26,7 +26,7 @@ export const categoryOf = (value: PlaceCategory) => byValue[value]
 export const TIP_CLASSES: Record<TipType, string> = {
   EAT: 'bg-coral-soft text-coral-strong',
   SEE: 'bg-amber-soft text-amber-strong',
-  DO: 'bg-brand-soft text-brand-strong',
+  DO: 'bg-brand-soft text-brand-text',
 }
 
 // Placeholder photo stacks until real photos are uploaded (gradients from the design).

@@ -20,25 +20,29 @@ import type { PickedPlace } from '../../lib/places'
 import { SavedPlacePicker } from './SavedPlacePicker'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
+import { useConfirm } from '../../lib/confirm'
 
 interface Props {
   /** Editing an existing record; without it the sheet creates a new one on `initialDate`. */
   record?: DateRecord
   initialDate?: Date
+  /** Start time (HH:MM) for a new record, e.g. when the day's previous stop ends. */
+  initialTime?: string
   onClose: () => void
   onSaved?: (scheduledAt: Date) => void
 }
 
 const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: string }[] = [
-  { value: 'PLAN', key: 'plan', activeClass: 'text-coral' },
-  { value: 'RECORD', key: 'record', activeClass: 'text-brand' },
+  { value: 'PLAN', key: 'plan', activeClass: 'text-coral-strong' },
+  { value: 'RECORD', key: 'record', activeClass: 'text-brand-text' },
 ]
 
 /** Where the record happens: one of the couple's saved places, or a new one from Google. */
 type PlaceSource = 'saved' | 'new'
 
-export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSaved }: Props) {
+export function ScheduleSheet({ record, initialDate = new Date(), initialTime = '18:00', onClose, onSaved }: Props) {
   const t = useT()
+  const confirm = useConfirm()
   const retro = useIsRetro()
   const editing = record !== undefined
   const createRecord = useCreateRecord()
@@ -49,7 +53,11 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
 
   const [type, setType] = useState<RecordType>(record?.type ?? 'PLAN')
   const [date, setDate] = useState(toDateInput(at ?? initialDate))
-  const [time, setTime] = useState(at ? toTimeInput(at) : '18:00')
+  const [time, setTime] = useState(at ? toTimeInput(at) : initialTime)
+  const [endTime, setEndTime] = useState(record?.endsAt ? toTimeInput(new Date(record.endsAt)) : '')
+  // The end is on the same day as the start.
+  const endsAt = endTime && date && time ? fromInputs(date, endTime) : null
+  const endsBeforeStart = endsAt !== null && endsAt <= fromInputs(date, time)
   // Until chosen: saved places when there are any (a record whose place was deleted starts as new).
   const [source, setSource] = useState<PlaceSource | null>(record ? (record.placeId ? 'saved' : 'new') : null)
   const [savedId, setSavedId] = useState<number | null>(record?.placeId ?? null)
@@ -66,7 +74,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
   const mutation = editing ? updateRecord : createRecord
   const busy = mutation.isPending || deleteRecord.isPending
   const hasPlace = placeSource === 'saved' ? savedId !== null : placeName.trim() !== ''
-  const canSave = hasPlace && date !== '' && time !== '' && !busy
+  const canSave = hasPlace && date !== '' && time !== '' && !endsBeforeStart && !busy
   const error = mutation.error ?? deleteRecord.error
   const latestPlaceNote = placeSource === 'saved' ? places.find((p) => p.id === savedId)?.latestNote : null
 
@@ -96,6 +104,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         {
           type,
           scheduledAt: scheduledAt.toISOString(),
+          endsAt: endsAt?.toISOString() ?? null,
           category,
           memo: content || null,
           placeNote,
@@ -111,6 +120,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
       {
         type,
         scheduledAt: scheduledAt.toISOString(),
+        endsAt: endsAt?.toISOString(),
         category,
         ...(placeSource === 'saved' ? { placeId: savedId! } : newPlace),
         memo: content || undefined,
@@ -121,8 +131,9 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
     )
   }
 
-  function remove() {
-    if (record && window.confirm(t.schedule.confirmDelete)) deleteRecord.mutate(record.id, { onSuccess: onClose })
+  async function remove() {
+    if (record && (await confirm({ title: t.schedule.confirmDelete, confirmLabel: t.common.delete, danger: true })))
+      deleteRecord.mutate(record.id, { onSuccess: onClose })
   }
 
   return (
@@ -137,7 +148,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
               aria-checked={type === option.value}
               onClick={() => setType(option.value)}
               className={`ui-seg-option flex-1 rounded-xl text-[14px] leading-normal font-semibold retro:text-[13px] ${
-                type === option.value ? `bg-white ${option.activeClass}` : 'text-ink'
+                type === option.value ? `bg-surface ${option.activeClass}` : 'text-ink'
               }`}
             >
               {t.schedule[option.key]}
@@ -153,6 +164,22 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             <PickerInput type="time" value={time} onChange={setTime} icon={editing ? clockOutlineIcon : clockIcon} />
           </Field>
         </div>
+        <div className="flex items-end gap-3 pb-4">
+          <Field label={t.schedule.endTime} className="flex-1">
+            <PickerInput type="time" value={endTime} onChange={setEndTime} icon={editing ? clockOutlineIcon : clockIcon} required={false} />
+          </Field>
+          <div className="flex min-h-11 flex-1 items-center">
+            {endsBeforeStart ? (
+              <p className="text-[12px] text-coral-strong">{t.schedule.endBeforeStart}</p>
+            ) : (
+              endTime && (
+                <button type="button" onClick={() => setEndTime('')} className="text-[12px] text-muted underline">
+                  {t.schedule.clearEndTime}
+                </button>
+              )
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[12px] leading-normal font-semibold text-muted">{t.schedule.place}</span>
@@ -164,7 +191,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
                 role="radio"
                 aria-checked={placeSource === value}
                 onClick={() => setSource(value)}
-                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-white text-brand' : 'text-ink'}`}
+                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
               >
                 {t.schedule.placeSource[value]}
               </button>
@@ -271,13 +298,13 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
         {editing ? (
           <>
             <div className="flex gap-3 pt-5">
-              <button type="button" onClick={onClose} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-white retro:text-[14px]">
+              <button type="button" onClick={onClose} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-surface retro:text-[14px]">
                 {t.common.cancel}
               </button>
               <button
                 type="submit"
                 disabled={!canSave}
-                className="ui-btn h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+                className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-button disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
               >
                 {updateRecord.isPending ? t.common.saving : t.common.saveChanges}
               </button>
@@ -291,7 +318,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), onClose, onSav
             <button
               type="submit"
               disabled={!canSave}
-              className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
             >
               {createRecord.isPending ? t.common.saving : t.schedule.save}
             </button>
@@ -308,16 +335,18 @@ function PickerInput({
   value,
   onChange,
   icon,
+  required = true,
 }: {
   type: 'date' | 'time'
   value: string
   onChange: (value: string) => void
   icon: string
+  required?: boolean
 }) {
   return (
     <div className={`${inputClass} relative flex items-center justify-between focus-within:border-brand`}>
       <input
-        required
+        required={required}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

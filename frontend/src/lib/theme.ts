@@ -5,7 +5,7 @@ export const THEMES: Theme[] = ['classic', 'retro']
 
 const STORAGE_KEY = 'daty.theme'
 
-/** The design picked on this device, or null before the first pick (the start screen asks). */
+/** The design picked on this device, or null before any pick (the classic design is shown then). */
 function savedTheme(): Theme | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -35,7 +35,7 @@ export function applyTheme(theme: Theme | null) {
   else delete document.documentElement.dataset.theme
 }
 
-export const ThemeContext = createContext<{ theme: Theme; chosen: boolean; setTheme: (theme: Theme) => void } | null>(null)
+export const ThemeContext = createContext<{ theme: Theme; setTheme: (theme: Theme) => void } | null>(null)
 
 export function useTheme() {
   const value = use(ThemeContext)

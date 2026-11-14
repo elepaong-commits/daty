@@ -7,6 +7,14 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="daty" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // iOS Safari zooms in on any input under 16px when it gets focus, and our inputs are 12–14px (the pixel
+      // design's bitmap font only looks right at its own sizes). On iOS `maximum-scale` stops only that
+      // auto-zoom — pinch zoom still works there — so it is added for iOS alone; elsewhere it would block pinch zoom.
+      if (/iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)) {
+        document.querySelector('meta[name="viewport"]').content += ', maximum-scale=1'
+      }
+    </script>
     <meta name="theme-color" content="#FBF8EC" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -5,7 +5,7 @@ import type { PlaceCategory } from './types'
  * is a colour token from `index.css`; `x` is left for the caller to fill (e.g. a pin's status colour).
  */
 export const SPRITE_PALETTE: Record<string, string> = {
-  k: 'var(--color-ink)',
+  k: 'var(--color-night)',
   w: '#fff',
   y: 'var(--color-cream)',
   t: 'var(--color-brand)',

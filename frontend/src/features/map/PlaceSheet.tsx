@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
+
+const DRAG_THRESHOLD = 30
 import { useNavigate } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { MemoText } from '../../components/Memo'
@@ -24,6 +26,29 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
   const t = useT()
   const [expanded, setExpanded] = useState(false)
   const cardRefs = useRef(new Map<number, HTMLElement>())
+  // The handle and heading pull the sheet: up opens the full list, down closes it, a tap toggles it.
+  const dragStart = useRef<number | null>(null)
+  const drag = {
+    onPointerDown: (e: PointerEvent) => {
+      // A press on the heading's own button is a click on it, not a pull.
+      const button = (e.target as Element).closest('button')
+      if (button && button !== e.currentTarget) return
+      dragStart.current = e.clientY
+      // Keep the release here even when the finger ends up outside.
+      e.currentTarget.setPointerCapture(e.pointerId)
+    },
+    onPointerUp: (e: PointerEvent) => {
+      if (dragStart.current === null) return
+      const moved = e.clientY - dragStart.current
+      dragStart.current = null
+      if (Math.abs(moved) > DRAG_THRESHOLD) setExpanded(moved < 0)
+      // Only the handle toggles on a tap; the heading's own button does that for itself.
+      else if (e.currentTarget.tagName === 'BUTTON') setExpanded((open) => !open)
+    },
+    onPointerCancel: () => {
+      dragStart.current = null
+    },
+  }
 
   // Bring the card for a tapped pin into view.
   useEffect(() => {
@@ -34,19 +59,26 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
     <section
       className={`ui-sheet absolute inset-x-0 bottom-0 flex flex-col ${expanded ? 'top-0' : 'h-[238px]'}`}
     >
-      <button type="button" onClick={() => setExpanded((e) => !e)} className="flex justify-center pt-2.5 pb-1" aria-label={expanded ? t.map.collapseList : t.map.expandList}>
+      <button
+        type="button"
+        {...drag}
+        // Keyboard and screen readers; pointer taps are handled with the drag.
+        onClick={(e) => e.detail === 0 && setExpanded((open) => !open)}
+        className="flex touch-none justify-center pt-2.5 pb-1"
+        aria-label={expanded ? t.map.collapseList : t.map.expandList}
+      >
         <span className="h-1.5 w-10 rounded-full bg-handle retro:rounded-none" />
       </button>
-      <div className="flex items-center justify-between px-5 pb-2.5">
+      <div {...drag} className="flex touch-none items-center justify-between px-5 pb-2.5">
         <h2 className="ui-heading">
           {t.map.sheetHeading[status][0]}
-          <span className="text-brand">{places.length}</span>
+          <span className="text-brand-text">{places.length}</span>
           {t.map.sheetHeading[status][1]}
         </h2>
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className="ui-label text-[12px] font-semibold text-brand retro:text-[11px] retro:text-brand-strong"
+          className="ui-label text-[12px] font-semibold text-brand-text retro:text-[11px] retro:text-brand-text"
         >
           {expanded ? t.map.viewMap : t.map.viewAll}
         </button>
@@ -81,6 +113,7 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
                 setExpanded(false) // the full list covers the map; drop back to the card row so the pan is visible
               }}
               className={expanded ? 'w-full' : 'w-[325px] max-w-[85%] snap-start'}
+              hint
             />
           ))}
         </div>
@@ -113,7 +146,7 @@ export function PlaceList({
     <section className="flex min-h-0 flex-1 flex-col">
       <h2 className="ui-heading px-5 pt-1 pb-2.5">
         {t.map.sheetHeading[status][0]}
-        <span className="text-brand">{places.length}</span>
+        <span className="text-brand-text">{places.length}</span>
         {t.map.sheetHeading[status][1]}
       </h2>
       {places.length === 0 ? (
@@ -147,9 +180,12 @@ function PlaceCard({
   className,
   index,
   ref,
+  hint = false,
 }: {
   place: Place
   selected: boolean
+  /** Says that a second tap opens the place (the sheet's cards; on desktop one click does). */
+  hint?: boolean
   onClick: () => void
   className: string
   /** Position in the list, for the order the cards rise in. */
@@ -188,6 +224,7 @@ function PlaceCard({
         )}
       </div>
       {place.latestNote && <MemoText content={place.latestNote} className="w-full truncate text-[12.5px] leading-[1.75]" />}
+      {selected && hint && <span className="text-[12px] font-semibold text-brand-text">{t.map.openHint}</span>}
     </button>
   )
 }

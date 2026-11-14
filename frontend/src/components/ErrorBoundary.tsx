@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { useT } from '../lib/i18n'
+import { reportError } from '../lib/reportError'
 
 function CrashScreen() {
   const t = useT()
@@ -9,7 +10,7 @@ function CrashScreen() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="h-[44px] rounded-full bg-brand px-6 text-[14px] font-bold text-white hover:bg-brand-strong"
+        className="h-[44px] rounded-full bg-brand-strong px-6 text-[14px] font-bold text-white hover:bg-brand-deep"
       >
         {t.common.reload}
       </button>
@@ -27,6 +28,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { crashed:
 
   componentDidCatch(error: unknown) {
     console.error(error)
+    reportError(error)
   }
 
   render() {

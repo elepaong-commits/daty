@@ -1,5 +1,6 @@
 import globeIcon from '../assets/icons/globe.svg'
 import { LANGS, useI18n, useT } from '../lib/i18n'
+import { COLOR_MODES, useColorMode } from '../lib/colorMode'
 import { THEMES, useTheme } from '../lib/theme'
 
 export function LanguageToggle() {
@@ -32,6 +33,21 @@ export function ThemeToggle() {
       {THEMES.map((value) => (
         <button key={value} type="button" onClick={() => setTheme(value)} aria-pressed={theme === value} className="ui-segment-option">
           {t.theme.names[value]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Light, dark, or following the system, on this device. */
+export function ColorModeToggle() {
+  const t = useT()
+  const [mode, setMode] = useColorMode()
+  return (
+    <div className="ui-segment" role="group" aria-label={t.theme.modeLabel}>
+      {COLOR_MODES.map((value) => (
+        <button key={value} type="button" onClick={() => setMode(value)} aria-pressed={mode === value} className="ui-segment-option">
+          {t.theme.modes[value]}
         </button>
       ))}
     </div>

@@ -24,6 +24,12 @@ export async function startSession(res: Response, userId: number) {
   res.cookie(SESSION_COOKIE, token, { ...cookieOptions, maxAge: MAX_AGE_SECONDS * 1000 });
 }
 
+// Sessions slide: one older than this is reissued for another full 30 days on the next request,
+// so using the app at least once a month keeps you logged in. Once a day keeps Set-Cookie off most responses.
+const RENEW_AFTER_MS = 24 * 60 * 60 * 1000;
+
+export const sessionNeedsRenewal = (issuedAt: number, now = Date.now()) => now - issuedAt > RENEW_AFTER_MS;
+
 export function endSession(res: Response) {
   res.clearCookie(SESSION_COOKIE, cookieOptions);
 }

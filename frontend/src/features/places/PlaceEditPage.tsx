@@ -15,6 +15,7 @@ import type { PlaceDetail, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsRetro } from '../../lib/theme'
 import type { MapFocus } from '../map/MapPage'
+import { useConfirm } from '../../lib/confirm'
 
 export function PlaceEditPage() {
   const id = Number(useParams().id)
@@ -38,6 +39,7 @@ export function PlaceEditPage() {
 
 function PlaceEditForm({ place }: { place: PlaceDetail }) {
   const t = useT()
+  const confirm = useConfirm()
   const retro = useIsRetro()
   const navigate = useNavigate()
   const updatePlace = useUpdatePlace(place.id)
@@ -77,8 +79,9 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
     )
   }
 
-  function remove() {
-    if (window.confirm(t.place.confirmDelete)) deletePlace.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
+  async function remove() {
+    if (await confirm({ title: t.place.confirmDelete, message: t.place.confirmDeleteBody, confirmLabel: t.common.delete, danger: true }))
+      deletePlace.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
   return (
@@ -91,7 +94,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
       />
 
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 retro:pt-1">
-        <div className="ui-box-thin flex flex-col gap-4 rounded-3xl bg-white p-4">
+        <div className="ui-box-thin flex flex-col gap-4 rounded-3xl bg-surface p-4">
           <div className="ui-seg flex h-11 gap-2 rounded-2xl bg-sand-soft p-1" role="radiogroup" aria-label={t.place.visitStatus}>
             {(['VISITED', 'WISH'] as const).map((value) => (
               <button
@@ -100,7 +103,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                 role="radio"
                 aria-checked={status === value}
                 onClick={() => setStatus(value)}
-                className={`ui-seg-option flex flex-1 items-center justify-center gap-1 rounded-xl text-[13px] font-semibold retro:text-[12px] ${status === value ? 'bg-brand text-white' : 'text-ink'}`}
+                className={`ui-seg-option flex flex-1 items-center justify-center gap-1 rounded-xl text-[13px] font-semibold retro:text-[12px] ${status === value ? 'bg-brand-strong text-white' : 'text-ink'}`}
               >
                 {!retro && (value === 'VISITED' ? <Check size={14} strokeWidth={1.75} /> : <Heart size={14} strokeWidth={1.75} />)} {t.status[value]}
               </button>
@@ -123,8 +126,8 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                     onClick={() => setCategory(value)}
                     className={`ui-pop flex h-[34px] items-center gap-1 rounded-full border px-3 text-[12px] font-semibold retro:h-8 retro:border-0 retro:font-normal retro:pixel-outline retro:pixel-thin ${
                       category === value
-                        ? 'border-brand bg-brand text-white retro:bg-brand-soft retro:text-brand-strong retro:[--pixel-border:var(--color-brand)]'
-                        : 'border-field-border bg-white retro:[--pixel-border:var(--color-handle)]'
+                        ? 'border-brand bg-brand-strong text-white retro:bg-brand-soft retro:text-brand-text retro:[--pixel-border:var(--color-brand)]'
+                        : 'border-field-border bg-surface retro:[--pixel-border:var(--color-handle)]'
                     }`}
                   >
                     <CategoryIcon category={value} /> {t.categories[value]}
@@ -166,7 +169,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
           {visited && (
             <div className="flex flex-col gap-[5px]">
               <span className="text-[12px] font-semibold text-muted">{t.common.ourRating}</span>
-              <div className="flex h-12 items-center gap-3 rounded-xl border border-field-border bg-field px-3 retro:border-0 retro:bg-white retro:pixel-field">
+              <div className="flex h-12 items-center gap-3 rounded-xl border border-field-border bg-field px-3 retro:border-0 retro:bg-surface retro:pixel-field">
                 <div className="flex flex-1" role="radiogroup" aria-label={t.common.rating}>
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -176,7 +179,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                       aria-checked={rating === n}
                       aria-label={t.common.points(n)}
                       onClick={() => setRating(n)}
-                      className={`ui-pop ${rating !== null && n <= rating ? 'text-[#eaa300]' : 'text-chip-border'}`}
+                      className={`ui-pop ${rating !== null && n <= rating ? 'text-amber' : 'text-chip-border'}`}
                     >
                       {retro ? (
                         <PixelSprite name={rating !== null && n <= rating ? 'star' : 'starOff'} scale={3} className="mr-1" />
@@ -201,13 +204,13 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
 
         <div className="mt-auto pt-[18px] pb-5">
           <div className="flex gap-3">
-            <button type="button" onClick={close} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-white retro:text-[14px]">
+            <button type="button" onClick={close} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-surface retro:text-[14px]">
               {t.common.cancel}
             </button>
             <button
               type="submit"
               disabled={!canSave}
-              className="ui-btn h-12 flex-1 rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-[0_6px_14px_rgba(0,168,150,0.25)] disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
+              className="ui-btn h-12 flex-1 rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-button disabled:opacity-50 retro:mb-1.5 retro:text-[14px]"
             >
               {updatePlace.isPending ? t.common.saving : t.common.saveChanges}
             </button>

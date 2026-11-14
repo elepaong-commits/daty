@@ -14,7 +14,7 @@ export function PlaceVisits({ place }: { place: PlaceDetail }) {
   const many = place.visits.length > 1
 
   return (
-    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-white p-3">
+    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-surface p-3">
       <div className="flex gap-4">
         <div className="flex flex-1 flex-col gap-[3px]">
           <span className="text-[11px] text-muted">{many ? t.place.lastVisitedDate : t.place.visitedDate}</span>

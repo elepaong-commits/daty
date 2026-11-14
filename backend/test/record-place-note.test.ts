@@ -64,3 +64,16 @@ test("a blank place memo is refused", async () => {
   const res = await a.request("POST", "/records", { ...plan, placeName: "Blank Cafe", placeNote: "   " });
   assert.equal(res.status, 400);
 });
+
+test("a stop can have an end time, after its start", async () => {
+  const at = "2026-12-24T14:00:00+09:00";
+  const course = { type: "PLAN", category: "CAFE", placeName: "Course cafe" };
+  const stop = await a.ok("POST", "/records", { ...course, scheduledAt: at, endsAt: "2026-12-24T16:00:00+09:00" });
+  assert.equal(stop.endsAt, "2026-12-24T07:00:00.000Z");
+  const early = await a.request("POST", "/records", { ...course, scheduledAt: at, endsAt: at });
+  assert.equal(early.body.code, "ENDS_BEFORE_START");
+  // Moving the start past the kept end is refused too; clearing the end is fine.
+  const late = await a.request("PATCH", `/records/${stop.id}`, { scheduledAt: "2026-12-24T17:00:00+09:00" });
+  assert.equal(late.body.code, "ENDS_BEFORE_START");
+  assert.equal((await a.ok("PATCH", `/records/${stop.id}`, { endsAt: null })).endsAt, null);
+});

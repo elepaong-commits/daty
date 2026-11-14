@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError, ImageError, uploadToStorage } from './api'
+import { api, ApiError, ImageError, uploadToStorage, withRetry } from './api'
 import { fileFingerprint } from './fingerprint'
-import { prepareImage } from './images'
+import { prepareImage, prepareAvatar } from './images'
 import { isVideoFile, prepareVideo, videoContentType } from './videos'
-import type { Album, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
+import type { Album, AlbumBase, Feedback, FeedbackTarget, Me, PlaceDetail, UpdateAlbumInput, UpdatePlaceInput, UpdateRecordInput } from './types'
 import { addDays, addMonths, parseDateOnly, startOfMonth } from './dates'
 import { keepScreenOn } from './wakeLock'
+import { clearOfflineData } from './offline'
 
 export const keys = {
   me: ['me'] as const,
@@ -45,6 +46,8 @@ function useMeMutation<TInput>(mutationFn: (input: TInput) => Promise<Me>) {
 
 export const useLogin = () => useMeMutation(api.login)
 export const useSignup = () => useMeMutation(api.signup)
+/** Signup is closed on the server unless it was opened for someone new; the login screen hides it then. */
+export const useSignupOpen = () => useQuery({ queryKey: ['signup'], queryFn: api.signupStatus, staleTime: Infinity, select: (s) => s.open })
 export const useCreateCouple = () => useMeMutation(api.createCouple)
 export const useJoinCouple = () => useMeMutation(api.joinCouple)
 export const useResetPassword = () => useMeMutation(api.resetPassword)
@@ -62,21 +65,59 @@ export function useUpdateMe() {
 }
 
 export const useUpdateCouple = () => useMeMutation(api.updateCouple)
+
+/** Shrinks the picked photo, puts it straight into storage and makes it the profile photo. */
+export const useSetAvatar = () =>
+  useMeMutation(async (file: File) => {
+    const blob = await prepareAvatar(file)
+    const upload = await withRetry(api.avatarUpload)
+    await withRetry(() => uploadToStorage(upload, blob))
+    return api.setAvatar(upload.key)
+  })
+export const useRemoveAvatar = () => useMeMutation(api.removeAvatar)
 export const useChangePassword = () => useMutation({ mutationFn: api.changePassword })
 export const useForgotPassword = () => useMutation({ mutationFn: api.forgotPassword })
 export const useIssueResetCode = () => useMutation({ mutationFn: api.issueResetCode })
 
+/**
+ * Sets `me` and drops every other cached screen, so what comes next never shows the previous
+ * couple's data. `me` is flipped in place (clear() would detach the gate watching it).
+ */
+function useSwitchMe() {
+  const queryClient = useQueryClient()
+  return (me: Me | null) => {
+    clearOfflineData()
+    queryClient.setQueryData(keys.me, me)
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+  }
+}
+
 export function useLogout() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.logout, onSuccess: () => switchMe(null) })
+}
+
+/** The couple's records stay with the partner; this account goes back to connecting a couple. */
+export function useLeaveCouple() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.leaveCouple, onSuccess: switchMe })
+}
+
+/** Records stay; the partner's names drop out of what is cached. */
+export function useRemovePartner() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: api.logout,
-    onSuccess: () => {
-      // Flip `me` in place (clear() would detach the gate watching it), then drop every
-      // other cached screen so the next account never sees the previous one's data.
-      queryClient.setQueryData(keys.me, null)
-      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
+    mutationFn: api.removePartner,
+    onSuccess: (me) => {
+      queryClient.setQueryData(keys.me, me)
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== keys.me[0] })
     },
   })
+}
+
+export function useDeleteAccount() {
+  const switchMe = useSwitchMe()
+  return useMutation({ mutationFn: api.deleteAccount, onSuccess: () => switchMe(null) })
 }
 
 export const usePlaces = () => useQuery({ queryKey: keys.places, queryFn: api.places })
@@ -168,6 +209,14 @@ export function useAddPlaceNote(placeId: number) {
   })
 }
 
+export function useUpdatePlaceNote(placeId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ noteId, content }: { noteId: number; content: string }) => api.updatePlaceNote(placeId, noteId, content),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.places }),
+  })
+}
+
 export function useDeletePlaceNote(placeId: number) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -204,7 +253,7 @@ export function useUpdateRecord(id: number) {
 export function useAddRecordToAlbum() {
   const invalidate = useInvalidateDateData()
   return useMutation({
-    mutationFn: ({ album, recordId }: { album: Album; recordId: number }) =>
+    mutationFn: ({ album, recordId }: { album: Pick<AlbumBase, 'id' | 'recordIds'>; recordId: number }) =>
       api.updateAlbum(album.id, { recordIds: [...new Set([...album.recordIds, recordId])] }),
     onSuccess: invalidate,
   })
@@ -218,6 +267,47 @@ export function useDeleteRecord() {
 export function useUpdateAlbum(id: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({ mutationFn: (input: UpdateAlbumInput) => api.updateAlbum(id, input), onSuccess: invalidate })
+}
+
+export function useCaptionPhoto(albumId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ photoId, caption }: { photoId: number; caption: string }) => api.updatePhoto(albumId, photoId, { caption }),
+    onSuccess: (album) => queryClient.setQueryData(keys.album(albumId), album),
+  })
+}
+
+/** Puts the photos first, keeping their order and that of the rest. */
+export function useMovePhotosToFront(albumId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ order, photoIds }: { order: number[]; photoIds: Set<number> }) =>
+      api.reorderPhotos(albumId, [...order.filter((id) => photoIds.has(id)), ...order.filter((id) => !photoIds.has(id))]),
+    onSuccess: (album) => {
+      queryClient.setQueryData(keys.album(albumId), album)
+      return queryClient.invalidateQueries({ queryKey: keys.albums, exact: true })
+    },
+  })
+}
+
+/** Moves photos to another album one by one; a file that album already has stays and is counted. */
+export function useMovePhotos(albumId: number) {
+  const invalidate = useInvalidateDateData()
+  return useMutation({
+    mutationFn: async ({ photoIds, targetId }: { photoIds: number[]; targetId: number }) => {
+      let skipped = 0
+      for (const photoId of photoIds) {
+        try {
+          await api.updatePhoto(albumId, photoId, { albumId: targetId })
+        } catch (error) {
+          if (!(error instanceof ApiError && error.code === 'PHOTO_EXISTS')) throw error
+          skipped++
+        }
+      }
+      return { moved: photoIds.length - skipped, skipped }
+    },
+    onSettled: invalidate,
+  })
 }
 
 export function useDeletePhotos(albumId: number) {
@@ -290,19 +380,20 @@ export function useUploadPhotos(albumId: number) {
       try {
         for (let start = 0; start < images.length; start += UPLOAD_BATCH) {
           const batch = images.slice(start, start + UPLOAD_BATCH)
-          const { uploads } = await api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' })))
+          const { uploads } = await withRetry(() => api.photoUploads(albumId, batch.map(() => ({ contentType: 'image/jpeg' }))))
           const results = await settleWithLimit(batch, UPLOAD_CONCURRENCY, async ({ file, fingerprint }, i) => {
             const upload = uploads[i]!
             const image = await prepareImage(file)
             // A failed thumbnail only costs some bandwidth later (the full image is shown), so it doesn't fail the photo.
             const [, thumbnailKey] = await Promise.all([
-              uploadToStorage(upload, image.blob),
-              uploadToStorage(upload.thumbnail, image.thumbnail).then(
+              withRetry(() => uploadToStorage(upload, image.blob)),
+              withRetry(() => uploadToStorage(upload.thumbnail, image.thumbnail)).then(
                 () => upload.thumbnail.key,
                 () => null,
               ),
             ])
-            await api.addPhotos(albumId, [{ key: upload.key, thumbnailKey, takenAt: image.takenAt, fingerprint }])
+            // A retried confirm of the same key is safe: the server records it once.
+            await withRetry(() => api.addPhotos(albumId, [{ key: upload.key, thumbnailKey, takenAt: image.takenAt, fingerprint }]))
             done++
             report()
           })
@@ -315,21 +406,23 @@ export function useUploadPhotos(albumId: number) {
             if (!contentType) throw new ImageError(file.name, 'VIDEO_UNSUPPORTED')
             const video = await prepareVideo(file)
             // Asked for right before the PUT: the URL is only good for 10 minutes and earlier videos may take longer.
-            const [upload] = (await api.photoUploads(albumId, [{ contentType }])).uploads
+            const [upload] = (await withRetry(() => api.photoUploads(albumId, [{ contentType }]))).uploads
             report(0)
             // Without a first frame the grid shows a video placeholder instead.
             const [, thumbnailKey] = await Promise.all([
-              uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100))),
+              withRetry(() => uploadToStorage(upload!, file, (fraction) => report(Math.round(fraction * 100)))),
               video.thumbnail
-                ? uploadToStorage(upload!.thumbnail, video.thumbnail).then(
+                ? withRetry(() => uploadToStorage(upload!.thumbnail, video.thumbnail!)).then(
                     () => upload!.thumbnail.key,
                     () => null,
                   )
                 : null,
             ])
-            await api.addPhotos(albumId, [
-              { key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec, fingerprint },
-            ])
+            await withRetry(() =>
+              api.addPhotos(albumId, [
+                { key: upload!.key, thumbnailKey, takenAt: video.takenAt, durationSec: video.durationSec, fingerprint },
+              ]),
+            )
           } catch (error) {
             failed++
             firstError ??= error

@@ -92,6 +92,7 @@ export interface DateRecord {
   category: PlaceCategory
   rating: number | null
   scheduledAt: string
+  endsAt: string | null // when this stop of the day ends, if set
   place: { id: number; name: string; address: string | null; googleMapsUrl: string | null } | null
   writer: { id: number; nickname: string } | null
 }
@@ -108,6 +109,7 @@ export interface Photo {
   thumbnailUrl: string | null
   displayOrder: number
   takenAt: string | null
+  caption: string | null
   durationSec: number | null // videos only
   fingerprint: string | null // hash of the original file, to skip it if picked again
   sizeBytes: number | null // what it takes up in storage; null for files uploaded before sizes were kept
@@ -116,7 +118,8 @@ export interface Photo {
   comments?: Comment[]
 }
 
-export interface Album {
+/** What an album's list entry and its own screen share. */
+export interface AlbumBase {
   id: number
   title: string
   albumDate: string // YYYY-MM-DD, the first day
@@ -129,12 +132,23 @@ export interface Album {
   category: PlaceCategory | null
   places: { id: number; name: string; address: string | null }[]
   recordIds: number[] // the visits bundled into this album
+}
+
+/** GET /api/albums: enough for a card — no reactions or comments on the photos. */
+export interface AlbumSummary extends AlbumBase {
+  videoCount: number
+  previewPhotos: Photo[] // up to three, cover first
+}
+
+/** GET /api/albums/:id: every photo with its reactions and comments. */
+export interface Album extends AlbumBase {
   photos: Photo[]
 }
 
 export interface CreateRecordInput {
   type: RecordType
   scheduledAt: string
+  endsAt?: string
   category: PlaceCategory
   // A saved place by id, or a name that is matched or created.
   placeId?: number
@@ -190,6 +204,7 @@ export interface UpdatePlaceInput {
 export interface UpdateRecordInput {
   type?: RecordType
   scheduledAt?: string
+  endsAt?: string | null
   category?: PlaceCategory
   memo?: string | null
   placeNote?: string // a new memo for the record's place

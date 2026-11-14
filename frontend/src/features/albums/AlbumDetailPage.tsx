@@ -6,17 +6,21 @@ import { useParams } from 'react-router'
 import { QueryState } from '../../components/Field'
 import { HeaderAction, SubHeader } from '../../components/SubHeader'
 import { api, errorMessage } from '../../lib/api'
-import { saveFiles } from '../../lib/download'
+import { saveMode } from '../../lib/download'
+import { useSaveFiles } from '../../lib/useSaveFiles'
+import { SaveReadyBar } from './SaveReadyBar'
+import { MovePhotosSheet } from './MovePhotosSheet'
 import { formatBytes } from '../../lib/format'
 import { albumHeading, daysBetween, formatDotted, formatDuration, formatMonthDay, parseDateOnly } from '../../lib/dates'
 import { RISE_IN, riseDelay } from '../../lib/motion'
-import { keys, useAlbum, useAlbumDownloads, useDeletePhotos, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
+import { keys, useAlbum, useAlbumDownloads, useDeletePhotos, useMovePhotos, useMovePhotosToFront, useUpdateAlbum, useUploadPhotos } from '../../lib/queries'
 import { isVideoFile } from '../../lib/videos'
 import { useT } from '../../lib/i18n'
 import type { MediaType, Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
 import { EditAlbumSheet } from './EditAlbumSheet'
 import { PhotoViewer } from './PhotoViewer'
+import { useConfirm } from '../../lib/confirm'
 
 type MediaFilter = 'ALL' | MediaType
 const FILTERS: MediaFilter[] = ['ALL', 'PHOTO', 'VIDEO']
@@ -64,8 +68,12 @@ export function AlbumDetailPage() {
   const id = Number(useParams().id)
   const { data: album, isLoading, error } = useAlbum(id)
   const t = useT()
+  const confirm = useConfirm()
   const updateAlbum = useUpdateAlbum(id)
   const deletePhotos = useDeletePhotos(id)
+  const toFront = useMovePhotosToFront(id)
+  const movePhotos = useMovePhotos(id)
+  const [moving, setMoving] = useState(false)
   const uploadPhotos = useUploadPhotos(id)
   const fileInput = useRef<HTMLInputElement>(null)
   const [selecting, setSelecting] = useState(false)
@@ -77,8 +85,9 @@ export function AlbumDetailPage() {
   const [viewing, setViewing] = useState<number | null>(null) // index in `shown` of the item open in the viewer
   const queryClient = useQueryClient()
   const loadDownloads = useAlbumDownloads(id)
-  const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null)
-  const [saveError, setSaveError] = useState<Error | null>(null)
+  const saver = useSaveFiles(loadDownloads)
+  const saveProgress = saver.state.phase === 'idle' ? null : saver.state
+  const saveError = saver.error
 
   function toggleSelecting() {
     setSelecting((on) => !on)
@@ -110,8 +119,8 @@ export function AlbumDetailPage() {
     if (videoBytes >= BIG_VIDEO_BYTES) {
       // Without the usage (offline, storage not set up) the upload just goes ahead.
       const usage = await queryClient.fetchQuery({ queryKey: keys.storage, queryFn: api.storage }).catch(() => null)
-      const question = usage && t.storage.bigUpload(videos.length, formatBytes(videoBytes), formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))
-      if (question && !window.confirm(question)) return
+      const message = usage && t.storage.bigUpload(videos.length, formatBytes(videoBytes), formatBytes(usage.usedBytes), formatBytes(usage.freeBytes))
+      if (message && !(await confirm({ title: t.storage.bigUploadTitle, message, confirmLabel: t.common.proceed }))) return
     }
     uploadPhotos.mutate(files)
   }
@@ -119,17 +128,10 @@ export function AlbumDetailPage() {
   /** Saves the album's files to this device: the selected ones, or all of them. */
   async function saveToDevice(photoIds?: Set<number>) {
     const total = photoIds?.size ?? album?.photos.length ?? 0
-    if (total === 0 || !window.confirm(t.albums.confirmSave(total))) return
-    setSaveError(null)
-    setSaveProgress({ done: 0, total })
-    try {
-      const files = (await loadDownloads()).filter((f) => !photoIds || photoIds.has(f.photoId))
-      await saveFiles(files.map((f) => f.url), (done) => setSaveProgress({ done, total: files.length }))
-    } catch (err) {
-      setSaveError(err as Error)
-    } finally {
-      setSaveProgress(null)
-    }
+    const message = t.albums.confirmSaveBody[saveMode()]
+    if (total === 0 || !(await confirm({ title: t.albums.confirmSave(total), message, confirmLabel: t.common.save }))) return
+    // Straight from the confirm tap: a folder picker needs it.
+    await saver.start(async () => (await loadDownloads()).filter((f) => !photoIds || photoIds.has(f.photoId)))
   }
 
   function changeSort(next: SortOrder) {
@@ -143,8 +145,8 @@ export function AlbumDetailPage() {
     remember(DIRECTION_STORAGE_KEY, next)
   }
 
-  function removeSelected() {
-    if (!window.confirm(t.albums.confirmDelete(selected.size))) return
+  async function removeSelected() {
+    if (!(await confirm({ title: t.albums.confirmDelete(selected.size), confirmLabel: t.common.delete, danger: true }))) return
     deletePhotos.mutate([...selected], { onSuccess: toggleSelecting })
   }
 
@@ -191,19 +193,19 @@ export function AlbumDetailPage() {
       ? dayHeading(start, formatDotted(start))
       : `${dayHeading(start, formatDotted(start))} ~ ${dayHeading(end, start.getFullYear() === end.getFullYear() ? formatMonthDay(end) : formatDotted(end))} · ${t.albums.tripLength(days - 1, days)}`
   const onlyPlace = album.places.length === 1 ? album.places[0] : undefined
-  const actionError = updateAlbum.error ?? deletePhotos.error ?? saveError
+  const actionError = updateAlbum.error ?? deletePhotos.error ?? toFront.error ?? movePhotos.error ?? saveError
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
       {header}
       {/* Album info first (on desktop a wide card with the best cut beside it), then the photos below. */}
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:gap-4 lg:pb-10">
-        <section className="flex gap-6 ui-box retro:m-1 retro:bg-white retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-white lg:p-5">
+        <section className="flex gap-6 ui-box retro:m-1 retro:bg-surface retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-surface lg:p-5">
           {album.coverPhoto?.thumbnailUrl && (
             <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline lg:block xl:w-[300px]">
               <img src={album.coverPhoto.thumbnailUrl} alt={t.albums.bestCut} className="size-full object-cover" />
               {album.coverPhotoId !== null && (
-                <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
+                <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[11px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
                   <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                 </span>
               )}
@@ -256,7 +258,7 @@ export function AlbumDetailPage() {
                 type="button"
                 onClick={() => saveToDevice()}
                 disabled={saveProgress !== null}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand disabled:opacity-50 retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-surface px-3 text-[12px] font-semibold text-brand-text disabled:opacity-50 retro:text-brand-text"
               >
                 {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.saveAll}
               </button>
@@ -265,7 +267,7 @@ export function AlbumDetailPage() {
               <button
                 type="button"
                 onClick={toggleSelecting}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-surface px-3 text-[12px] font-semibold text-brand-text retro:text-brand-text"
               >
                 {selecting ? t.albums.done : t.albums.select}
               </button>
@@ -274,7 +276,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={uploadPhotos.isPending || selecting}
-              className="ui-btn-thin h-8 rounded-full bg-brand px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+              className="ui-btn-thin h-8 rounded-full bg-brand-strong px-3 text-[12px] font-semibold text-white disabled:opacity-50"
             >
               {uploadPhotos.progress
                 ? t.albums.uploading(uploadPhotos.progress.done, uploadPhotos.progress.total, uploadPhotos.progress.percent)
@@ -286,8 +288,12 @@ export function AlbumDetailPage() {
 
         {uploadPhotos.error && <p className="text-[12px] text-coral-strong">{errorMessage(uploadPhotos.error, t)}</p>}
         {!selecting && saveError && <p className="text-[12px] text-coral-strong">{errorMessage(saveError, t)}</p>}
+        <SaveReadyBar saver={saver} />
         {uploadPhotos.data && uploadPhotos.data.failed > 0 && (
           <p className="text-[12px] text-coral-strong">{t.albums.uploadFailed(uploadPhotos.data.failed)}</p>
+        )}
+        {movePhotos.data && movePhotos.data.skipped > 0 && (
+          <p className="text-[12px] text-muted">{t.albums.moveSkipped(movePhotos.data.skipped)}</p>
         )}
         {uploadPhotos.data && uploadPhotos.data.skipped > 0 && (
           <p className="text-[12px] text-muted">{t.albums.uploadSkipped(uploadPhotos.data.skipped)}</p>
@@ -295,7 +301,7 @@ export function AlbumDetailPage() {
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {album.photos.length > 0 && (
-          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-white p-1 retro:mt-1 lg:w-[380px]" role="tablist">
+          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-surface p-1 retro:mt-1 lg:w-[380px]" role="tablist">
             {FILTERS.map((value) => (
               <button
                 key={value}
@@ -307,7 +313,7 @@ export function AlbumDetailPage() {
                   setSelected(new Set()) // don't keep hidden items selected for deletion
                 }}
                 className={`ui-seg-option flex-1 rounded-xl text-[13px] leading-normal font-semibold retro:text-[12px] ${
-                  filter === value ? 'bg-brand text-white' : 'text-ink'
+                  filter === value ? 'bg-brand-strong text-white' : 'text-ink'
                 }`}
               >
                 {t.albums.filter[value](counts[value])}
@@ -324,7 +330,7 @@ export function AlbumDetailPage() {
                 type="button"
                 aria-pressed={sort === value}
                 onClick={() => changeSort(value)}
-                className={`ui-pop h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
+                className={`ui-pop ui-hit-y h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-text' : 'text-muted'}`}
               >
                 {t.albums.sort[value]}
               </button>
@@ -334,7 +340,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={flipDirection}
               aria-label={t.albums.directionLabel(t.albums.direction[direction])}
-              className="flex h-7 items-center gap-1 rounded-full px-2.5 font-semibold text-muted"
+              className="ui-hit-y flex h-7 items-center gap-1 rounded-full px-2.5 font-semibold text-muted"
             >
               {direction === 'ASC' ? <ArrowUp size={12} strokeWidth={1.75} /> : <ArrowDown size={12} strokeWidth={1.75} />} {t.albums.direction[direction]}
             </button>
@@ -343,7 +349,7 @@ export function AlbumDetailPage() {
         </div>
 
         {shown.length === 0 ? (
-          <p className="ui-empty rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
+          <p className="ui-empty rounded-2xl bg-surface/60 py-10 text-center text-[13px] text-muted">
             {filter === 'ALL' ? t.albums.empty : t.albums.emptyFilter[filter]}
             <br />
             <span className="text-[11px]">{t.albums.emptyHint}</span>
@@ -366,18 +372,18 @@ export function AlbumDetailPage() {
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
-                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-night/70 px-1.5 py-0.5 text-[11px] font-semibold text-white tabular-nums">
                       <Play size={9} strokeWidth={2} />
                       {photo.durationSec !== null && formatDuration(photo.durationSec)}
                     </span>
                   )}
                   {photo.id === album.coverPhotoId && (
-                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[11px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
                       <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                     </span>
                   )}
                   {!selecting && ((photo.comments?.length ?? 0) > 0 || (photo.reactions?.length ?? 0) > 0) && (
-                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white tabular-nums">
+                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-night/70 px-1.5 py-0.5 text-[11px] leading-none font-semibold text-white tabular-nums">
                       {photo.reactions?.[0]?.emoji ?? <MessageCircle size={10} strokeWidth={2} />}
                       {(photo.comments?.length ?? 0) > 0 && photo.comments!.length}
                     </span>
@@ -385,7 +391,7 @@ export function AlbumDetailPage() {
                   {selecting && (
                     <span
                       className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-white ${
-                        isSelected ? 'bg-brand' : 'bg-ink/30'
+                        isSelected ? 'bg-brand-strong' : 'bg-night/30'
                       }`}
                     >
                       {isSelected && <Check size={12} strokeWidth={2.5} />}
@@ -400,7 +406,7 @@ export function AlbumDetailPage() {
       </div>
 
       {selecting && (
-        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3 retro:border-t-3 retro:border-ink">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-surface px-5 py-3 retro:border-t-3 retro:border-ink">
           {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError, t)}</p>}
           {album.coverPhotoId === null && <p className="text-[11px] text-muted">{t.albums.bestCutHint}</p>}
           <div className="flex gap-3">
@@ -416,7 +422,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={() => saveToDevice(selected)}
               disabled={selected.size === 0 || saveProgress !== null}
-              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-soft text-[14px] font-semibold text-brand-strong disabled:opacity-40 retro:text-[13px]"
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-soft text-[14px] font-semibold text-brand-text disabled:opacity-40 retro:text-[13px]"
             >
               {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.save}
             </button>
@@ -430,10 +436,53 @@ export function AlbumDetailPage() {
               {selected.size > 0 && ` (${selected.size})`}
             </button>
           </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                // Shown in album order, where the move is visible.
+                changeSort('UPLOADED')
+                toFront.mutate({ order: album.photos.map((p) => p.id), photoIds: selected }, { onSuccess: toggleSelecting })
+              }}
+              disabled={selected.size === 0 || toFront.isPending}
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[14px] font-semibold disabled:opacity-40 retro:text-[13px]"
+            >
+              {t.albums.toFront}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMoving(true)}
+              disabled={selected.size === 0 || movePhotos.isPending}
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[14px] font-semibold disabled:opacity-40 retro:text-[13px]"
+            >
+              {t.albums.moveToAlbum}
+            </button>
+          </div>
         </div>
       )}
 
       <AnimatePresence>{editing && <EditAlbumSheet album={album} onClose={() => setEditing(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {moving && (
+          <MovePhotosSheet
+            currentId={album.id}
+            count={selected.size}
+            busy={movePhotos.isPending}
+            onClose={() => setMoving(false)}
+            onPick={(targetId) =>
+              movePhotos.mutate(
+                { photoIds: [...selected], targetId },
+                {
+                  onSuccess: () => {
+                    setMoving(false)
+                    toggleSelecting()
+                  },
+                },
+              )
+            }
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {viewing !== null && (
           <PhotoViewer
@@ -462,14 +511,14 @@ function GridPhoto({ photo }: { photo: Photo }) {
   if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
   if (photo.mediaType === 'VIDEO' && !src) {
     return (
-      <span className="flex size-full flex-col items-center justify-center gap-1 bg-ink/80 text-[10px] text-white/80">
+      <span className="flex size-full flex-col items-center justify-center gap-1 bg-night/80 text-[11px] text-white/80">
         <Video size={22} strokeWidth={1.5} />
         {t.albums.video}
       </span>
     )
   }
   return (
-    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
+    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[11px] leading-snug text-muted">
       <TriangleAlert size={18} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>

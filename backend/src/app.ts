@@ -6,6 +6,7 @@ import { requireAuth, requireCouple } from "./middlewares/auth.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 import { albumsRouter } from "./modules/albums.routes.js";
 import { authRouter } from "./modules/auth.routes.js";
+import { clientErrorsRouter } from "./modules/client-errors.routes.js";
 import { coupleRouter } from "./modules/couple.routes.js";
 import { healthRouter } from "./modules/health.routes.js";
 import { memoriesRouter, recapRouter } from "./modules/insights.routes.js";
@@ -28,6 +29,7 @@ export function createApp() {
   api.use("/auth", authRouter);
   api.use("/couple", requireAuth, coupleRouter);
   api.use("/push", requireAuth, pushRouter);
+  api.use("/client-errors", clientErrorsRouter);
 
   // Couple-owned data: every query inside is scoped to req.coupleId.
   api.use("/places", requireAuth, requireCouple, placesRouter);

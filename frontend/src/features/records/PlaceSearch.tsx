@@ -2,6 +2,7 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useEffect, useId, useRef, useState } from 'react'
 import { inputClass } from '../../components/Field'
 import { MAPS_API_KEY } from '../../lib/maps'
+import { HOME } from '../../lib/home'
 import { lookUpPlace, type PickedPlace } from '../../lib/places'
 import { useI18n, useT } from '../../lib/i18n'
 
@@ -61,8 +62,8 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query,
           sessionToken: sessionToken.current,
-          // Worldwide (trips abroad count too); `region` only favors Korean results when names overlap.
-          region: 'kr',
+          // Worldwide (trips abroad count too); `region` only favors this device's country when names overlap.
+          region: HOME.region.toLowerCase(),
           language: lang,
         })
         if (!cancelled) {
@@ -132,7 +133,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
       />
 
       {showList && (
-        <ul id={listId} role="listbox" className="overflow-hidden rounded-xl border border-field-border bg-white">
+        <ul id={listId} role="listbox" className="overflow-hidden rounded-xl border border-field-border bg-surface">
           {visible.map((s, i) => (
             <li
               key={s.placeId}
@@ -153,7 +154,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         </ul>
       )}
 
-      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand' : 'text-muted'}`}>
+      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand-text' : 'text-muted'}`}>
         {loadingPick
           ? t.placeSearch.fetching
           : picked

@@ -11,7 +11,7 @@ export function MemoriesToday() {
   if (memories.length === 0) return null
 
   return (
-    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-amber-soft p-4 retro:m-0.5 retro:bg-white">
+    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-amber-soft p-4 retro:m-0.5 retro:bg-surface">
       <p className="ui-eyebrow">{t.memories.eyebrow}</p>
       {memories.map((memory) => (
         <div key={memory.year} className="flex flex-col gap-2">

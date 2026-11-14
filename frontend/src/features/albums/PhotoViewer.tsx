@@ -3,14 +3,17 @@ import { useAnimate, usePresence, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { FeedbackPanel } from '../../components/FeedbackPanel'
 import { formatDotted, toTimeInput } from '../../lib/dates'
-import { saveFiles } from '../../lib/download'
-import { useAlbumDownloads } from '../../lib/queries'
+import { useSaveFiles } from '../../lib/useSaveFiles'
+import { SaveReadyBar } from './SaveReadyBar'
+import { useAlbumDownloads, useCaptionPhoto } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
 import { PixelSprite } from '../../components/PixelSprite'
 import { useMotionPreset } from '../../lib/motion'
 import { useIsRetro } from '../../lib/theme'
 import type { Photo } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
+import { isTopModal, useDialogFocus } from '../../lib/useDialogFocus'
+import { useZoom } from './useZoom'
 
 interface Props {
   albumId: number
@@ -34,14 +37,18 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const stage = useRef<HTMLDivElement>(null)
   const flyer = useRef<HTMLDivElement>(null)
   const [scope, animate] = useAnimate<HTMLDivElement>()
+  useDialogFocus(onClose, scope)
   const [isPresent, safeToRemove] = usePresence()
   const reduceMotion = useReducedMotion()
   const motion = useMotionPreset()
   const retro = useIsRetro()
   const [index, setIndex] = useState(startIndex)
   const [talking, setTalking] = useState(false) // the reactions and comments panel
-  const [saving, setSaving] = useState(false)
   const loadDownloads = useAlbumDownloads(albumId)
+  // A zoomed photo pans under the finger instead of the strip swiping to the next one.
+  const [zoomed, setZoomed] = useState(false)
+  const saver = useSaveFiles(loadDownloads)
+  const saving = saver.state.phase !== 'idle'
   const photo = photos[Math.min(index, photos.length - 1)]
 
   // Open on the tapped photo without animating through the ones before it, zooming it out of its tile.
@@ -91,15 +98,14 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Arrow keys move the cursor while a comment is being typed.
-      if (e.target instanceof HTMLInputElement && e.key !== 'Escape') return
-      if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowLeft') scrollToPhoto(strip.current, index - 1, photos.length)
+      // Arrow keys move the cursor while a comment is being typed; a confirm on top has them too.
+      if (e.target instanceof HTMLInputElement || !isTopModal(scope.current)) return
+      if (e.key === 'ArrowLeft') scrollToPhoto(strip.current, index - 1, photos.length)
       else if (e.key === 'ArrowRight') scrollToPhoto(strip.current, index + 1, photos.length)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [index, photos.length, onClose])
+  }, [index, photos.length, scope])
 
   function onScroll() {
     const el = strip.current
@@ -111,27 +117,20 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
   const feedback = { reactions: photo?.reactions ?? [], comments: photo?.comments ?? [] }
   const reacted = [...new Set(feedback.reactions.map((r) => r.emoji))].join('')
 
-  async function save(photoId: number) {
-    setSaving(true)
-    try {
-      const file = (await loadDownloads()).find((f) => f.photoId === photoId)
-      if (file) await saveFiles([file.url])
-    } catch {
-      // Nothing was saved; the button can simply be pressed again.
-    } finally {
-      setSaving(false)
-    }
-  }
+  // A failure leaves nothing saved; the button can simply be pressed again.
+  const save = (photoId: number) =>
+    saver.start(async () => (await loadDownloads()).filter((f) => f.photoId === photoId), { single: true })
 
   return (
     <div
       ref={scope}
-      className={`absolute inset-0 z-50 flex flex-col text-white lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
+      tabIndex={-1}
+      className={`absolute inset-0 z-50 flex flex-col text-white outline-none lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
       aria-label={t.albums.viewer}
     >
-      <div data-viewer-fade className="absolute inset-0 bg-ink" />
+      <div data-viewer-fade className="absolute inset-0 bg-night" />
       <div data-viewer-fade className="relative flex shrink-0 items-center justify-between px-4 pt-3.5 pb-2">
         <span className="text-[13px] font-semibold tabular-nums">
           {index + 1} / {photos.length}
@@ -139,18 +138,23 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
         <button
           type="button"
           onClick={onClose}
-          className="flex size-9 items-center justify-center rounded-full bg-white/15 retro:size-8 retro:bg-white retro:pixel-btn retro:pixel-thin"
+          className="flex size-9 items-center justify-center rounded-full bg-white/15 retro:size-8 retro:bg-surface retro:pixel-btn retro:pixel-thin"
           aria-label={t.common.close}
         >
           {retro ? <PixelSprite name="close" scale={2} /> : <X size={18} strokeWidth={1.75} />}
         </button>
       </div>
+      {saver.state.phase === 'ready' && (
+        <div className="relative shrink-0 px-4 pb-2">
+          <SaveReadyBar saver={saver} dark />
+        </div>
+      )}
 
       <div ref={stage} className="relative min-h-0 flex-1">
         <div
           ref={strip}
           onScroll={onScroll}
-          className="scrollbar-none flex size-full snap-x snap-mandatory overflow-x-auto overscroll-contain"
+          className={`scrollbar-none flex size-full snap-x snap-mandatory overscroll-contain ${zoomed ? 'overflow-x-hidden' : 'overflow-x-auto'}`}
         >
           {photos.map((p, i) => (
             <div key={p.id} className="flex size-full shrink-0 snap-center items-center justify-center">
@@ -158,7 +162,13 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
                 <ViewerVideo src={p.imageUrl} poster={p.thumbnailUrl} active={i === index} />
               ) : (
                 // Neighbours load right away so swiping doesn't show a blank frame.
-                <ViewerPhoto src={p.imageUrl} thumb={p.thumbnailUrl} eager={Math.abs(i - index) <= 1} />
+                <ViewerPhoto
+                  src={p.imageUrl}
+                  thumb={p.thumbnailUrl}
+                  eager={Math.abs(i - index) <= 1}
+                  active={i === index}
+                  onZoomChange={setZoomed}
+                />
               )}
             </div>
           ))}
@@ -186,6 +196,12 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
         </div>
       )}
 
+      {photo && (
+        <div data-viewer-fade className="relative shrink-0 px-4 pt-2">
+          <Caption key={photo.id} albumId={albumId} photo={photo} />
+        </div>
+      )}
+
       <div data-viewer-fade className="relative flex min-h-12 shrink-0 items-center justify-between gap-2 px-4 pt-2 pb-[max(16px,env(safe-area-inset-bottom))] text-[12px] text-white/80">
         <span className="min-w-0 truncate">{takenAt && `${formatDotted(takenAt)} ${toTimeInput(takenAt)}`}</span>
         {photo && (
@@ -196,7 +212,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
             aria-pressed={talking}
             aria-label={t.feedback.open(feedback.comments.length)}
             className={`ui-pop flex h-8 items-center gap-1 rounded-full px-2.5 text-[12px] font-semibold tabular-nums retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-white)] ${
-              talking ? 'bg-white text-ink' : 'bg-white/15 text-white'
+              talking ? 'bg-surface text-ink' : 'bg-white/15 text-white'
             }`}
           >
             <MessageCircle size={15} strokeWidth={1.75} />
@@ -263,7 +279,7 @@ function NavButton({ side, label, onClick, children }: { side: 'left' | 'right';
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] retro:bg-white retro:pb-0 retro:pixel-btn retro:pixel-thin ${
+      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] retro:bg-surface retro:pb-0 retro:pixel-btn retro:pixel-thin ${
         side === 'left' ? 'left-3' : 'right-3'
       }`}
     >
@@ -305,12 +321,29 @@ function ViewerVideo({ src, poster, active }: { src: string | null; poster: stri
 }
 
 /** The full image over its thumbnail, which is already cached from the grid and shows while the full one loads. */
-function ViewerPhoto({ src, thumb, eager }: { src: string | null; thumb: string | null; eager: boolean }) {
+function ViewerPhoto({
+  src,
+  thumb,
+  eager,
+  active,
+  onZoomChange,
+}: {
+  src: string | null
+  thumb: string | null
+  eager: boolean
+  active: boolean
+  onZoomChange: (zoomed: boolean) => void
+}) {
   const t = useT()
   const { failed, onError } = useImageFailed(src)
+  const { ref: zoomRef, bind, style, reset } = useZoom((zoomed) => active && onZoomChange(zoomed))
+  // A photo swiped away comes back at its normal size.
+  useEffect(() => {
+    if (!active) reset()
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps -- reset is new each render
   if (src && !failed) {
     return (
-      <div className="relative size-full select-none">
+      <div ref={zoomRef} {...bind} style={style} className="relative size-full select-none">
         {thumb && thumb !== src && <img src={thumb} alt="" draggable={false} className="absolute inset-0 size-full object-contain" />}
         <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} onError={onError} draggable={false} className="absolute inset-0 size-full object-contain" />
       </div>
@@ -321,5 +354,51 @@ function ViewerPhoto({ src, thumb, eager }: { src: string | null; thumb: string 
       <TriangleAlert size={24} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>
+  )
+}
+
+/** The photo's one-line caption; tapping it (or "write one") edits it in place. */
+function Caption({ albumId, photo }: { albumId: number; photo: Photo }) {
+  const t = useT()
+  const save = useCaptionPhoto(albumId)
+  const [draft, setDraft] = useState<string | null>(null)
+
+  function commit() {
+    if (draft === null) return
+    const caption = draft.trim()
+    setDraft(null)
+    if (caption !== (photo.caption ?? '')) save.mutate({ photoId: photo.id, caption })
+  }
+
+  if (draft !== null) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        maxLength={300}
+        aria-label={t.albums.caption}
+        placeholder={t.albums.captionPlaceholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') {
+            // Only the edit is cancelled, not the viewer.
+            e.stopPropagation()
+            setDraft(null)
+          }
+        }}
+        className="ui-prose h-10 w-full rounded-xl bg-white/15 px-3 text-[16px] text-white outline-none placeholder:text-white/50"
+      />
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setDraft(photo.caption ?? '')}
+      className={`ui-prose w-full text-left text-[14px] leading-normal ${photo.caption ? 'text-white' : 'text-white/60'}`}
+    >
+      {save.isPending ? t.common.saving : photo.caption || `✎ ${t.albums.editCaption}`}
+    </button>
   )
 }

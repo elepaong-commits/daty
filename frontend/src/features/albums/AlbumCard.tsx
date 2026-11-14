@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { CategoryIcon } from '../../components/CategoryIcon'
 import { PHOTO_GRADIENTS } from '../../lib/categories'
 import { albumHeading, formatDottedRange, parseDateOnly } from '../../lib/dates'
-import type { Album, PlaceCategory } from '../../lib/types'
+import type { AlbumSummary, PlaceCategory } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -14,7 +14,7 @@ const LAYERS = [
   'rotate-5 retro:hidden',
 ] as const
 
-export function AlbumCard({ album, className = '', style }: { album: Album; className?: string; style?: CSSProperties }) {
+export function AlbumCard({ album, className = '', style }: { album: AlbumSummary; className?: string; style?: CSSProperties }) {
   const t = useT()
   const start = parseDateOnly(album.albumDate)
   const end = parseDateOnly(album.albumEndDate)
@@ -25,7 +25,7 @@ export function AlbumCard({ album, className = '', style }: { album: Album; clas
   return (
     <Link
       to={`/albums/${album.id}`}
-      className={`group flex min-w-0 flex-col gap-2.5 pt-1.5 ui-box-thin retro:m-0.5 retro:gap-2 retro:bg-white retro:p-2 retro:pt-2.5 ${className}`}
+      className={`group flex min-w-0 flex-col gap-2.5 pt-1.5 ui-box-thin retro:m-0.5 retro:gap-2 retro:bg-surface retro:p-2 retro:pt-2.5 ${className}`}
       style={style}
     >
       <div className="px-1.5 retro:pr-2 retro:pl-0">
@@ -59,19 +59,17 @@ export function AlbumCard({ album, className = '', style }: { album: Album; clas
 }
 
 /** A pile of prints. Real photos replace the gradient placeholders once uploaded. */
-function PhotoStack({ album, date }: { album: Album; date: string }) {
+function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
   const t = useT()
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
-  const { coverPhoto } = album
-  const photos = coverPhoto ? [coverPhoto, ...album.photos.filter((p) => p.id !== coverPhoto.id)].slice(0, 3) : []
-  const videoCount = album.photos.filter((p) => p.mediaType === 'VIDEO').length
+  const { previewPhotos: photos, videoCount } = album
 
   const layer = (i: number) => (
     <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} category={i === 0 ? category : null} />
   )
-  const print = 'absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo retro:border-0 retro:bg-white retro:pixel-outline retro:pixel-thin'
+  const print = 'absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo retro:border-0 retro:bg-surface retro:pixel-outline retro:pixel-thin'
 
   return (
     <div className="relative h-[225px] w-full transition-transform duration-200 lg:h-[200px] lg:group-hover:-translate-y-1 retro:h-[120px] retro:lg:h-[160px]">
@@ -82,11 +80,11 @@ function PhotoStack({ album, date }: { album: Album; date: string }) {
       ))}
       <div className={print}>
         {layer(0)}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))] retro:hidden" />
+        <div className="absolute inset-0 bg-linear-to-b from-transparent from-55% to-night/20 retro:hidden" />
         {/* Classic: date top left, counts bottom right. Pixel: both as dark tags along the bottom left. */}
-        <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[10px] retro:leading-[14px]">
-          <span className="rounded-lg bg-white/95 px-2 py-1 font-bold retro:bg-ink/85 retro:px-1 retro:py-0 retro:font-normal retro:text-white">{date}</span>
-          <span className="flex items-center gap-1 self-end rounded-full bg-ink/70 px-2 py-0.5 font-semibold text-white retro:bg-ink/85 retro:px-1 retro:py-0 retro:font-normal">
+        <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[11px] retro:leading-[14px]">
+          <span className="rounded-lg bg-surface/95 px-2 py-1 font-bold retro:bg-night/85 retro:px-1 retro:py-0 retro:font-normal retro:text-white">{date}</span>
+          <span className="flex items-center gap-1 self-end rounded-full bg-night/70 px-2 py-0.5 font-semibold text-white retro:bg-night/85 retro:px-1 retro:py-0 retro:font-normal">
             <Camera size={12} strokeWidth={1.75} className="retro:hidden" /> {album.photoCount - videoCount}
             {videoCount > 0 && (
               <>
@@ -97,7 +95,7 @@ function PhotoStack({ album, date }: { album: Album; date: string }) {
           </span>
         </div>
         {album.coverPhotoId !== null && (
-          <span className="absolute top-1 right-1 hidden items-center gap-0.5 bg-amber px-1 text-[10px] leading-[14px] text-ink retro:flex">
+          <span className="absolute top-1 right-1 hidden items-center gap-0.5 bg-amber px-1 text-[11px] leading-[14px] text-ink retro:flex">
             <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
           </span>
         )}

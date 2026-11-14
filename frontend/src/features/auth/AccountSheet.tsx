@@ -1,9 +1,11 @@
-import { Heart } from 'lucide-react'
-import { useState } from 'react'
+import { Camera, Heart } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
-import { ThemeToggle } from '../../components/SettingToggles'
-import { useLogout, useMe } from '../../lib/queries'
+import { ColorModeToggle, ThemeToggle } from '../../components/SettingToggles'
+import { useLogout, useMe, useRemoveAvatar, useSetAvatar } from '../../lib/queries'
+import { errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
+import { MembershipSettings } from './MembershipSettings'
 import { NotificationSettings } from './NotificationSettings'
 import { ChangePassword, PartnerResetCode } from './PasswordSettings'
 import { ProfileSettings } from './ProfileSettings'
@@ -13,6 +15,9 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
   const me = useMe().data
   const t = useT()
   const logout = useLogout()
+  const setAvatar = useSetAvatar()
+  const removeAvatar = useRemoveAvatar()
+  const photoInput = useRef<HTMLInputElement>(null)
   const [copied, setCopied] = useState(false)
   if (!me) return null
 
@@ -26,50 +31,107 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <BottomSheet title={t.common.myInfo} onClose={onClose}>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-2xl bg-field p-4">
-          <Avatar name={user.nickname} />
-          <div className="min-w-0">
-            <p className="font-display text-[18px] leading-normal">{user.nickname}</p>
-            <p className="truncate text-[12px] text-muted">{user.email}</p>
-          </div>
-        </div>
-
-        {couple && (
-          <div className="rounded-2xl border border-card-border p-4">
-            <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
-            {partner ? (
-              <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
-                <Heart size={15} strokeWidth={1.75} className="text-coral" /> {partner.nickname}
-              </p>
-            ) : (
-              <>
-                <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>
-                <button
-                  type="button"
-                  onClick={() => copyCode(couple.coupleCode)}
-                  className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
-                >
-                  <span className="text-[20px] font-bold tracking-[6px] text-brand-strong">{couple.coupleCode}</span>
-                  <span className="text-[12px] font-semibold text-brand">{copied ? t.account.copied : t.account.copy}</span>
-                </button>
-              </>
+      <div className="flex flex-col gap-6">
+        <div className="ui-outline flex flex-col gap-2 rounded-2xl bg-field p-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => photoInput.current?.click()}
+              disabled={setAvatar.isPending}
+              aria-label={t.account.changePhoto}
+              className="relative shrink-0 disabled:opacity-50"
+            >
+              <Avatar name={user.nickname} src={user.profileImageUrl} />
+              <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-surface text-ink shadow-md retro:rounded-none retro:pixel-outline retro:pixel-thin">
+                <Camera size={11} strokeWidth={2} />
+              </span>
+            </button>
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) setAvatar.mutate(file)
+              }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-[18px] leading-normal">{user.nickname}</p>
+              <p className="truncate text-[12px] text-muted">{user.email}</p>
+            </div>
+            {user.profileImageUrl && (
+              <button
+                type="button"
+                onClick={() => removeAvatar.mutate()}
+                disabled={removeAvatar.isPending}
+                className="shrink-0 text-[12px] text-muted underline disabled:opacity-50"
+              >
+                {t.account.removePhoto}
+              </button>
             )}
           </div>
-        )}
-
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
-          <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
-          <ThemeToggle />
+          {(setAvatar.error ?? removeAvatar.error) && (
+            <p className="text-[12px] text-coral-strong">{errorMessage((setAvatar.error ?? removeAvatar.error)!, t)}</p>
+          )}
         </div>
 
-        <NotificationSettings />
-        {couple && <StorageUsage />}
+        <Section title={t.account.sections.account}>
+          {couple && (
+            <div className="ui-outline rounded-2xl border border-card-border p-4">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
+              {partner ? (
+                <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
+                  <Heart size={15} strokeWidth={1.75} className="text-coral-strong" /> {partner.nickname}
+                </p>
+              ) : (
+                <>
+                  <p className="pt-1 text-[13px] leading-normal">{t.account.noPartner}</p>
+                  <button
+                    type="button"
+                    onClick={() => copyCode(couple.coupleCode)}
+                    className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
+                  >
+                    <span className="text-[20px] font-bold tracking-[6px] text-brand-text">{couple.coupleCode}</span>
+                    <span className="text-[12px] font-semibold text-brand-text">{copied ? t.account.copied : t.account.copy}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <ProfileSettings me={me} />
+          <ChangePassword />
+          {partner && <PartnerResetCode partnerName={partner.nickname} />}
+        </Section>
 
-        <ProfileSettings me={me} />
-        <ChangePassword />
-        {partner && <PartnerResetCode partnerName={partner.nickname} />}
-        {couple && <DataExport />}
+        <Section title={t.account.sections.display}>
+          <div className="ui-outline flex flex-col gap-3 rounded-2xl border border-card-border p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
+              <ThemeToggle />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.modeLabel}</p>
+              <ColorModeToggle />
+            </div>
+          </div>
+        </Section>
+
+        <Section title={t.account.sections.notifications}>
+          <NotificationSettings />
+        </Section>
+
+        {couple && (
+          <Section title={t.account.sections.data}>
+            <StorageUsage />
+            <DataExport />
+          </Section>
+        )}
+
+        <Section title={t.account.sections.membership}>
+          <MembershipSettings inCouple={couple !== null} partnerName={partner?.nickname ?? null} />
+        </Section>
 
         <button
           type="button"
@@ -84,15 +146,34 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+export function Avatar({ name, src, size = 'md' }: { name: string; src?: string | null; size?: 'sm' | 'md' }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className={`shrink-0 rounded-full object-cover retro:rounded-none retro:pixel-outline retro:pixel-thin ${size === 'sm' ? 'size-7' : 'size-11'}`}
+      />
+    )
+  }
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-brand font-display text-white retro:rounded-none retro:font-pixel retro:pixel-outline retro:pixel-thin retro:pixel-crisp ${
+      className={`flex shrink-0 items-center justify-center rounded-full bg-brand-strong font-display text-white retro:rounded-none retro:font-pixel retro:pixel-outline retro:pixel-thin retro:pixel-crisp ${
         size === 'sm' ? 'size-7 text-[13px]' : 'size-11 text-[18px]'
       }`}
       aria-hidden="true"
     >
       {name.slice(0, 1)}
     </span>
+  )
+}
+
+/** One group of the account sheet under a small heading. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="ui-eyebrow px-1">{title}</h3>
+      {children}
+    </section>
   )
 }

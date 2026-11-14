@@ -100,6 +100,14 @@ placesRouter.post("/", async (req, res) => {
       },
       include: visitsInclude,
     });
+    if (place.status === "WISH") {
+      const nickname = await nicknameOf(userId);
+      notifyPartner(coupleId, userId, (locale) => ({
+        title: locale === "ja" ? `${nickname}さんが行きたい場所を追加しました` : `${nickname}님이 가고 싶은 곳을 추가했어요`,
+        body: place.name,
+        url: `/places/${place.id}`,
+      }));
+    }
     res.status(201).json(serializePlace(place));
   } catch (err) {
     // The same Google place is already on the couple's map.
@@ -215,15 +223,37 @@ placesRouter.post("/:id/notes", async (req, res) => {
   res.status(201).json(note);
 });
 
+const noteParams = idParam.extend({ noteId: z.coerce.number().int().positive() });
+
+/**
+ * A memo is changed or taken back by whoever wrote it, like a comment. One left by an account that
+ * no longer exists can be deleted by either partner (but not rewritten in someone else's name).
+ */
+async function ownNote(req: { params: unknown; coupleId: number; userId: number }, { orphanOk }: { orphanOk: boolean }) {
+  const { id, noteId } = noteParams.parse(req.params);
+  const note = await prisma.placeNote.findFirstOrThrow({
+    where: { id: noteId, placeId: id, coupleId: req.coupleId },
+    select: { id: true, writerId: true },
+  });
+  if (note.writerId !== req.userId && !(orphanOk && note.writerId === null)) {
+    throw new HttpError(403, "Only the writer can change this memo", "NOT_WRITER");
+  }
+  return note;
+}
+
+placesRouter.patch("/:id/notes/:noteId", async (req, res) => {
+  const { content } = z.object({ content: noteContent }).parse(req.body);
+  const { id } = await ownNote(req, { orphanOk: false });
+  res.json(await prisma.placeNote.update({ where: { id }, data: { content }, select: noteSelect }));
+});
+
 placesRouter.delete("/:id/notes/:noteId", async (req, res) => {
-  const { id, noteId } = idParam.extend({ noteId: z.coerce.number().int().positive() }).parse(req.params);
-  await prisma.placeNote.delete({ where: { id: noteId, placeId: id, coupleId: req.coupleId } });
+  const { id } = await ownNote(req, { orphanOk: true });
+  await prisma.placeNote.delete({ where: { id } });
   res.status(204).end();
 });
 
 // Reactions and comments on a place memo. Every call answers with the memo's feedback as it now stands.
-
-const noteParams = idParam.extend({ noteId: z.coerce.number().int().positive() });
 
 async function noteTarget(req: { params: unknown; coupleId: number }) {
   const { id, noteId } = noteParams.parse(req.params);

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/SettingToggles'
+import { LanguageToggle, ThemeToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { toDateInput } from '../../lib/dates'
 import { useCreateCouple, useJoinCouple, useLogout, useMe } from '../../lib/queries'
 import { useT } from '../../lib/i18n'
+import { MembershipSettings } from './MembershipSettings'
 
 type Mode = 'create' | 'join'
 
@@ -18,6 +19,7 @@ export function CoupleSetupPage() {
   const logout = useLogout()
   const [anniversary, setAnniversary] = useState('')
   const [code, setCode] = useState('')
+  const [showDelete, setShowDelete] = useState(false)
 
   const active = mode === 'create' ? createCouple : joinCouple
   const canSubmit = mode === 'create' ? anniversary !== '' : code.trim().length === 6
@@ -31,18 +33,20 @@ export function CoupleSetupPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
-      <div className="flex justify-end">
+      {/* The design can be switched right here, and later in the account sheet. */}
+      <div className="flex justify-end gap-2">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
       <div className="pb-8">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand">{t.couple.hello(nickname ?? '')}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.couple.hello(nickname ?? '')}</p>
         <h1 className="font-display text-[26px] leading-[1.25]">{t.couple.title}</h1>
         <p className="pt-2 text-[13px] leading-normal text-muted">
           {t.couple.description}
         </p>
       </div>
 
-      <div className="mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
+      <div className="ui-seg mb-5 flex h-11 gap-2 rounded-2xl bg-segment p-1" role="tablist">
         {(['create', 'join'] as const).map((value) => (
           <button
             key={value}
@@ -50,14 +54,14 @@ export function CoupleSetupPage() {
             role="tab"
             aria-selected={mode === value}
             onClick={() => setMode(value)}
-            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand' : 'text-ink'}`}
+            className={`ui-seg-option flex-1 rounded-xl text-[14px] font-semibold retro:text-[13px] ${mode === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
           >
             {value === 'create' ? t.couple.createTab : t.couple.joinTab}
           </button>
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+      <form onSubmit={submit} className="ui-box flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card retro:mx-0.5">
         {mode === 'create' ? (
           <Field label={t.couple.anniversary}>
             <input
@@ -89,7 +93,7 @@ export function CoupleSetupPage() {
         <button
           type="submit"
           disabled={!canSubmit || active.isPending}
-          className="ui-btn h-12 w-full rounded-2xl bg-brand text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
+          className="ui-btn h-12 w-full rounded-2xl bg-brand-strong text-[16px] font-semibold text-white shadow-cta disabled:opacity-50 disabled:shadow-none retro:mb-1.5 retro:text-[14px]"
         >
           {active.isPending ? t.common.wait : mode === 'create' ? t.couple.create : t.couple.join}
         </button>
@@ -98,6 +102,15 @@ export function CoupleSetupPage() {
       <button type="button" onClick={() => logout.mutate()} className="mt-6 self-center text-[12px] text-muted underline">
         {t.couple.otherAccount}
       </button>
+      {showDelete ? (
+        <div className="mt-4">
+          <MembershipSettings inCouple={false} partnerName={null} />
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowDelete(true)} className="mt-3 self-center text-[12px] text-muted underline">
+          {t.account.deleteAccount}
+        </button>
+      )}
     </div>
   )
 }

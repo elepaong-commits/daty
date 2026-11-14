@@ -35,13 +35,14 @@ export function ScreenHeader({ eyebrow, title, actions, children }: Props) {
 
 function AccountButton() {
   const t = useT()
-  const nickname = useMe().data?.user.nickname
+  const user = useMe().data?.user
+  const nickname = user?.nickname
   const [open, setOpen] = useState(false)
   if (!nickname) return null
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label={t.common.myInfo}>
-        <Avatar name={nickname} size="sm" />
+        <Avatar name={nickname} src={user?.profileImageUrl} size="sm" />
       </button>
       <AnimatePresence>{open && <AccountSheet onClose={() => setOpen(false)} />}</AnimatePresence>
     </>

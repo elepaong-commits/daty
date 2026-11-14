@@ -1,5 +1,6 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
 import type { ReactNode } from 'react'
+import { HOME } from './home'
 import { BOOT_LANG } from './i18n'
 
 export const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
@@ -11,7 +12,7 @@ export const MAP_ID_RETRO = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID_RETRO as str
 export function MapsProvider({ children }: { children: ReactNode }) {
   if (!MAPS_API_KEY) return children
   return (
-    <APIProvider apiKey={MAPS_API_KEY} language={BOOT_LANG} region="KR">
+    <APIProvider apiKey={MAPS_API_KEY} language={BOOT_LANG} region={HOME.region}>
       {children}
     </APIProvider>
   )
