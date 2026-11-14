@@ -129,7 +129,7 @@ function Confirm({
       {children}
       {error && <p className="text-[12px] text-danger">{errorMessage(error, t)}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={onCancel} className="h-11 flex-1 rounded-xl bg-white text-[14px] font-semibold">
+        <button type="button" onClick={onCancel} className="h-11 flex-1 rounded-xl bg-surface text-[14px] font-semibold">
           {t.common.cancel}
         </button>
         <button

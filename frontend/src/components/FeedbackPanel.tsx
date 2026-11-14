@@ -57,8 +57,8 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               aria-label={t.feedback.react(emoji)}
               className={`flex h-8 items-center gap-0.5 rounded-full px-2 text-[15px] leading-none transition-opacity ${
                 isMine
-                  ? dark ? 'bg-white text-ink' : 'bg-brand-soft ring-1 ring-brand'
-                  : dark ? 'bg-white/15' : 'bg-white/70'
+                  ? dark ? 'bg-surface text-ink' : 'bg-brand-soft ring-1 ring-brand'
+                  : dark ? 'bg-white/15' : 'bg-surface/70'
               } ${count === 0 ? 'opacity-55 hover:opacity-100' : ''}`}
             >
               {emoji}
@@ -106,14 +106,14 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
               placeholder={t.feedback.placeholder}
               aria-label={t.feedback.placeholder}
               className={`ui-prose h-9 min-w-0 flex-1 rounded-full px-3.5 text-[13px] outline-none retro:rounded-none ${
-                dark ? 'bg-white/15 text-white placeholder:text-white/50' : 'bg-white text-ink placeholder:text-faint'
+                dark ? 'bg-white/15 text-white placeholder:text-white/50' : 'bg-surface text-ink placeholder:text-faint'
               }`}
             />
             <button
               type="submit"
               disabled={!draft.trim() || comment.isPending}
               className={`h-9 shrink-0 rounded-full px-3.5 text-[13px] font-semibold disabled:opacity-40 retro:rounded-none ${
-                dark ? 'bg-white text-ink' : 'bg-brand-strong text-white'
+                dark ? 'bg-surface text-ink' : 'bg-brand-strong text-white'
               }`}
             >
               {t.feedback.send}

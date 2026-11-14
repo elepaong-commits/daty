@@ -43,7 +43,7 @@ export function ChangePassword() {
           {t.account.changePassword}
           <span className="text-muted">›</span>
         </button>
-        {change.isSuccess && <p className="px-1 text-[12px] text-brand-strong">{t.account.passwordChanged}</p>}
+        {change.isSuccess && <p className="px-1 text-[12px] text-brand-text">{t.account.passwordChanged}</p>}
       </div>
     )
   }
@@ -99,7 +99,7 @@ export function PartnerResetCode({ partnerName }: { partnerName: string }) {
       <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.resetCodeTitle(partnerName)}</p>
       {issued && expiresAt ? (
         <>
-          <p className="rounded-xl bg-brand-soft px-4 py-3 text-center text-[22px] font-bold tracking-[6px] text-brand-strong select-all">
+          <p className="rounded-xl bg-brand-soft px-4 py-3 text-center text-[22px] font-bold tracking-[6px] text-brand-text select-all">
             {issued.code}
           </p>
           <p className="text-[12px] leading-normal text-muted">

@@ -34,7 +34,7 @@ export function RecapPage() {
         {!recap ? (
           <QueryState isLoading={isLoading} error={error} />
         ) : recap.totals.visits === 0 ? (
-          <p className="ui-empty rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">{t.recap.empty}</p>
+          <p className="ui-empty rounded-2xl bg-surface/60 py-10 text-center text-[13px] text-muted">{t.recap.empty}</p>
         ) : (
           <>
             <RecapBody recap={recap} />
@@ -63,7 +63,7 @@ function RecapBody({ recap }: { recap: Recap }) {
     <>
       <dl className="grid grid-cols-3 gap-2 retro:gap-3 retro:p-0.5">
         {tiles.map(([label, value]) => (
-          <div key={label} className="ui-box-thin flex flex-col gap-0.5 rounded-2xl bg-white p-3">
+          <div key={label} className="ui-box-thin flex flex-col gap-0.5 rounded-2xl bg-surface p-3">
             <dt className="text-[11px] leading-normal text-muted">{label}</dt>
             <dd className="font-display text-[26px] leading-[1.15] tabular-nums retro:text-[22px]">{value}</dd>
           </div>
@@ -145,7 +145,7 @@ function RecapBody({ recap }: { recap: Recap }) {
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-white p-4 retro:mx-0.5">
+    <section className="ui-box-thin flex flex-col gap-3 rounded-2xl bg-surface p-4 retro:mx-0.5">
       <h2 className="font-display text-[17px] leading-normal">{title}</h2>
       {children}
     </section>
@@ -158,7 +158,7 @@ function Row({ rank, to, trailing, children }: { rank: number; to?: string; trai
     <li className="flex items-center gap-2 text-[13px] leading-normal">
       <span className="w-4 shrink-0 text-center text-[12px] text-muted tabular-nums">{rank}</span>
       {to ? (
-        <Link to={to} className="flex min-w-0 flex-1 hover:text-brand-strong">
+        <Link to={to} className="flex min-w-0 flex-1 hover:text-brand-text">
           {name}
         </Link>
       ) : (

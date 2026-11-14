@@ -1,7 +1,7 @@
 import { Camera, Heart } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { BottomSheet } from '../../components/BottomSheet'
-import { ThemeToggle } from '../../components/SettingToggles'
+import { ColorModeToggle, ThemeToggle } from '../../components/SettingToggles'
 import { useLogout, useMe, useRemoveAvatar, useSetAvatar } from '../../lib/queries'
 import { errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
@@ -42,7 +42,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
               className="relative shrink-0 disabled:opacity-50"
             >
               <Avatar name={user.nickname} src={user.profileImageUrl} />
-              <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-white text-ink shadow-md retro:rounded-none retro:pixel-outline retro:pixel-thin">
+              <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full bg-surface text-ink shadow-md retro:rounded-none retro:pixel-outline retro:pixel-thin">
                 <Camera size={11} strokeWidth={2} />
               </span>
             </button>
@@ -92,8 +92,8 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
                   onClick={() => copyCode(couple.coupleCode)}
                   className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-soft px-4 py-3"
                 >
-                  <span className="text-[20px] font-bold tracking-[6px] text-brand-strong">{couple.coupleCode}</span>
-                  <span className="text-[12px] font-semibold text-brand-strong">{copied ? t.account.copied : t.account.copy}</span>
+                  <span className="text-[20px] font-bold tracking-[6px] text-brand-text">{couple.coupleCode}</span>
+                  <span className="text-[12px] font-semibold text-brand-text">{copied ? t.account.copied : t.account.copy}</span>
                 </button>
               </>
             )}
@@ -103,6 +103,11 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
           <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.label}</p>
           <ThemeToggle />
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-card-border p-4">
+          <p className="text-[12px] leading-normal font-semibold text-muted">{t.theme.modeLabel}</p>
+          <ColorModeToggle />
         </div>
 
         <NotificationSettings />

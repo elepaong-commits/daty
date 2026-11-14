@@ -29,12 +29,12 @@ export function Sidebar() {
   const partner = couple.users.find((u) => u.id !== user.id)
 
   return (
-    <aside className="hidden w-[240px] shrink-0 flex-col gap-6 border-r border-sand bg-white px-4 pt-7 pb-5 lg:flex">
+    <aside className="hidden w-[240px] shrink-0 flex-col gap-6 border-r border-sand bg-surface px-4 pt-7 pb-5 lg:flex">
       <div className="flex items-center gap-2 px-2 retro:gap-2.5 retro:px-1">
         <span className="flex size-8 items-center justify-center rounded-[10px] bg-brand-strong text-white retro:size-9 retro:rounded-none retro:pixel-outline retro:pixel-thin">
           {retro ? <PixelSprite name="heart" scale={2} /> : <Heart size={17} strokeWidth={1.75} fill="currentColor" />}
         </span>
-        <span className="font-display text-[28px] leading-none text-brand-strong retro:font-pixel-head retro:text-[30px] retro:pixel-crisp">daty</span>
+        <span className="font-display text-[28px] leading-none text-brand-text retro:font-pixel-head retro:text-[30px] retro:pixel-crisp">daty</span>
       </div>
 
       <div className="flex flex-col rounded-[20px] border border-card-border bg-cream p-4 retro:rounded-none retro:border-0 retro:pixel-box">
@@ -52,7 +52,7 @@ export function Sidebar() {
         ) : (
           <div className="flex items-center justify-between gap-2">
             <div className="flex">
-              <Initial name={user.nickname} src={user.profileImageUrl} className="bg-brand-soft text-brand-strong" />
+              <Initial name={user.nickname} src={user.profileImageUrl} className="bg-brand-soft text-brand-text" />
               {partner && <Initial name={partner.nickname} src={partner.profileImageUrl} className="-ml-2 bg-coral-soft text-coral-strong" />}
             </div>
             <span className="min-w-0 truncate text-[11px] font-semibold text-muted">
@@ -77,7 +77,7 @@ export function Sidebar() {
               to={to}
               aria-current={active ? 'page' : undefined}
               className={`relative isolate flex h-[46px] items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold transition-colors duration-200 retro:h-11 retro:rounded-none retro:px-3 retro:font-pixel retro:text-[12px] retro:font-normal retro:pixel-crisp ${
-                active ? 'text-brand-strong retro:text-brand-strong' : 'text-muted hover:bg-sand-soft hover:text-ink retro:text-ink'
+                active ? 'text-brand-text retro:text-brand-text' : 'text-muted hover:bg-sand-soft hover:text-ink retro:text-ink'
               }`}
             >
               {/* Slides over to the tab that opens (in the pixel design with the menu cursor riding along). */}
@@ -116,10 +116,10 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setAccount(true)}
-          className="flex items-center gap-2.5 rounded-[14px] border border-card-border p-2.5 text-left hover:bg-sand-soft retro:rounded-none retro:border-0 retro:bg-white retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-handle)]"
+          className="flex items-center gap-2.5 rounded-[14px] border border-card-border p-2.5 text-left hover:bg-sand-soft retro:rounded-none retro:border-0 retro:bg-surface retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-handle)]"
           aria-label={t.common.myInfo}
         >
-          <Initial name={user.nickname} src={user.profileImageUrl} size={34} className="bg-brand-soft text-brand-strong" />
+          <Initial name={user.nickname} src={user.profileImageUrl} size={34} className="bg-brand-soft text-brand-text" />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[13px] font-bold ui-label retro:text-[12px]">{user.nickname}</span>
             <span className="truncate text-[11px] text-muted">{user.email}</span>

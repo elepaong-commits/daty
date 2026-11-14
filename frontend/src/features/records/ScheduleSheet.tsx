@@ -34,7 +34,7 @@ interface Props {
 
 const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: string }[] = [
   { value: 'PLAN', key: 'plan', activeClass: 'text-coral' },
-  { value: 'RECORD', key: 'record', activeClass: 'text-brand-strong' },
+  { value: 'RECORD', key: 'record', activeClass: 'text-brand-text' },
 ]
 
 /** Where the record happens: one of the couple's saved places, or a new one from Google. */
@@ -148,7 +148,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
               aria-checked={type === option.value}
               onClick={() => setType(option.value)}
               className={`ui-seg-option flex-1 rounded-xl text-[14px] leading-normal font-semibold retro:text-[13px] ${
-                type === option.value ? `bg-white ${option.activeClass}` : 'text-ink'
+                type === option.value ? `bg-surface ${option.activeClass}` : 'text-ink'
               }`}
             >
               {t.schedule[option.key]}
@@ -191,7 +191,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
                 role="radio"
                 aria-checked={placeSource === value}
                 onClick={() => setSource(value)}
-                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
+                className={`ui-seg-option flex-1 rounded-lg text-[13px] leading-normal font-semibold retro:text-[12px] ${placeSource === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
               >
                 {t.schedule.placeSource[value]}
               </button>
@@ -298,7 +298,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
         {editing ? (
           <>
             <div className="flex gap-3 pt-5">
-              <button type="button" onClick={onClose} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-white retro:text-[14px]">
+              <button type="button" onClick={onClose} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-surface retro:text-[14px]">
                 {t.common.cancel}
               </button>
               <button

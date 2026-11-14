@@ -24,10 +24,10 @@ export function ResetLinkPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
       <div className="pb-8 text-center">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.auth.tagline}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-[20px] leading-normal">{t.auth.linkTitle}</h2>
           <p className="text-[12px] leading-normal text-muted">{t.auth.linkHelp}</p>
@@ -54,7 +54,7 @@ export function ResetLinkPage() {
         >
           {reset.isPending ? t.common.wait : t.auth.linkSubmit}
         </button>
-        <button type="button" onClick={() => navigate('/', { replace: true })} className="text-[13px] font-semibold text-brand-strong">
+        <button type="button" onClick={() => navigate('/', { replace: true })} className="text-[13px] font-semibold text-brand-text">
           {t.auth.backToLogin}
         </button>
       </form>

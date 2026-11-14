@@ -55,7 +55,7 @@ export function AlbumsPage() {
             <div className="flex shrink-0 items-center gap-2">
               <Link
                 to="/recap"
-                className="ui-btn-thin flex h-10 items-center rounded-full bg-white px-3.5 text-[14px] font-semibold text-brand-strong retro:h-9 retro:px-3 retro:text-[12px] retro:text-brand-strong"
+                className="ui-btn-thin flex h-10 items-center rounded-full bg-surface px-3.5 text-[14px] font-semibold text-brand-text retro:h-9 retro:px-3 retro:text-[12px] retro:text-brand-text"
               >
                 {t.albums.recap}
               </Link>
@@ -100,7 +100,7 @@ export function AlbumsPage() {
             </div>
           )}
           {!isLoading && !error && filtering && shown.length === 0 && (
-            <p className="ui-empty rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.albums.noResults}</p>
+            <p className="ui-empty rounded-2xl bg-surface/60 py-8 text-center text-[13px] text-muted">{t.albums.noResults}</p>
           )}
           {!isLoading && !error && groups.map((group, g) => (
             <section key={group.year} className="flex flex-col gap-3">
@@ -174,7 +174,7 @@ function NewAlbumCard({ index, onClick }: { index: number; onClick: () => void }
       <span className="flex size-11 items-center justify-center rounded-full bg-brand-strong text-[24px] text-white retro:size-10 retro:pixel-outline retro:pixel-thin">
         {retro ? <PixelSprite name="plus" scale={3} /> : '+'}
       </span>
-      <span className="text-[14px] font-bold text-brand-strong">{t.albums.createCard}</span>
+      <span className="text-[14px] font-bold text-brand-text">{t.albums.createCard}</span>
       <span className="text-center text-[11px] leading-[1.375] text-muted">
         {t.albums.createCardHint[0]}
         <br />

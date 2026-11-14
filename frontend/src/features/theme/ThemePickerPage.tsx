@@ -20,11 +20,11 @@ export function ThemePickerPage() {
     <div className="h-dvh overflow-y-auto bg-cream">
       <div className="mx-auto flex w-full max-w-[960px] flex-col px-5 pt-[max(20px,env(safe-area-inset-top))] lg:pt-12 lg:pb-12">
         <header className="flex items-center justify-between">
-          <span className="font-display text-[28px] leading-none text-brand-strong">daty</span>
+          <span className="font-display text-[28px] leading-none text-brand-text">daty</span>
           <LanguageToggle />
         </header>
 
-        <p className="pt-7 text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.theme.pickerEyebrow}</p>
+        <p className="pt-7 text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.theme.pickerEyebrow}</p>
         <h1 className="pt-1 font-display text-[26px] leading-[1.25] lg:text-[28px]">{t.theme.pickerTitle}</h1>
         <p className="pt-1.5 text-[13px] leading-normal text-muted">{t.theme.pickerHint}</p>
 
@@ -37,7 +37,7 @@ export function ThemePickerPage() {
               aria-checked={picked === theme}
               onClick={() => setPicked(theme)}
               className={`flex flex-col rounded-[22px] border-2 p-2.5 text-left transition-colors ${
-                picked === theme ? 'border-brand bg-brand-soft' : 'border-card-border bg-white hover:border-brand/40'
+                picked === theme ? 'border-brand bg-brand-soft' : 'border-card-border bg-surface hover:border-brand/40'
               }`}
             >
               <ThemeScope theme={theme} className="overflow-hidden rounded-2xl bg-cream">

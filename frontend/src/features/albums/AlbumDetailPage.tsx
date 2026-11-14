@@ -200,7 +200,7 @@ export function AlbumDetailPage() {
       {header}
       {/* Album info first (on desktop a wide card with the best cut beside it), then the photos below. */}
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:gap-4 lg:pb-10">
-        <section className="flex gap-6 ui-box retro:m-1 retro:bg-white retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-white lg:p-5">
+        <section className="flex gap-6 ui-box retro:m-1 retro:bg-surface retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-surface lg:p-5">
           {album.coverPhoto?.thumbnailUrl && (
             <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline lg:block xl:w-[300px]">
               <img src={album.coverPhoto.thumbnailUrl} alt={t.albums.bestCut} className="size-full object-cover" />
@@ -258,7 +258,7 @@ export function AlbumDetailPage() {
                 type="button"
                 onClick={() => saveToDevice()}
                 disabled={saveProgress !== null}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand-strong disabled:opacity-50 retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-surface px-3 text-[12px] font-semibold text-brand-text disabled:opacity-50 retro:text-brand-text"
               >
                 {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.saveAll}
               </button>
@@ -267,7 +267,7 @@ export function AlbumDetailPage() {
               <button
                 type="button"
                 onClick={toggleSelecting}
-                className="ui-btn-thin h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-brand-strong retro:text-brand-strong"
+                className="ui-btn-thin h-8 rounded-full bg-surface px-3 text-[12px] font-semibold text-brand-text retro:text-brand-text"
               >
                 {selecting ? t.albums.done : t.albums.select}
               </button>
@@ -301,7 +301,7 @@ export function AlbumDetailPage() {
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {album.photos.length > 0 && (
-          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-white p-1 retro:mt-1 lg:w-[380px]" role="tablist">
+          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-surface p-1 retro:mt-1 lg:w-[380px]" role="tablist">
             {FILTERS.map((value) => (
               <button
                 key={value}
@@ -330,7 +330,7 @@ export function AlbumDetailPage() {
                 type="button"
                 aria-pressed={sort === value}
                 onClick={() => changeSort(value)}
-                className={`ui-pop h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-strong' : 'text-muted'}`}
+                className={`ui-pop h-7 rounded-full px-2.5 font-semibold ${sort === value ? 'bg-brand-soft text-brand-text' : 'text-muted'}`}
               >
                 {t.albums.sort[value]}
               </button>
@@ -349,7 +349,7 @@ export function AlbumDetailPage() {
         </div>
 
         {shown.length === 0 ? (
-          <p className="ui-empty rounded-2xl bg-white/60 py-10 text-center text-[13px] text-muted">
+          <p className="ui-empty rounded-2xl bg-surface/60 py-10 text-center text-[13px] text-muted">
             {filter === 'ALL' ? t.albums.empty : t.albums.emptyFilter[filter]}
             <br />
             <span className="text-[11px]">{t.albums.emptyHint}</span>
@@ -372,7 +372,7 @@ export function AlbumDetailPage() {
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
-                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-night/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
                       <Play size={9} strokeWidth={2} />
                       {photo.durationSec !== null && formatDuration(photo.durationSec)}
                     </span>
@@ -383,7 +383,7 @@ export function AlbumDetailPage() {
                     </span>
                   )}
                   {!selecting && ((photo.comments?.length ?? 0) > 0 || (photo.reactions?.length ?? 0) > 0) && (
-                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-ink/70 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white tabular-nums">
+                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-night/70 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white tabular-nums">
                       {photo.reactions?.[0]?.emoji ?? <MessageCircle size={10} strokeWidth={2} />}
                       {(photo.comments?.length ?? 0) > 0 && photo.comments!.length}
                     </span>
@@ -391,7 +391,7 @@ export function AlbumDetailPage() {
                   {selecting && (
                     <span
                       className={`absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white text-white ${
-                        isSelected ? 'bg-brand-strong' : 'bg-ink/30'
+                        isSelected ? 'bg-brand-strong' : 'bg-night/30'
                       }`}
                     >
                       {isSelected && <Check size={12} strokeWidth={2.5} />}
@@ -406,7 +406,7 @@ export function AlbumDetailPage() {
       </div>
 
       {selecting && (
-        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-white px-5 py-3 retro:border-t-3 retro:border-ink">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-sand bg-surface px-5 py-3 retro:border-t-3 retro:border-ink">
           {actionError && <p className="text-[12px] text-coral-strong">{errorMessage(actionError, t)}</p>}
           {album.coverPhotoId === null && <p className="text-[11px] text-muted">{t.albums.bestCutHint}</p>}
           <div className="flex gap-3">
@@ -422,7 +422,7 @@ export function AlbumDetailPage() {
               type="button"
               onClick={() => saveToDevice(selected)}
               disabled={selected.size === 0 || saveProgress !== null}
-              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-soft text-[14px] font-semibold text-brand-strong disabled:opacity-40 retro:text-[13px]"
+              className="ui-btn-thin h-11 flex-1 rounded-2xl bg-brand-soft text-[14px] font-semibold text-brand-text disabled:opacity-40 retro:text-[13px]"
             >
               {saveProgress ? t.albums.saveStarting(saveProgress.done, saveProgress.total) : t.albums.save}
             </button>
@@ -511,7 +511,7 @@ function GridPhoto({ photo }: { photo: Photo }) {
   if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
   if (photo.mediaType === 'VIDEO' && !src) {
     return (
-      <span className="flex size-full flex-col items-center justify-center gap-1 bg-ink/80 text-[10px] text-white/80">
+      <span className="flex size-full flex-col items-center justify-center gap-1 bg-night/80 text-[10px] text-white/80">
         <Video size={22} strokeWidth={1.5} />
         {t.albums.video}
       </span>

@@ -93,13 +93,13 @@ export function CalendarPage() {
           title={t.dates.yearMonth(month)}
           actions={
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => goToMonth(today)} className="ui-btn-thin h-9 rounded-full bg-white px-3 text-[12px] font-semibold retro:mr-1.5 retro:font-normal">
+              <button type="button" onClick={() => goToMonth(today)} className="ui-btn-thin h-9 rounded-full bg-surface px-3 text-[12px] font-semibold retro:mr-1.5 retro:font-normal">
                 {t.calendar.today}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="ui-icon-button size-9 bg-white retro:mr-1.5" aria-label={t.calendar.prevMonth}>
+              <button type="button" onClick={() => goToMonth(addMonths(month, -1))} className="ui-icon-button size-9 bg-surface retro:mr-1.5" aria-label={t.calendar.prevMonth}>
                 {retro ? <PixelSprite name="left" scale={2} /> : <img src={chevronLeft} alt="" width={16} height={16} />}
               </button>
-              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="ui-icon-button size-9 bg-white" aria-label={t.calendar.nextMonth}>
+              <button type="button" onClick={() => goToMonth(addMonths(month, 1))} className="ui-icon-button size-9 bg-surface" aria-label={t.calendar.nextMonth}>
                 {retro ? <PixelSprite name="right" scale={2} /> : <img src={chevronRight} alt="" width={16} height={16} />}
               </button>
             </div>
@@ -108,7 +108,7 @@ export function CalendarPage() {
 
         {/* The day panel sits beside the month from xl; below it on narrower desktops so the cells keep their width. */}
         <div className="lg:px-5 xl:flex xl:items-start xl:gap-6">
-        <section className="ui-box mx-4 rounded-3xl bg-white p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
+        <section className="ui-box mx-4 rounded-3xl bg-surface p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
               {retro ? <span className="size-2 bg-brand" /> : <img src={markerRecord} alt="" width={8} height={8} />} {t.calendar.legendRecord}
@@ -123,7 +123,7 @@ export function CalendarPage() {
 
           <div className="grid grid-cols-7 pb-1 text-center text-[11px] leading-normal font-semibold">
             {t.weekdays.map((d, i) => (
-              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand-strong' : ''}>
+              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand-text' : ''}>
                 {d}
               </span>
             ))}
@@ -149,7 +149,7 @@ export function CalendarPage() {
           </div>
         </section>
 
-        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-white lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
+        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-surface lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
@@ -250,7 +250,7 @@ function DayCell({
       : weekday === 0
         ? 'text-coral'
         : weekday === 6
-          ? 'text-brand-strong'
+          ? 'text-brand-text'
           : 'text-ink'
   const shownMilestones = inMonth ? milestones.slice(0, 1) : []
   const visible = inMonth ? records.slice(0, (isDesktop ? MAX_BARS_DESKTOP : MAX_BARS) - shownMilestones.length) : []
@@ -288,7 +288,7 @@ function DayCell({
           key={r.id}
           className={`h-3.5 truncate rounded px-1 text-left text-[9px] leading-[1.556] font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
             r.type === 'RECORD'
-              ? 'border border-transparent bg-brand-soft text-brand-strong'
+              ? 'border border-transparent bg-brand-soft text-brand-text'
               : 'border border-coral/45 bg-coral-soft text-coral-strong'
           }`}
         >

@@ -53,7 +53,7 @@ export function ProfileSettings({ me }: { me: Me }) {
           {t.account.editProfile}
           <span className="text-muted">›</span>
         </button>
-        {saved && <p className="px-1 text-[12px] text-brand-strong">{t.account.profileSaved}</p>}
+        {saved && <p className="px-1 text-[12px] text-brand-text">{t.account.profileSaved}</p>}
       </div>
     )
   }

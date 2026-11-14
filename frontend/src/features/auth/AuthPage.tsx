@@ -48,7 +48,7 @@ export function AuthPage() {
         <LanguageToggle />
       </div>
       <div className="pb-8 text-center">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.auth.tagline}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.auth.tagline}</p>
         <h1 className="font-display text-[44px] leading-[1.25]">daty</h1>
       </div>
 
@@ -65,7 +65,7 @@ export function AuthPage() {
                   role="tab"
                   aria-selected={mode === value}
                   onClick={() => switchMode(value)}
-                  className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
+                  className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
                 >
                   {value === 'login' ? t.auth.login : t.auth.signup}
                 </button>
@@ -73,7 +73,7 @@ export function AuthPage() {
             </div>
           )}
 
-          <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+          <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
             {mode === 'signup' && (
               <Field label={t.auth.nickname}>
                 <input
@@ -147,7 +147,7 @@ function AuthHero() {
         <span className="flex size-9 items-center justify-center rounded-xl bg-brand-strong text-white">
           <Heart size={20} strokeWidth={1.75} fill="currentColor" />
         </span>
-        <span className="font-display text-[36px] leading-none text-brand-strong">daty</span>
+        <span className="font-display text-[36px] leading-none text-brand-text">daty</span>
       </div>
 
       <div className="relative my-8 min-h-0 flex-1" aria-hidden="true">
@@ -157,14 +157,14 @@ function AuthHero() {
           const { Icon } = categoryOf(category)
           const [from, to] = PHOTO_GRADIENTS[category][0]!
           return (
-            <div key={category} className={`absolute h-44 w-36 rounded-[10px] bg-white p-2.5 pb-9 shadow-photo ${className}`}>
+            <div key={category} className={`absolute h-44 w-36 rounded-[10px] bg-surface p-2.5 pb-9 shadow-photo ${className}`}>
               <div className="flex size-full items-center justify-center rounded-md" style={{ background: `linear-gradient(160deg, ${from}, ${to})` }}>
                 <Icon size={40} strokeWidth={1.5} className="text-white" />
               </div>
             </div>
           )
         })}
-        <MapPin size={44} strokeWidth={1.75} className="absolute top-[30%] left-[46%] fill-white text-brand-strong" />
+        <MapPin size={44} strokeWidth={1.75} className="absolute top-[30%] left-[46%] fill-white text-brand-text" />
       </div>
 
       <div className="flex flex-col gap-2.5">

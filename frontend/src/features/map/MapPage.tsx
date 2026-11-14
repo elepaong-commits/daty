@@ -174,7 +174,7 @@ export function MapPage() {
               setSearchOpen((open) => !open)
               setQuery('')
             }}
-            className="ui-icon-button bg-white lg:hidden"
+            className="ui-icon-button bg-surface lg:hidden"
             aria-label={t.map.search}
             aria-expanded={searchOpen}
           >
@@ -236,7 +236,7 @@ export function MapPage() {
 
       {status === 'WISH' && listed.length > 0 && (
         <div className="flex shrink-0 flex-wrap items-center gap-2 px-5 pb-3 text-[12px]">
-          <button type="button" onClick={pickRandom} className="ui-btn-thin flex h-8 items-center gap-1.5 rounded-full bg-white px-3 font-semibold text-brand-strong retro:text-brand-strong">
+          <button type="button" onClick={pickRandom} className="ui-btn-thin flex h-8 items-center gap-1.5 rounded-full bg-surface px-3 font-semibold text-brand-text retro:text-brand-text">
             <Dices size={14} strokeWidth={1.75} /> {t.map.randomPick}
           </button>
           <button
@@ -245,7 +245,7 @@ export function MapPage() {
             disabled={locating === 'pending'}
             aria-pressed={near !== null}
             className={`ui-btn-thin flex h-8 items-center gap-1.5 rounded-full px-3 font-semibold disabled:opacity-50 ${
-              near ? 'bg-brand-strong text-white' : 'bg-white text-brand-strong retro:text-brand-strong'
+              near ? 'bg-brand-strong text-white' : 'bg-surface text-brand-text retro:text-brand-text'
             }`}
           >
             <LocateFixed size={14} strokeWidth={1.75} /> {locating === 'pending' ? t.common.wait : t.map.nearby}

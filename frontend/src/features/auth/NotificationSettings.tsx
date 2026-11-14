@@ -28,7 +28,7 @@ export function NotificationSettings() {
       <p className="text-[12px] leading-normal text-muted">{pushSupported ? t.notifications.help : t.notifications.unsupported}</p>
       {pushSupported && (
         <>
-          {subscribed && <p className="text-[13px] font-semibold text-brand-strong">{t.notifications.on}</p>}
+          {subscribed && <p className="text-[13px] font-semibold text-brand-text">{t.notifications.on}</p>}
           <div className="flex gap-2">
             <button
               type="button"
@@ -43,7 +43,7 @@ export function NotificationSettings() {
                 type="button"
                 onClick={() => test.mutate()}
                 disabled={test.isPending}
-                className="h-11 flex-1 rounded-xl bg-brand-soft text-[14px] font-semibold text-brand-strong disabled:opacity-50"
+                className="h-11 flex-1 rounded-xl bg-brand-soft text-[14px] font-semibold text-brand-text disabled:opacity-50"
               >
                 {test.isPending ? t.common.wait : test.isSuccess ? t.notifications.testSent : t.notifications.test}
               </button>

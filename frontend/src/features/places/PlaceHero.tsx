@@ -59,7 +59,7 @@ function GooglePlaceHero(props: Props & { googlePlaceId: string }) {
     <div className={`relative overflow-hidden ${props.className}`}>
       <img src={photo.src} alt="" onError={onError} className="size-full object-cover" />
       {/* Google requires its name and the photographer's next to Places photos. */}
-      <span className="absolute right-2 bottom-2 max-w-[70%] truncate rounded-full bg-ink/70 px-2 py-0.5 text-[10px] text-white">
+      <span className="absolute right-2 bottom-2 max-w-[70%] truncate rounded-full bg-night/70 px-2 py-0.5 text-[10px] text-white">
         Google Maps
         {photo.author &&
           (photo.author.uri ? (

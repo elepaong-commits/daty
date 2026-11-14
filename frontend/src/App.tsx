@@ -201,7 +201,7 @@ function OfflineBanner() {
   const t = useT()
   if (useOnline()) return null
   return (
-    <p role="status" className="shrink-0 bg-ink px-4 py-1.5 text-center text-[12px] text-white retro:font-pixel retro:pixel-crisp">
+    <p role="status" className="shrink-0 bg-night px-4 py-1.5 text-center text-[12px] text-white retro:font-pixel retro:pixel-crisp">
       {t.common.offline}
     </p>
   )

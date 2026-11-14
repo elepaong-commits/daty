@@ -9,7 +9,7 @@ export function SaveReadyBar({ saver, dark = false }: { saver: ReturnType<typeof
   return (
     <div
       role="status"
-      className={`ui-box-thin flex items-center gap-2 rounded-2xl p-2 pl-3.5 ${dark ? 'bg-white/15 text-white' : 'bg-brand-soft text-brand-strong'}`}
+      className={`ui-box-thin flex items-center gap-2 rounded-2xl p-2 pl-3.5 ${dark ? 'bg-white/15 text-white' : 'bg-brand-soft text-brand-text'}`}
     >
       <p className="min-w-0 flex-1 text-[13px] font-semibold">{t.albums.saveReady(state.count, state.done, state.total)}</p>
       <button type="button" onClick={saver.cancel} className="ui-btn-thin h-9 rounded-xl px-3 text-[13px] font-semibold">

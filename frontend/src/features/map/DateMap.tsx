@@ -201,7 +201,7 @@ function PlacePin({ place, dimmed, selected }: { place: Place; dimmed: boolean; 
         <Icon size={selected ? 18 : 15} strokeWidth={2} />
       </span>
       {selected && (
-        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-full bg-night px-2.5 py-1 text-[11px] leading-normal font-semibold whitespace-nowrap text-white">
           {place.name}
         </span>
       )}
@@ -236,7 +236,7 @@ function RetroPlacePin({ place, dimmed, selected }: { place: Place; dimmed: bool
         <PixelSprite name={CATEGORY_SPRITES[place.category]} scale={selected ? 3 : 2} />
       </span>
       {selected && (
-        <span className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 bg-white px-2 py-1 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-box pixel-thin pixel-crisp">
+        <span className="absolute bottom-full left-1/2 mb-2.5 -translate-x-1/2 bg-surface px-2 py-1 font-pixel text-[11px] leading-normal whitespace-nowrap pixel-box pixel-thin pixel-crisp">
           {place.name}
         </span>
       )}
@@ -285,7 +285,7 @@ function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLi
 
   return (
     <>
-      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-white/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 lg:retro:top-5 lg:retro:left-5">
+      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-surface/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 lg:retro:top-5 lg:retro:left-5">
         <span className="flex items-center gap-1 retro:gap-1.5">
           {retro ? <span className="size-2 bg-brand" /> : <img src={dotVisited} alt="" width={10} height={10} />} {t.status.VISITED}
         </span>
@@ -294,7 +294,7 @@ function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLi
         </span>
       </div>
       {/* One rounded block in the classic design; two separate pixel buttons in the pixel one. */}
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-white lg:top-4 lg:right-4 lg:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none lg:retro:top-5 lg:retro:right-5">
+      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-surface lg:top-4 lg:right-4 lg:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none lg:retro:top-5 lg:retro:right-5">
         <button type="button" onClick={() => zoom(1)} className="ui-float-button flex size-9 items-center justify-center retro:size-8" aria-label={t.map.zoomIn}>
           {retro ? <PixelSprite name="plus" scale={2} /> : <Plus size={18} strokeWidth={1.75} />}
         </button>

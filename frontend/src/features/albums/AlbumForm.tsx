@@ -126,11 +126,11 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           <span className="ui-badge">{monthly ? t.albums.wholeMonth : multiDay ? t.albums.tripLength(days - 1, days) : t.albums.oneDay}</span>
           <span className="ml-auto flex gap-3">
             {multiDay && !monthly && (
-              <button type="button" onClick={() => setEndDate(date)} className="text-[12px] font-semibold text-brand-strong">
+              <button type="button" onClick={() => setEndDate(date)} className="text-[12px] font-semibold text-brand-text">
                 {t.albums.makeOneDay}
               </button>
             )}
-            <button type="button" onClick={() => setMonthly(!monthly)} className="text-[12px] font-semibold text-brand-strong">
+            <button type="button" onClick={() => setMonthly(!monthly)} className="text-[12px] font-semibold text-brand-text">
               {monthly ? t.albums.byDate : t.albums.byMonth}
             </button>
           </span>
@@ -138,11 +138,11 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
         {monthly ? (
           <>
             <div className="flex items-center gap-2" role="group" aria-label={t.albums.month}>
-              <button type="button" onClick={() => setMonth(addMonths(month, -1))} className="ui-icon-button size-11 shrink-0 bg-white" aria-label={t.albums.prevMonth}>
+              <button type="button" onClick={() => setMonth(addMonths(month, -1))} className="ui-icon-button size-11 shrink-0 bg-surface" aria-label={t.albums.prevMonth}>
                 {retro ? <PixelSprite name="left" scale={2} /> : <img src={chevronLeft} alt="" width={16} height={16} />}
               </button>
               <span className={`${inputClass} flex min-w-0 flex-1 items-center justify-center font-semibold`}>{t.dates.yearMonth(month)}</span>
-              <button type="button" onClick={() => setMonth(addMonths(month, 1))} className="ui-icon-button size-11 shrink-0 bg-white" aria-label={t.albums.nextMonth}>
+              <button type="button" onClick={() => setMonth(addMonths(month, 1))} className="ui-icon-button size-11 shrink-0 bg-surface" aria-label={t.albums.nextMonth}>
                 {retro ? <PixelSprite name="right" scale={2} /> : <img src={chevronRight} alt="" width={16} height={16} />}
               </button>
             </div>
@@ -178,7 +178,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
       {dayAlbum && (
         <p className="-mt-2 flex flex-col gap-1 rounded-xl bg-coral-soft px-3 py-2 text-[12px] text-coral-strong">
           {multiDay ? t.albums.periodTaken : t.albums.dayTaken}
-          <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand-strong">
+          <Link to={`/albums/${dayAlbum.id}`} className="self-start font-semibold text-brand-text">
             {t.albums.openDayAlbum(dayAlbum.title)}
           </Link>
         </p>
@@ -203,7 +203,7 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           ))}
           {addedPlaces.map((p) => (
             <div key={p.id} className="flex items-center gap-2 rounded-xl border border-brand bg-brand-soft px-3 py-2.5 text-[14px]">
-              <span className="text-[11px] font-semibold text-brand-strong">{t.albums.newVisit}</span>
+              <span className="text-[11px] font-semibold text-brand-text">{t.albums.newVisit}</span>
               <CategoryIcon category={p.category} />
               <span className="min-w-0 flex-1 truncate">{p.name}</span>
               <button type="button" onClick={() => togglePlace(p.id)} className="text-[12px] font-semibold text-muted">
@@ -215,14 +215,14 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
           <button
             type="button"
             onClick={() => setChoosingPlaces((on) => !on)}
-            className="h-9 self-start rounded-full bg-sand-soft px-3 text-[12px] font-semibold text-brand-strong"
+            className="h-9 self-start rounded-full bg-sand-soft px-3 text-[12px] font-semibold text-brand-text"
           >
             {choosingPlaces ? t.albums.closePlaces : t.albums.addPlaces}
           </button>
           {choosingPlaces && (
             <SavedPlacePicker places={pickable} selectedIds={placeIds} onSelect={(place) => togglePlace(place.id)} />
           )}
-          {addedPlaces.length > 0 && <p className="text-[11px] text-brand-strong">{multiDay ? t.albums.newVisitHintPeriod : t.albums.newVisitHint}</p>}
+          {addedPlaces.length > 0 && <p className="text-[11px] text-brand-text">{multiDay ? t.albums.newVisitHintPeriod : t.albums.newVisitHint}</p>}
         </div>
       )}
 
@@ -247,5 +247,5 @@ export function AlbumForm({ album, draft, submitLabel, isPending, error, footer,
 
 function CategoryIcon({ category }: { category: PlaceCategory }) {
   const { Icon } = categoryOf(category)
-  return <Icon size={14} strokeWidth={1.75} className="shrink-0 text-brand-strong" />
+  return <Icon size={14} strokeWidth={1.75} className="shrink-0 text-brand-text" />
 }

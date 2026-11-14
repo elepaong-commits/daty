@@ -130,7 +130,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
       aria-modal="true"
       aria-label={t.albums.viewer}
     >
-      <div data-viewer-fade className="absolute inset-0 bg-ink" />
+      <div data-viewer-fade className="absolute inset-0 bg-night" />
       <div data-viewer-fade className="relative flex shrink-0 items-center justify-between px-4 pt-3.5 pb-2">
         <span className="text-[13px] font-semibold tabular-nums">
           {index + 1} / {photos.length}
@@ -138,7 +138,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
         <button
           type="button"
           onClick={onClose}
-          className="flex size-9 items-center justify-center rounded-full bg-white/15 retro:size-8 retro:bg-white retro:pixel-btn retro:pixel-thin"
+          className="flex size-9 items-center justify-center rounded-full bg-white/15 retro:size-8 retro:bg-surface retro:pixel-btn retro:pixel-thin"
           aria-label={t.common.close}
         >
           {retro ? <PixelSprite name="close" scale={2} /> : <X size={18} strokeWidth={1.75} />}
@@ -212,7 +212,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
             aria-pressed={talking}
             aria-label={t.feedback.open(feedback.comments.length)}
             className={`ui-pop flex h-8 items-center gap-1 rounded-full px-2.5 text-[12px] font-semibold tabular-nums retro:pixel-outline retro:pixel-thin retro:[--pixel-border:var(--color-white)] ${
-              talking ? 'bg-white text-ink' : 'bg-white/15 text-white'
+              talking ? 'bg-surface text-ink' : 'bg-white/15 text-white'
             }`}
           >
             <MessageCircle size={15} strokeWidth={1.75} />
@@ -279,7 +279,7 @@ function NavButton({ side, label, onClick, children }: { side: 'left' | 'right';
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] retro:bg-white retro:pb-0 retro:pixel-btn retro:pixel-thin ${
+      className={`absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 pb-0.5 text-[24px] retro:bg-surface retro:pb-0 retro:pixel-btn retro:pixel-thin ${
         side === 'left' ? 'left-3' : 'right-3'
       }`}
     >

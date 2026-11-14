@@ -50,6 +50,13 @@
   --color-amber-ink: #7a5600;
   --color-amber-soft: #fff6dd;
 
+  /* Cards, sheets, fields: white in light mode (use this, not bg-surface, so dark mode can change it). */
+  --color-surface: #ffffff;
+  /* Teal text and links: brand-strong in light mode, a lighter teal on dark grounds. */
+  --color-brand-text: #00796b;
+  /* Always dark, in either mode: the photo viewer and overlays on photos. */
+  --color-night: #2d3748;
+
   --color-ink: #2d3748;
   --color-muted: #718096;
   --color-faint: #a0aec0;
@@ -187,6 +194,36 @@
   box-shadow: 0 4px 0 0 var(--color-brand-deep);
 }
 
+/*
+ * Dark mode (<html data-mode="dark">, see lib/colorMode.ts): the same tokens, night colours. Coloured
+ * fills (brand-strong, coral, danger) keep their white text; `night` and the pixel sprites stay as they are.
+ */
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+:root[data-mode="dark"] {
+  --color-cream: #14181f;
+  --color-surface: #1e2430;
+  --color-ink: #e6eaf0;
+  --color-muted: #a6b0bf;
+  --color-faint: #8794a6;
+  --color-placeholder: #7d8798;
+  --color-brand-text: #5fd4c4;
+  --color-brand-soft: #123a36;
+  --color-coral-soft: #3a2024;
+  --color-coral-strong: #ff8a8a;
+  --color-amber-soft: #352b12;
+  --color-amber-ink: #f2cf72;
+  --color-amber-strong: #e8b23c;
+  --color-sand: #2c3340;
+  --color-sand-soft: #262d39;
+  --color-segment: #232a35;
+  --color-field: #232a35;
+  --color-field-border: #363e4c;
+  --color-chip-border: #363e4c;
+  --color-card-border: #2c3340;
+  --color-handle: #434c5b;
+  --color-beige: #262d39;
+}
+
 @layer base {
   html,
   body,
@@ -297,7 +334,7 @@
 /* ---- Shared shapes in both designs. The classic look first, then the pixel one. ---- */
 
 @utility ui-eyebrow {
-  @apply text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong;
+  @apply text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text;
   @variant retro {
     @apply font-pixel font-normal tracking-normal pixel-crisp;
     &::before {
@@ -343,7 +380,7 @@
 
 /* Filter and form chips; `aria-pressed` marks the picked one. `--chip-border` tints the classic outline. */
 @utility ui-chip {
-  @apply flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-white px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap text-ink;
+  @apply flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-surface px-3.5 text-[13px] leading-normal font-semibold whitespace-nowrap text-ink;
   border-color: var(--chip-border, var(--color-chip-border));
   &[aria-pressed="true"] {
     @apply border-brand bg-brand-strong text-white;
@@ -353,7 +390,7 @@
     --pixel-border: var(--color-handle);
     /* A light fill, so the sprites' dark outlines still show on the picked chip. */
     &[aria-pressed="true"] {
-      @apply bg-brand-soft text-brand-strong motion-safe:animate-pixel-pop;
+      @apply bg-brand-soft text-brand-text motion-safe:animate-pixel-pop;
       --pixel-border: var(--color-brand);
     }
   }
@@ -361,7 +398,7 @@
 
 /* Two-way switch (visited / wish): a white track with the picked tab filled, or two pixel buttons. */
 @utility ui-tabs {
-  @apply flex h-12 rounded-2xl bg-white p-1;
+  @apply flex h-12 rounded-2xl bg-surface p-1;
   @variant retro {
     @apply h-auto gap-3 rounded-none bg-transparent p-0;
   }
@@ -373,7 +410,7 @@
     @apply bg-brand-strong text-white;
   }
   @variant retro {
-    @apply h-10 rounded-none bg-white font-pixel text-[12px] font-normal pixel-btn pixel-crisp hover:bg-sand-soft;
+    @apply h-10 rounded-none bg-surface font-pixel text-[12px] font-normal pixel-btn pixel-crisp hover:bg-sand-soft;
     &[aria-selected="true"] {
       @apply bg-brand-strong hover:bg-brand-deep motion-safe:animate-pixel-pop;
     }
@@ -382,7 +419,7 @@
 
 /* Small language / design switch; `aria-pressed` marks the current one. */
 @utility ui-segment {
-  @apply flex h-7 items-center gap-0.5 rounded-full bg-white p-0.5;
+  @apply flex h-7 items-center gap-0.5 rounded-full bg-surface p-0.5;
   @variant retro {
     @apply h-6 gap-0 rounded-none p-0 pixel-outline pixel-thin;
   }
@@ -396,7 +433,7 @@
   @variant retro {
     @apply min-w-8 rounded-none px-2 font-pixel font-normal text-ink pixel-crisp;
     &[aria-pressed="true"] {
-      @apply bg-ink text-white;
+      @apply bg-ink text-surface;
     }
   }
 }
@@ -418,7 +455,7 @@
 }
 
 @utility ui-search {
-  @apply mt-3 h-10 w-full rounded-xl border border-sand bg-white px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11;
+  @apply mt-3 h-10 w-full rounded-xl border border-sand bg-surface px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11;
   @variant retro {
     @apply mt-3.5 rounded-none border-0 font-pixel text-[12px] pixel-field pixel-crisp placeholder:text-faint lg:h-10;
   }
@@ -426,7 +463,7 @@
 
 /* List card; `aria-pressed` marks the selected one. The pixel shadows sit outside, so keep ~6px room around it. */
 @utility ui-card {
-  @apply rounded-2xl border-[1.5px] border-card-border bg-white;
+  @apply rounded-2xl border-[1.5px] border-card-border bg-surface;
   &[aria-pressed="true"] {
     @apply border-brand;
   }
@@ -439,7 +476,7 @@
 }
 
 @utility ui-badge {
-  @apply rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-strong;
+  @apply rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-text;
   @variant retro {
     @apply rounded-none px-1.5 font-pixel font-normal pixel-crisp;
   }
@@ -447,7 +484,7 @@
 
 /* Panel rising over the bottom of the map. */
 @utility ui-sheet {
-  @apply rounded-t-[26px] bg-white shadow-sheet;
+  @apply rounded-t-[26px] bg-surface shadow-sheet;
   @variant retro {
     @apply rounded-none border-t-3 border-ink shadow-none;
   }
@@ -461,7 +498,7 @@
 }
 
 @utility ui-float-button {
-  @apply bg-white;
+  @apply bg-surface;
   @variant retro {
     @apply rounded-none pixel-btn pixel-thin;
   }
@@ -514,13 +551,13 @@
 @utility ui-input {
   @apply h-11 w-full rounded-xl border border-field-border bg-field px-3 text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-brand;
   @variant retro {
-    @apply border-0 bg-white pixel-field placeholder:text-faint;
+    @apply border-0 bg-surface pixel-field placeholder:text-faint;
   }
 }
 
 /* Dimmed backdrop behind sheets and dialogs; a dithered screen in the pixel design. */
 @utility ui-backdrop {
-  @apply bg-ink/42;
+  @apply bg-night/42;
   @variant retro {
     background-color: rgb(45 55 72 / 0.18);
     background-image: conic-gradient(rgb(30 42 51 / 0.55) 25%, transparent 0 50%, rgb(30 42 51 / 0.55) 0 75%, transparent 0);
@@ -542,7 +579,7 @@
 /* Empty-state message as a game's text box, with the blinking "more" arrow. */
 @utility ui-empty {
   @variant retro {
-    @apply relative border-0 bg-white pixel-outline pixel-thin;
+    @apply relative border-0 bg-surface pixel-outline pixel-thin;
     &::after {
       content: "▼";
       position: absolute;
@@ -565,7 +602,7 @@
 
 @utility ui-seg-option {
   @variant retro {
-    @apply h-9 bg-white font-normal text-ink pixel-btn pixel-thin;
+    @apply h-9 bg-surface font-normal text-ink pixel-btn pixel-thin;
     &:is([aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) {
       @apply bg-brand-strong text-white motion-safe:animate-pixel-pop;
     }

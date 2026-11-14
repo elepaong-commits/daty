@@ -51,6 +51,8 @@ const ko = {
   theme: {
     label: '디자인',
     names: { classic: '기본', retro: '도트' },
+    modeLabel: '화면 밝기',
+    modes: { system: '자동', light: '밝게', dark: '어둡게' },
     pickerEyebrow: '시작하기 전에',
     pickerTitle: '어떤 디자인으로 쓸까요?',
     pickerHint: '나중에 내 정보에서 언제든 바꿀 수 있어요',
@@ -522,6 +524,8 @@ const ja: Messages = {
   theme: {
     label: 'デザイン',
     names: { classic: 'ベーシック', retro: 'ドット' },
+    modeLabel: '画面の明るさ',
+    modes: { system: '自動', light: 'ライト', dark: 'ダーク' },
     pickerEyebrow: 'はじめる前に',
     pickerTitle: 'どのデザインで使いますか？',
     pickerHint: 'あとからマイページでいつでも変えられます',

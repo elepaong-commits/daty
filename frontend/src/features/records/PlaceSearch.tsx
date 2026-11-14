@@ -133,7 +133,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
       />
 
       {showList && (
-        <ul id={listId} role="listbox" className="overflow-hidden rounded-xl border border-field-border bg-white">
+        <ul id={listId} role="listbox" className="overflow-hidden rounded-xl border border-field-border bg-surface">
           {visible.map((s, i) => (
             <li
               key={s.placeId}
@@ -154,7 +154,7 @@ function GooglePlaceSearch({ name, onNameChange, picked, onPick }: Props) {
         </ul>
       )}
 
-      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand-strong' : 'text-muted'}`}>
+      <p className={`text-[11px] leading-normal font-medium ${picked ? 'text-brand-text' : 'text-muted'}`}>
         {loadingPick
           ? t.placeSearch.fetching
           : picked

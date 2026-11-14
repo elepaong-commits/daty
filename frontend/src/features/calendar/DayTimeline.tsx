@@ -53,7 +53,7 @@ export function DayTimeline({
       ))}
 
       {records.length === 0 ? (
-        <p className="ui-empty rounded-2xl bg-white/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
+        <p className="ui-empty rounded-2xl bg-surface/60 py-8 text-center text-[13px] text-muted">{t.calendar.empty}</p>
       ) : (
         records.map((r, i) => (
           <TimelineEntry key={r.id} index={i} record={r} today={today} onEdit={() => onEdit(r)} onComplete={onComplete} />
@@ -64,7 +64,7 @@ export function DayTimeline({
         <button
           type="button"
           onClick={() => onAddNext(nextStopTime(records.at(-1)!))}
-          className="ui-btn-thin flex h-10 items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand/50 text-[13px] font-semibold text-brand-strong retro:border-0 retro:bg-white retro:text-[12px]"
+          className="ui-btn-thin flex h-10 items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand/50 text-[13px] font-semibold text-brand-text retro:border-0 retro:bg-surface retro:text-[12px]"
         >
           <Plus size={15} strokeWidth={2} aria-hidden="true" />
           {t.calendar.addNextStop}
@@ -127,12 +127,12 @@ function TimelineEntry({
         aria-label={t.calendar.editSchedule(record.place?.name ?? record.title)}
         onClick={onEdit}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEdit())}
-        className={`ui-box-thin flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-white p-3.5 text-left retro:mt-1 ${
+        className={`ui-box-thin flex min-w-0 flex-1 cursor-pointer flex-col rounded-2xl border bg-surface p-3.5 text-left retro:mt-1 ${
           isPlan ? 'border-coral/30 retro:[--pixel-border:var(--color-coral)]' : 'border-card-border'
         }`}
       >
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-[11px] leading-normal font-semibold text-brand-strong">
+          <span className="flex items-center gap-1 text-[11px] leading-normal font-semibold text-brand-text">
             <CategoryIcon category={record.category} size={12} /> {t.categories[record.category]}
           </span>
           {isPlan ? (
@@ -151,7 +151,7 @@ function TimelineEntry({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex max-w-full items-center gap-1 self-start pt-2 text-[11px] leading-normal font-medium text-brand-strong"
+            className="flex max-w-full items-center gap-1 self-start pt-2 text-[11px] leading-normal font-medium text-brand-text"
           >
             <MapPin size={12} strokeWidth={1.75} className="shrink-0" />
             <span className="truncate">{mapUrl.replace(/^https?:\/\//, '')}</span>

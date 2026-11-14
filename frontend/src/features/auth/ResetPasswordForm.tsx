@@ -38,7 +38,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
           role="tab"
           aria-selected={method === value}
           onClick={() => setMethod(value)}
-          className={`flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
+          className={`flex-1 rounded-xl text-[12px] font-semibold ${method === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
         >
           {value === 'code' ? t.auth.resetByCode : t.auth.resetByEmail}
         </button>
@@ -48,7 +48,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
 
   if (method === 'email') {
     return (
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-[20px] leading-normal">{t.auth.resetTitle}</h2>
           <p className="text-[12px] leading-normal text-muted">{t.auth.resetEmailHelp}</p>
@@ -66,7 +66,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
           />
         </Field>
         {forgot.error && <p className="text-[12px] text-coral-strong">{errorMessage(forgot.error, t)}</p>}
-        {forgot.isSuccess && <p className="text-[12px] leading-normal text-brand-strong">{t.auth.resetMailSent}</p>}
+        {forgot.isSuccess && <p className="text-[12px] leading-normal text-brand-text">{t.auth.resetMailSent}</p>}
         <button
           type="submit"
           disabled={email.trim() === '' || forgot.isPending}
@@ -74,7 +74,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
         >
           {forgot.isPending ? t.common.wait : t.auth.sendResetMail}
         </button>
-        <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-strong">
+        <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-text">
           {t.auth.backToLogin}
         </button>
       </form>
@@ -82,7 +82,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+    <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
       <div className="flex flex-col gap-1">
         <h2 className="font-display text-[20px] leading-normal">{t.auth.resetTitle}</h2>
         <p className="text-[12px] leading-normal text-muted">{t.auth.resetHelp}</p>
@@ -131,7 +131,7 @@ export function ResetPasswordForm({ initialEmail, onBack }: { initialEmail: stri
       >
         {reset.isPending ? t.common.wait : t.auth.resetSubmit}
       </button>
-      <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-strong">
+      <button type="button" onClick={onBack} className="text-[13px] font-semibold text-brand-text">
         {t.auth.backToLogin}
       </button>
     </form>

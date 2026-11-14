@@ -33,7 +33,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
   }
 
   return (
-    <section className="ui-box-thin flex flex-col gap-2.5 rounded-2xl bg-white p-3">
+    <section className="ui-box-thin flex flex-col gap-2.5 rounded-2xl bg-surface p-3">
       <h3 className="font-display text-[18px]">{t.place.notes}</h3>
 
       {notes.length === 0 ? (
@@ -84,7 +84,7 @@ export function PlaceNotes({ placeId, notes }: { placeId: number; notes: PlaceNo
         <button
           type="submit"
           disabled={!content || addNote.isPending}
-          className="ui-btn-thin h-10 rounded-xl bg-brand-soft text-[13px] font-semibold text-brand-strong disabled:opacity-50 retro:mb-1"
+          className="ui-btn-thin h-10 rounded-xl bg-brand-soft text-[13px] font-semibold text-brand-text disabled:opacity-50 retro:mb-1"
         >
           {addNote.isPending ? t.common.saving : t.place.addNote}
         </button>
@@ -112,7 +112,7 @@ function NoteEditor({ placeId, note, onDone }: { placeId: number; note: PlaceNot
       <MemoInput label={t.place.editNote} value={text} onChange={setText} maxLength={500} />
       {update.error && <p className="text-[12px] text-coral-strong">{t.common.saveFailed}: {errorMessage(update.error, t)}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={onDone} className="ui-btn-thin h-9 flex-1 rounded-xl bg-white text-[13px] font-semibold retro:mb-1">
+        <button type="button" onClick={onDone} className="ui-btn-thin h-9 flex-1 rounded-xl bg-surface text-[13px] font-semibold retro:mb-1">
           {t.common.cancel}
         </button>
         <button

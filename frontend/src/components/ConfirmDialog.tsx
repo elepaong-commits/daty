@@ -36,12 +36,12 @@ export function ConfirmDialog({ title, message, confirmLabel, cancelLabel, error
       <m.div className="ui-backdrop absolute inset-0" onClick={onCancel} {...motion.backdrop} />
       <m.div
         {...motion.dialog}
-        className="ui-box relative flex w-full max-w-[320px] flex-col gap-2 rounded-3xl bg-white p-5 text-center shadow-card">
+        className="ui-box relative flex w-full max-w-[320px] flex-col gap-2 rounded-3xl bg-surface p-5 text-center shadow-card">
         <h2 className="font-display text-[20px] leading-normal retro:text-[15px] retro:pixel-crisp">{title}</h2>
         {message && <p className="ui-prose text-[14px] leading-[1.6] text-ink/75">{message}</p>}
         {error && <p className="text-[12px] text-coral-strong">{error}</p>}
         <div className="flex gap-2 pt-3">
-          <button type="button" onClick={onCancel} className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[15px] font-semibold text-muted retro:bg-white retro:text-[13px] retro:text-ink">
+          <button type="button" onClick={onCancel} className="ui-btn-thin h-11 flex-1 rounded-2xl bg-sand-soft text-[15px] font-semibold text-muted retro:bg-surface retro:text-[13px] retro:text-ink">
             {cancelLabel}
           </button>
           <button

@@ -94,7 +94,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
       />
 
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 retro:pt-1">
-        <div className="ui-box-thin flex flex-col gap-4 rounded-3xl bg-white p-4">
+        <div className="ui-box-thin flex flex-col gap-4 rounded-3xl bg-surface p-4">
           <div className="ui-seg flex h-11 gap-2 rounded-2xl bg-sand-soft p-1" role="radiogroup" aria-label={t.place.visitStatus}>
             {(['VISITED', 'WISH'] as const).map((value) => (
               <button
@@ -126,8 +126,8 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
                     onClick={() => setCategory(value)}
                     className={`ui-pop flex h-[34px] items-center gap-1 rounded-full border px-3 text-[12px] font-semibold retro:h-8 retro:border-0 retro:font-normal retro:pixel-outline retro:pixel-thin ${
                       category === value
-                        ? 'border-brand bg-brand-strong text-white retro:bg-brand-soft retro:text-brand-strong retro:[--pixel-border:var(--color-brand)]'
-                        : 'border-field-border bg-white retro:[--pixel-border:var(--color-handle)]'
+                        ? 'border-brand bg-brand-strong text-white retro:bg-brand-soft retro:text-brand-text retro:[--pixel-border:var(--color-brand)]'
+                        : 'border-field-border bg-surface retro:[--pixel-border:var(--color-handle)]'
                     }`}
                   >
                     <CategoryIcon category={value} /> {t.categories[value]}
@@ -169,7 +169,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
           {visited && (
             <div className="flex flex-col gap-[5px]">
               <span className="text-[12px] font-semibold text-muted">{t.common.ourRating}</span>
-              <div className="flex h-12 items-center gap-3 rounded-xl border border-field-border bg-field px-3 retro:border-0 retro:bg-white retro:pixel-field">
+              <div className="flex h-12 items-center gap-3 rounded-xl border border-field-border bg-field px-3 retro:border-0 retro:bg-surface retro:pixel-field">
                 <div className="flex flex-1" role="radiogroup" aria-label={t.common.rating}>
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -204,7 +204,7 @@ function PlaceEditForm({ place }: { place: PlaceDetail }) {
 
         <div className="mt-auto pt-[18px] pb-5">
           <div className="flex gap-3">
-            <button type="button" onClick={close} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-white retro:text-[14px]">
+            <button type="button" onClick={close} className="ui-btn h-12 w-24 rounded-2xl bg-sand-soft text-[16px] font-semibold text-muted retro:mb-1.5 retro:bg-surface retro:text-[14px]">
               {t.common.cancel}
             </button>
             <button

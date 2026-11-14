@@ -74,7 +74,7 @@ export function AddPlaceSheet({ onClose, onSaved, initial }: Props) {
         {existing && (
           <p className="pt-1.5 text-[11px] font-medium text-coral-strong">
             {t.addPlace.alreadySaved}{' '}
-            <Link to={`/places/${existing.id}`} className="font-semibold text-brand-strong">
+            <Link to={`/places/${existing.id}`} className="font-semibold text-brand-text">
               {t.addPlace.viewSaved}
             </Link>
           </p>

@@ -43,7 +43,7 @@ export function NewPlaceFields({ mapUrl, onMapUrlChange, mapLinkLabel, name, onN
             ))}
         </div>
       </Field>
-      {editing && <p className="pt-1.5 text-[11px] text-brand-strong">{t.schedule.mapLinkHint}</p>}
+      {editing && <p className="pt-1.5 text-[11px] text-brand-text">{t.schedule.mapLinkHint}</p>}
 
       <Field label={t.common.placeName} className="pt-4">
         <PlaceSearch name={name} onNameChange={onNameChange} picked={picked} onPick={onPick} />

@@ -63,7 +63,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0.04, bottom: 1 }}
         onDragEnd={endDrag}
-        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-white px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] retro:border-t-3 retro:border-ink lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card lg:retro:border-t-0 lg:retro:pixel-box"
+        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-surface px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] retro:border-t-3 retro:border-ink lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card lg:retro:border-t-0 lg:retro:pixel-box"
       >
         <div onPointerDown={startDrag} className="touch-none lg:touch-auto">
           <div className="flex justify-center pb-2 lg:hidden">
@@ -74,7 +74,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="ui-btn-thin flex size-8 items-center justify-center rounded-full bg-sand-soft retro:size-7 retro:bg-white"
+              className="ui-btn-thin flex size-8 items-center justify-center rounded-full bg-sand-soft retro:size-7 retro:bg-surface"
               aria-label={t.common.close}
             >
               {retro ? <PixelSprite name="close" scale={2} /> : <X size={16} strokeWidth={1.75} />}

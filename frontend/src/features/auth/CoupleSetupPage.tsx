@@ -37,7 +37,7 @@ export function CoupleSetupPage() {
         <LanguageToggle />
       </div>
       <div className="pb-8">
-        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-strong">{t.couple.hello(nickname ?? '')}</p>
+        <p className="text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text">{t.couple.hello(nickname ?? '')}</p>
         <h1 className="font-display text-[26px] leading-[1.25]">{t.couple.title}</h1>
         <p className="pt-2 text-[13px] leading-normal text-muted">
           {t.couple.description}
@@ -52,14 +52,14 @@ export function CoupleSetupPage() {
             role="tab"
             aria-selected={mode === value}
             onClick={() => setMode(value)}
-            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-white text-brand-strong' : 'text-ink'}`}
+            className={`flex-1 rounded-xl text-[14px] font-semibold ${mode === value ? 'bg-surface text-brand-text' : 'text-ink'}`}
           >
             {value === 'create' ? t.couple.createTab : t.couple.joinTab}
           </button>
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-card">
+      <form onSubmit={submit} className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card">
         {mode === 'create' ? (
           <Field label={t.couple.anniversary}>
             <input
