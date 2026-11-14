@@ -10,19 +10,5 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme) rememberTheme(theme)
   }, [theme])
 
-  return <ThemeContext value={{ theme: theme ?? 'classic', chosen: theme !== null, setTheme }}>{children}</ThemeContext>
-}
-
-/**
- * Shows its children in one design whatever the page uses, for the previews on the start screen.
- * The page itself has no design yet there, so only `retro` needs marking.
- */
-export function ThemeScope({ theme, children, className }: { theme: Theme; children: ReactNode; className?: string }) {
-  return (
-    <ThemeContext value={{ theme, chosen: true, setTheme: () => {} }}>
-      <div data-theme={theme === 'retro' ? 'retro' : undefined} className={className}>
-        {children}
-      </div>
-    </ThemeContext>
-  )
+  return <ThemeContext value={{ theme: theme ?? 'classic', setTheme }}>{children}</ThemeContext>
 }

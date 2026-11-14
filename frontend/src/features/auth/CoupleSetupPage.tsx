@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass } from '../../components/Field'
-import { LanguageToggle } from '../../components/SettingToggles'
+import { LanguageToggle, ThemeToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { toDateInput } from '../../lib/dates'
 import { useCreateCouple, useJoinCouple, useLogout, useMe } from '../../lib/queries'
@@ -33,7 +33,9 @@ export function CoupleSetupPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-10">
-      <div className="flex justify-end">
+      {/* The design can be switched right here, and later in the account sheet. */}
+      <div className="flex justify-end gap-2">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
       <div className="pb-8">

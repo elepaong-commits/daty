@@ -18,7 +18,6 @@ import { useMotionPreset } from './lib/motion'
 import { refreshPush } from './lib/push'
 import { useIsDesktop } from './lib/useIsDesktop'
 import { keys, useMe } from './lib/queries'
-import { useTheme } from './lib/theme'
 import { ConfirmProvider } from './components/ConfirmProvider'
 import { useOnline } from './lib/offline'
 
@@ -29,7 +28,6 @@ const CoupleSetupPage = lazy(() => import('./features/auth/CoupleSetupPage').the
 const CalendarPage = lazy(() => import('./features/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })))
 const AlbumsPage = lazy(() => import('./features/albums/AlbumsPage').then((m) => ({ default: m.AlbumsPage })))
 const AlbumDetailPage = lazy(() => import('./features/albums/AlbumDetailPage').then((m) => ({ default: m.AlbumDetailPage })))
-const ThemePickerPage = lazy(() => import('./features/theme/ThemePickerPage').then((m) => ({ default: m.ThemePickerPage })))
 const PlaceEditPage = lazy(() => import('./features/places/PlaceEditPage').then((m) => ({ default: m.PlaceEditPage })))
 const RecapPage = lazy(() => import('./features/recap/RecapPage').then((m) => ({ default: m.RecapPage })))
 const ResetLinkPage = lazy(() => import('./features/auth/ResetLinkPage').then((m) => ({ default: m.ResetLinkPage })))
@@ -145,17 +143,6 @@ function AuthGate() {
   )
 }
 
-/** A device that hasn't picked a design yet starts on the design picker, before login. */
-function ThemeGate({ children }: { children: ReactNode }) {
-  const { chosen } = useTheme()
-  if (chosen) return children
-  return (
-    <Suspense fallback={null}>
-      <ThemePickerPage />
-    </Suspense>
-  )
-}
-
 export default function App() {
   return (
     <I18nProvider>
@@ -180,9 +167,7 @@ export default function App() {
                     <Route
                       path="*"
                       element={
-                        <ThemeGate>
-                          <AuthGate />
-                        </ThemeGate>
+                        <AuthGate />
                       }
                     />
                   </Routes>

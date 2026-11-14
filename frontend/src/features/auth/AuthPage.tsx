@@ -1,7 +1,7 @@
 import { Heart, MapPin } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Field, inputClass, PasswordInput } from '../../components/Field'
-import { LanguageToggle } from '../../components/SettingToggles'
+import { LanguageToggle, ThemeToggle } from '../../components/SettingToggles'
 import { errorMessage } from '../../lib/api'
 import { categoryOf, PHOTO_GRADIENTS } from '../../lib/categories'
 import { useLogin, useSignup, useSignupOpen } from '../../lib/queries'
@@ -44,7 +44,9 @@ export function AuthPage() {
       <AuthHero />
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-10 lg:items-center lg:px-12">
       <div className="w-full lg:max-w-[400px]">
-      <div className="flex justify-end">
+      {/* The design can be switched right here, and later in the account sheet. */}
+      <div className="flex justify-end gap-2">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
       <div className="pb-8 text-center">
