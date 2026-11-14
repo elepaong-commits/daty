@@ -5,6 +5,7 @@ import { CategoryIcon } from '../../components/CategoryIcon'
 import { PHOTO_GRADIENTS } from '../../lib/categories'
 import { albumHeading, formatDottedRange, parseDateOnly } from '../../lib/dates'
 import type { AlbumSummary, PlaceCategory } from '../../lib/types'
+import { cardPhotos } from '../../lib/albums'
 import { useT } from '../../lib/i18n'
 import { useImageFailed } from '../../lib/useImageFailed'
 
@@ -64,7 +65,7 @@ function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
   const category = album.category ?? 'CAFE'
   const gradients = PHOTO_GRADIENTS[category]
   // The cover (best cut, or the first photo when none is picked) sits on top of the pile.
-  const { previewPhotos: photos, videoCount } = album
+  const { photos, videoCount } = cardPhotos(album)
 
   const layer = (i: number) => (
     <StackLayer src={photos[i]?.thumbnailUrl} gradient={gradients[i % gradients.length]!} category={i === 0 ? category : null} />
@@ -123,3 +124,4 @@ function StackLayer({
     </div>
   )
 }
+
