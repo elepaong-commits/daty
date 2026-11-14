@@ -51,7 +51,7 @@ export function PlaceDetailPage() {
             category={place.category}
             className="size-full rounded-xl"
           />
-          <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand-text' : 'text-coral'}`}>
+          <span className={`absolute top-3 left-3 flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold ${visited ? 'text-brand-text' : 'text-coral-strong'}`}>
             {visited ? <Check size={12} strokeWidth={1.75} /> : <Heart size={12} strokeWidth={1.75} />} {t.place.badge[place.status]}
           </span>
         </div>

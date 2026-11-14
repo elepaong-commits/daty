@@ -41,7 +41,7 @@
   --color-brand-deep: #00695c;
   --color-brand-soft: #e6f7f5;
   --color-coral: #ff6b6b;
-  --color-coral-strong: #e05252;
+  --color-coral-strong: #c43c3c;
   --color-coral-soft: #fff0ee;
   /* Destructive actions (leave, delete): unlike coral it holds white text at 4.5:1. */
   --color-danger: #c53030;
@@ -58,9 +58,9 @@
   --color-night: #2d3748;
 
   --color-ink: #2d3748;
-  --color-muted: #718096;
-  --color-faint: #a0aec0;
-  --color-placeholder: #9ca3af;
+  --color-muted: #5f6b7d;
+  --color-faint: #6b7689;
+  --color-placeholder: #666f80;
 
   --color-cream: #fbf8ec;
   --color-sand: #efebdd;

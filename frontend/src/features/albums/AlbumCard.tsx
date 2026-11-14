@@ -82,7 +82,7 @@ function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
         {layer(0)}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_55%,rgba(0,0,0,0.18))] retro:hidden" />
         {/* Classic: date top left, counts bottom right. Pixel: both as dark tags along the bottom left. */}
-        <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[10px] retro:leading-[14px]">
+        <div className="absolute inset-2 flex flex-col items-start justify-between text-[11px] leading-normal retro:inset-1 retro:flex-row retro:items-end retro:justify-start retro:gap-1 retro:text-[11px] retro:leading-[14px]">
           <span className="rounded-lg bg-surface/95 px-2 py-1 font-bold retro:bg-night/85 retro:px-1 retro:py-0 retro:font-normal retro:text-white">{date}</span>
           <span className="flex items-center gap-1 self-end rounded-full bg-night/70 px-2 py-0.5 font-semibold text-white retro:bg-night/85 retro:px-1 retro:py-0 retro:font-normal">
             <Camera size={12} strokeWidth={1.75} className="retro:hidden" /> {album.photoCount - videoCount}
@@ -95,7 +95,7 @@ function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
           </span>
         </div>
         {album.coverPhotoId !== null && (
-          <span className="absolute top-1 right-1 hidden items-center gap-0.5 bg-amber px-1 text-[10px] leading-[14px] text-ink retro:flex">
+          <span className="absolute top-1 right-1 hidden items-center gap-0.5 bg-amber px-1 text-[11px] leading-[14px] text-ink retro:flex">
             <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
           </span>
         )}

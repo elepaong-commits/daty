@@ -53,7 +53,7 @@ export function SavedPlacePicker({ places, selectedIds, onSelect }: Props) {
                   <span className="truncate text-[14px] font-semibold">{place.name}</span>
                   {place.address && <span className="truncate text-[11px] text-muted">{place.address}</span>}
                 </span>
-                <span className={`flex shrink-0 items-center gap-1 text-[11px] font-semibold ${place.status === 'WISH' ? 'text-coral' : 'text-brand-text'}`}>
+                <span className={`flex shrink-0 items-center gap-1 text-[11px] font-semibold ${place.status === 'WISH' ? 'text-coral-strong' : 'text-brand-text'}`}>
                   {place.status === 'WISH' ? <Heart size={12} strokeWidth={1.75} /> : <Check size={12} strokeWidth={1.75} />} {t.status[place.status]}
                 </span>
               </button>

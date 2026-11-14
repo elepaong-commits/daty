@@ -82,7 +82,7 @@ export function AccountSheet({ onClose }: { onClose: () => void }) {
             <p className="text-[12px] leading-normal font-semibold text-muted">{t.account.partner}</p>
             {partner ? (
               <p className="flex items-center gap-1.5 pt-1 text-[15px] font-semibold">
-                <Heart size={15} strokeWidth={1.75} className="text-coral" /> {partner.nickname}
+                <Heart size={15} strokeWidth={1.75} className="text-coral-strong" /> {partner.nickname}
               </p>
             ) : (
               <>

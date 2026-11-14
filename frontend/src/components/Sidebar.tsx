@@ -60,7 +60,7 @@ export function Sidebar() {
             </span>
           </div>
         )}
-        <span className="pt-3 font-display text-[30px] leading-[1.1] retro:pt-1 retro:font-pixel-head retro:leading-none retro:text-coral retro:pixel-crisp">
+        <span className="pt-3 font-display text-[30px] leading-[1.1] retro:pt-1 retro:font-pixel-head retro:leading-none retro:text-coral-strong retro:pixel-crisp">
           D+{daysTogether(couple.anniversaryDate)}
         </span>
         <span className="pt-0.5 text-[12px] text-muted retro:pt-1.5 retro:font-pixel retro:text-[11px] retro:pixel-crisp">

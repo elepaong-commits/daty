@@ -136,7 +136,7 @@ function TimelineEntry({
             <CategoryIcon category={record.category} size={12} /> {t.categories[record.category]}
           </span>
           {isPlan ? (
-            <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[11px] leading-normal font-bold text-coral">
+            <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[11px] leading-normal font-bold text-coral-strong">
               {t.calendar.dDay(dDay)}
             </span>
           ) : (

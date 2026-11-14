@@ -121,7 +121,7 @@ export function FeedbackPanel({ target, feedback, tone = 'light', collapsible = 
           </form>
         </>
       )}
-      {error && <p className={`text-[12px] ${dark ? 'text-coral' : 'text-coral-strong'}`}>{errorMessage(error, t)}</p>}
+      {error && <p className={`text-[12px] ${dark ? 'text-coral-strong' : 'text-coral-strong'}`}>{errorMessage(error, t)}</p>}
     </div>
   )
 }

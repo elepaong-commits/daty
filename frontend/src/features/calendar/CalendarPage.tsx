@@ -123,7 +123,7 @@ export function CalendarPage() {
 
           <div className="grid grid-cols-7 pb-1 text-center text-[11px] leading-normal font-semibold">
             {t.weekdays.map((d, i) => (
-              <span key={d} className={i === 0 ? 'text-coral' : i === 6 ? 'text-brand-text' : ''}>
+              <span key={d} className={i === 0 ? 'text-coral-strong' : i === 6 ? 'text-brand-text' : ''}>
                 {d}
               </span>
             ))}
@@ -248,7 +248,7 @@ function DayCell({
     : isSelected
       ? 'text-white'
       : weekday === 0
-        ? 'text-coral'
+        ? 'text-coral-strong'
         : weekday === 6
           ? 'text-brand-text'
           : 'text-ink'
@@ -277,7 +277,7 @@ function DayCell({
       {shownMilestones.map((m) => (
         <span
           key={`${m.kind}-${m.count}`}
-          className="h-3.5 truncate rounded bg-amber-soft px-1 text-left text-[9px] leading-[1.556] font-bold text-amber-ink lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px]"
+          className="h-4 truncate rounded bg-amber-soft px-1 text-left text-[10px] leading-4 font-bold text-amber-ink lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px]"
         >
           <span className="hidden lg:inline">♥ </span>
           {t.calendar.milestone(m)}
@@ -286,7 +286,7 @@ function DayCell({
       {visible.map((r) => (
         <span
           key={r.id}
-          className={`h-3.5 truncate rounded px-1 text-left text-[9px] leading-[1.556] font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
+          className={`h-4 truncate rounded px-1 text-left text-[10px] leading-4 font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
             r.type === 'RECORD'
               ? 'border border-transparent bg-brand-soft text-brand-text'
               : 'border border-coral/45 bg-coral-soft text-coral-strong'
@@ -295,7 +295,7 @@ function DayCell({
           {r.place?.name ?? r.title}
         </span>
       ))}
-      {hidden > 0 && <span className="text-left text-[9px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
+      {hidden > 0 && <span className="text-left text-[10px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
     </button>
   )
 }

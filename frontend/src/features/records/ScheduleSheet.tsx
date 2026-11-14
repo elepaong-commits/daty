@@ -33,7 +33,7 @@ interface Props {
 }
 
 const TYPE_OPTIONS: { value: RecordType; key: 'plan' | 'record'; activeClass: string }[] = [
-  { value: 'PLAN', key: 'plan', activeClass: 'text-coral' },
+  { value: 'PLAN', key: 'plan', activeClass: 'text-coral-strong' },
   { value: 'RECORD', key: 'record', activeClass: 'text-brand-text' },
 ]
 

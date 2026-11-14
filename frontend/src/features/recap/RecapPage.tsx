@@ -179,7 +179,7 @@ function MonthBars({ months }: { months: number[] }) {
     <ol className="flex items-end gap-1.5 border-b border-sand" aria-label={t.recap.months}>
       {months.map((count, i) => (
         <li key={i} className="group relative flex min-w-0 flex-1 flex-col items-center" title={t.recap.monthVisits(i + 1, count)}>
-          <span className="h-4 text-[10px] leading-4 text-muted tabular-nums">{count > 0 && count}</span>
+          <span className="h-4 text-[11px] leading-4 text-muted tabular-nums">{count > 0 && count}</span>
           <span className="flex w-full items-end justify-center" style={{ height: BAR_AREA }}>
             <span
               className="w-full max-w-[22px] rounded-t-[4px] bg-brand group-hover:bg-brand-strong retro:rounded-none"
@@ -190,7 +190,7 @@ function MonthBars({ months }: { months: number[] }) {
           {/* Sits under the baseline; shown for every month on wide screens, every third on phones. */}
           <span
             aria-hidden="true"
-            className={`absolute top-full pt-1 text-[10px] whitespace-nowrap text-muted tabular-nums ${i % 3 === 0 ? '' : 'hidden lg:block'}`}
+            className={`absolute top-full pt-1 text-[11px] whitespace-nowrap text-muted tabular-nums ${i % 3 === 0 ? '' : 'hidden lg:block'}`}
           >
             {t.recap.month(i + 1)}
           </span>

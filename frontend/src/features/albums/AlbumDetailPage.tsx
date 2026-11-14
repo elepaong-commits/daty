@@ -205,7 +205,7 @@ export function AlbumDetailPage() {
             <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline lg:block xl:w-[300px]">
               <img src={album.coverPhoto.thumbnailUrl} alt={t.albums.bestCut} className="size-full object-cover" />
               {album.coverPhotoId !== null && (
-                <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
+                <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[11px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
                   <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                 </span>
               )}
@@ -372,18 +372,18 @@ export function AlbumDetailPage() {
                 >
                   <GridPhoto photo={photo} />
                   {photo.mediaType === 'VIDEO' && (
-                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-night/70 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+                    <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-night/70 px-1.5 py-0.5 text-[11px] font-semibold text-white tabular-nums">
                       <Play size={9} strokeWidth={2} />
                       {photo.durationSec !== null && formatDuration(photo.durationSec)}
                     </span>
                   )}
                   {photo.id === album.coverPhotoId && (
-                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[10px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[11px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
                       <Star size={10} strokeWidth={2} /> {t.albums.bestCut}
                     </span>
                   )}
                   {!selecting && ((photo.comments?.length ?? 0) > 0 || (photo.reactions?.length ?? 0) > 0) && (
-                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-night/70 px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white tabular-nums">
+                    <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-night/70 px-1.5 py-0.5 text-[11px] leading-none font-semibold text-white tabular-nums">
                       {photo.reactions?.[0]?.emoji ?? <MessageCircle size={10} strokeWidth={2} />}
                       {(photo.comments?.length ?? 0) > 0 && photo.comments!.length}
                     </span>
@@ -511,14 +511,14 @@ function GridPhoto({ photo }: { photo: Photo }) {
   if (src && !failed) return <img src={src} alt="" loading="lazy" onError={onError} className="size-full object-cover" />
   if (photo.mediaType === 'VIDEO' && !src) {
     return (
-      <span className="flex size-full flex-col items-center justify-center gap-1 bg-night/80 text-[10px] text-white/80">
+      <span className="flex size-full flex-col items-center justify-center gap-1 bg-night/80 text-[11px] text-white/80">
         <Video size={22} strokeWidth={1.5} />
         {t.albums.video}
       </span>
     )
   }
   return (
-    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-muted">
+    <span className="flex size-full flex-col items-center justify-center gap-1 px-2 text-center text-[11px] leading-snug text-muted">
       <TriangleAlert size={18} strokeWidth={1.5} />
       {t.albums.missingPhoto}
     </span>
