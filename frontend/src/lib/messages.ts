@@ -207,6 +207,7 @@ const ko = {
     // The count is wrapped in its own span, so the heading comes as the text before and after it.
     sheetHeading: { VISITED: ['갔던 ', '곳'], WISH: ['가고 싶은 ', '곳'] },
     expandList: '목록 펼치기',
+    openHint: '한 번 더 누르면 자세히 볼 수 있어요 ›',
     collapseList: '목록 접기',
     viewAll: '전체 보기',
     viewMap: '지도 보기',
@@ -678,6 +679,7 @@ const ja: Messages = {
     myLocation: '現在地',
     sheetHeading: { VISITED: ['行った場所 ', 'か所'], WISH: ['行きたい場所 ', 'か所'] },
     expandList: 'リストを開く',
+    openHint: 'もう一度タップすると詳しく見られます ›',
     collapseList: 'リストを閉じる',
     viewAll: 'すべて見る',
     viewMap: '地図を見る',
