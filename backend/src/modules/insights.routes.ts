@@ -36,9 +36,10 @@ memoriesRouter.get("/", async (req, res) => {
       },
     }),
     // A trip counts on each of its days; a monthly album isn't about any one day.
+    // Without their photos: only the few albums that fall on this day need a count and a cover (below).
     prisma.album.findMany({
       where: { coupleId, monthly: false, albumDate: { lt: new Date(`${year}-01-01`) } },
-      include: { photos: { orderBy: { displayOrder: "asc" } } },
+      select: { id: true, title: true, albumDate: true, albumEndDate: true, coverPhotoId: true },
     }),
   ]);
   const visits = memoriesOn(date, records.map((r) => ({ ...r, date: localParts(r.scheduledAt, tz).date })));
@@ -58,14 +59,19 @@ memoriesRouter.get("/", async (req, res) => {
         yearsAgo: year - y,
         records: (visits.find((v) => v.yearsAgo === year - y)?.items ?? []).map(({ date: _date, ...record }) => record),
         albums: await Promise.all(
-          (albumsByYear.get(y) ?? []).map(async ({ photos, ...album }) => {
-            const cover = photos.find((p) => p.id === album.coverPhotoId) ?? photos[0];
+          (albumsByYear.get(y) ?? []).map(async (album) => {
+            const [photoCount, picked, first] = await Promise.all([
+              prisma.photo.count({ where: { albumId: album.id } }),
+              album.coverPhotoId ? prisma.photo.findFirst({ where: { id: album.coverPhotoId, albumId: album.id } }) : null,
+              prisma.photo.findFirst({ where: { albumId: album.id }, orderBy: { displayOrder: "asc" } }),
+            ]);
+            const cover = picked ?? first;
             return {
               id: album.id,
               title: album.title,
               albumDate: toDateOnly(album.albumDate),
               albumEndDate: toDateOnly(album.albumEndDate ?? album.albumDate),
-              photoCount: photos.length,
+              photoCount,
               coverPhoto: cover ? await serializePhoto(cover) : null,
             };
           }),

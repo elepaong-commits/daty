@@ -401,6 +401,10 @@ const ko = {
     delete: '삭제',
     confirmDelete: (n: number) => `선택한 ${n}개를 삭제할까요?`,
     editAlbum: '앨범 정보 수정',
+    deleteAlbum: '이 앨범 삭제',
+    confirmDeleteAlbum: '이 앨범을 삭제할까요?',
+    confirmDeleteAlbumBody: (n: number) =>
+      n > 0 ? `사진·동영상 ${n}개도 함께 지워지고 되돌릴 수 없어요. 캘린더 기록과 장소는 남아요.` : '캘린더 기록과 장소는 남아요.',
     viewer: '사진·동영상 보기',
     prevPhoto: '이전',
     nextPhoto: '다음',
@@ -866,6 +870,10 @@ const ja: Messages = {
     delete: '削除',
     confirmDelete: (n) => `選択した${n}件を削除しますか？`,
     editAlbum: 'アルバム情報を編集',
+    deleteAlbum: 'このアルバムを削除',
+    confirmDeleteAlbum: 'このアルバムを削除しますか？',
+    confirmDeleteAlbumBody: (n) =>
+      n > 0 ? `写真・動画${n}件も一緒に消え、元に戻せません。カレンダーの記録と場所は残ります。` : 'カレンダーの記録と場所は残ります。',
     viewer: '写真・動画を見る',
     prevPhoto: '前へ',
     nextPhoto: '次へ',

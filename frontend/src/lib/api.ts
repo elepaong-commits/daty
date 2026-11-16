@@ -109,6 +109,7 @@ export const api = {
   albums: () => request<AlbumSummary[]>('/api/albums'),
   album: (id: number) => request<Album>(`/api/albums/${id}`),
   updateAlbum: (id: number, input: UpdateAlbumInput) => patch<Album>(`/api/albums/${id}`, input),
+  deleteAlbum: (id: number) => del<void>(`/api/albums/${id}`),
   deletePhoto: (albumId: number, photoId: number) => del<void>(`/api/albums/${albumId}/photos/${photoId}`),
   /** Caption it or move it to another album; answers with the album it was in. */
   updatePhoto: (albumId: number, photoId: number, input: { caption?: string | null; albumId?: number }) =>

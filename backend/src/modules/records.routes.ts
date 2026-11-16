@@ -70,7 +70,12 @@ async function resolvePlace(tx: Prisma.TransactionClient, coupleId: number, inpu
     ? await tx.place.findFirst({ where: { id: input.placeId, coupleId } })
     : ((input.googlePlaceId && (await tx.place.findFirst({ where: { coupleId, googlePlaceId: input.googlePlaceId } }))) ||
       // Guard the name lookup: Prisma reads `name: undefined` as "any name".
-      (input.placeName !== undefined && (await tx.place.findFirst({ where: { coupleId, name: input.placeName } }))) ||
+      // A place picked from search only matches by name one that has no Google place yet: the same
+      // name with another Google place is a different branch, which gets its own pin.
+      (input.placeName !== undefined &&
+        (await tx.place.findFirst({
+          where: { coupleId, name: input.placeName, ...(input.googlePlaceId && { googlePlaceId: null }) },
+        }))) ||
       null);
   if (input.placeId && !place) throw new HttpError(404, "Place not found");
   if (!place && input.placeName === undefined) throw new HttpError(400, "placeName is required for a new place");
