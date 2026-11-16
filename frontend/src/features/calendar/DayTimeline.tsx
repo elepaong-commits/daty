@@ -11,6 +11,7 @@ import { useUpdateRecord } from '../../lib/queries'
 import type { DateRecord } from '../../lib/types'
 import type { Milestone } from '../../lib/anniversary'
 import { useT } from '../../lib/i18n'
+import { webLink } from '../../lib/links'
 import { useIsRetro } from '../../lib/theme'
 
 export function DayTimeline({
@@ -103,7 +104,7 @@ function TimelineEntry({
   const at = new Date(record.scheduledAt)
   const isPlan = record.type === 'PLAN'
   const dDay = daysBetween(today, at)
-  const mapUrl = record.place?.googleMapsUrl
+  const mapUrl = webLink(record.place?.googleMapsUrl)
   // A plan can be finished once its day has come.
   const canComplete = isPlan && dDay <= 0
 

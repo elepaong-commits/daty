@@ -18,8 +18,19 @@ pushRouter.get("/key", (_req, res) => {
   res.json({ publicKey: requirePush() });
 });
 
+// The server POSTs to the endpoint, so only the browsers' push services are accepted: otherwise anyone
+// logged in could make it call an address of their choosing (an internal one, say).
+const PUSH_HOSTS = ["fcm.googleapis.com", "android.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com"];
+const PUSH_HOST_SUFFIXES = [".push.apple.com", ".notify.windows.com"];
+
+export const isPushServiceUrl = (value: string) => {
+  const url = URL.parse(value);
+  if (!url || url.protocol !== "https:" || url.port !== "") return false;
+  return PUSH_HOSTS.includes(url.hostname) || PUSH_HOST_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
+};
+
 const subscriptionBody = z.object({
-  endpoint: z.url().max(1000).refine((url) => url.startsWith("https://"), "Push endpoints are https"),
+  endpoint: z.url().max(1000).refine(isPushServiceUrl, "Not a known push service"),
   keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
   locale: z.enum(["ko", "ja"]),
   timeZone: timeZoneParam,

@@ -9,6 +9,7 @@ import { albumHeading } from '../../lib/dates'
 import { usePlace } from '../../lib/queries'
 import type { Place } from '../../lib/types'
 import { useT } from '../../lib/i18n'
+import { webLink } from '../../lib/links'
 import { PlaceHero } from './PlaceHero'
 import { PlaceVisits } from './PlaceVisits'
 import { PlaceNotes } from './PlaceNotes'
@@ -127,7 +128,8 @@ export function PlaceDetailPage() {
 
 /** The place's own Google Maps page when we have it, otherwise a Maps search that lands on it. */
 function googleMapsLink(place: Place) {
-  if (place.googleMapsUrl) return place.googleMapsUrl
+  const saved = webLink(place.googleMapsUrl)
+  if (saved) return saved
   const params = new URLSearchParams({ api: '1' })
   if (place.googlePlaceId) {
     params.set('query', place.name)

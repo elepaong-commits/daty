@@ -2,6 +2,7 @@ import { MapPin } from 'lucide-react'
 import mapPinIcon from '../../assets/icons/map-pin.svg'
 import { Field, inputClass } from '../../components/Field'
 import { useT } from '../../lib/i18n'
+import { webLink } from '../../lib/links'
 import type { PickedPlace } from '../../lib/places'
 import { PlaceSearch } from './PlaceSearch'
 
@@ -34,8 +35,8 @@ export function NewPlaceFields({ mapUrl, onMapUrlChange, mapLinkLabel, name, onN
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-placeholder"
           />
           {editing &&
-            (mapUrl.trim() ? (
-              <a href={mapUrl.trim()} target="_blank" rel="noreferrer" aria-label={t.schedule.openInMap}>
+            (webLink(mapUrl.trim()) ? (
+              <a href={webLink(mapUrl.trim())} target="_blank" rel="noreferrer" aria-label={t.schedule.openInMap}>
                 <img src={mapPinIcon} alt="" width={16} height={16} />
               </a>
             ) : (
