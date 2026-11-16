@@ -42,8 +42,8 @@ export function AuthPage() {
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto">
       <AuthHero />
-      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-10 lg:items-center lg:px-12">
-      <div className="w-full lg:max-w-[400px]">
+      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-10 md:items-center md:px-8 lg:px-12">
+      <div className="w-full md:max-w-[400px]">
       {/* The design can be switched right here, and later in the account sheet. */}
       <div className="flex justify-end gap-2">
         <ThemeToggle />
@@ -144,7 +144,7 @@ function AuthHero() {
   ] as const
 
   return (
-    <section className="hidden w-[55%] shrink-0 flex-col bg-brand-soft px-16 py-14 lg:flex">
+    <section className="hidden w-[45%] shrink-0 flex-col bg-brand-soft px-10 py-14 md:flex lg:w-[55%] lg:px-16">
       <div className="flex items-center gap-2.5">
         <span className="flex size-9 items-center justify-center rounded-xl bg-brand-strong text-white">
           <Heart size={20} strokeWidth={1.75} fill="currentColor" />

@@ -6,7 +6,7 @@
 
 - `frontend/` — React 19 + Vite + TypeScript + Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, PostCSS 설정 없음)
   - React Router(탭 3개: `/`, `/calendar`, `/albums` + 하위 화면 `/places/:id`, `/places/:id/edit`, `/albums/:id`, `/recap`(연말 결산, 앨범 탭 아래). 로그인 없이 열리는 `/reset-password?token=`(메일 링크)은 로그인 게이트보다 앞에 있다. 하위 화면에서도 해당 탭이 활성 표시된다), TanStack Query(`src/lib/queries.ts`), 지도는 `@vis.gl/react-google-maps`
-  - 1024px(`lg`) 미만은 폰 폭 한 열 + 하단 탭, 이상은 왼쪽 `Sidebar` + 넓은 화면(`useIsDesktop`, 나머지는 `lg:` 클래스). 데스크톱에서 `/places/:id`는 지도 탭 왼쪽 열에 열리고(지도는 그대로), 바텀시트는 가운데 모달이 된다
+  - 736px(`md`, `index.css`에서 46rem으로 낮춤 — 세로로 든 iPad mini가 744px) 미만은 폰 폭 한 열 + 하단 탭, 이상은 왼쪽 `Sidebar` + 넓은 화면(`useIsDesktop`, 나머지는 `md:` 클래스). 태블릿 폭(`md`~`lg` 1024px)에서는 `Sidebar`가 아이콘만 있는 76px 레일(탭·일정 추가·내 정보)이 되고 언어 토글은 화면 헤더에 남는다. `lg:`는 사이드바를 넓히는 등 1024px부터만 맞는 것에만 쓴다. 데스크톱에서 `/places/:id`는 지도 탭 왼쪽 열에 열리고(지도는 그대로), 바텀시트는 가운데 모달이 된다
   - Google Maps JS는 `MapsProvider`(`src/lib/maps.tsx`)가 앱 전체에 한 번 로드한다. 지도와 장소 검색(Places API New, 자동완성 세션 토큰 사용)이 함께 쓴다. 지도 지역(`region`)·검색에서 우선할 나라·장소가 없을 때의 처음 중심은 기기 시간대(없으면 앱 언어)로 정한다: 일본이면 JP·도쿄, 아니면 KR·서울(`src/lib/home.ts`). 장소 상세 위쪽 사진도 `googlePlaceId`로 Google 장소 사진을 받아 쓰고(`PlaceHero`, 작성자 표시 필수), 없으면 앨범 표지 → 카테고리 타일
   - 디자인 토큰(색상·글꼴·그림자)은 `src/index.css`의 `@theme`에 있다. 새 색을 하드코딩하지 말고 토큰을 쓴다 (`bg-brand-strong`, `text-muted`, `font-display` 등). 브랜드색 `brand`(#00A896)는 흰 글자와 대비가 3:1이 안 되므로 점·막대·테두리 같은 장식에만 쓰고, 글자색과 글자·아이콘이 올라가는 배경은 `brand-strong`(hover는 `brand-deep`)을 쓴다
   - 44px보다 작은 버튼은 모양은 그대로 두고 `ui-hit`(혼자 있는 버튼, 가로세로 44px) 또는 `ui-hit-y`(나란히 붙은 버튼, 높이만 44px)로 누를 수 있는 영역을 넓힌다(`::after`, `absolute` 요소에는 쓰지 않는다)

@@ -174,7 +174,7 @@ export function MapPage() {
               setSearchOpen((open) => !open)
               setQuery('')
             }}
-            className="ui-icon-button bg-surface lg:hidden"
+            className="ui-icon-button bg-surface md:hidden"
             aria-label={t.map.search}
             aria-expanded={searchOpen}
           >
@@ -223,7 +223,7 @@ export function MapPage() {
       </div>
 
       {/* The pixel chips' outlines sit outside them, so the row gets a little more room there. */}
-      <div className="scrollbar-none flex shrink-0 gap-2 overflow-x-auto px-5 py-3 [--chip-border:var(--color-sand)] retro:gap-2.5 retro:pt-5 lg:flex-wrap lg:overflow-visible">
+      <div className="scrollbar-none flex shrink-0 gap-2 overflow-x-auto px-5 py-3 [--chip-border:var(--color-sand)] retro:gap-2.5 retro:pt-5 md:flex-wrap md:overflow-visible">
         <Chip selected={category === null} onClick={() => setCategory(null)}>
           {t.map.all}
         </Chip>
@@ -268,7 +268,7 @@ export function MapPage() {
   if (isDesktop) {
     return (
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-[400px] shrink-0 flex-col border-r border-sand retro:border-r-3 retro:border-ink">
+        <div className="flex w-[320px] shrink-0 flex-col lg:w-[400px] border-r border-sand retro:border-r-3 retro:border-ink">
           {detailMatch ? (
             <Outlet />
           ) : (

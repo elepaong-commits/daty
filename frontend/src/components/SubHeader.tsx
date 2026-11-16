@@ -27,7 +27,7 @@ export function SubHeader({ eyebrow, title, fallback, action }: Props) {
         <button type="button" onClick={back} className="ui-icon-button size-9 bg-surface" aria-label={t.common.back}>
           {retro ? <PixelSprite name="left" scale={2} /> : <img src={backIcon} alt="" width={18} height={18} />}
         </button>
-        <h1 className="min-w-0 flex-1 truncate font-display text-[26px] leading-[1.25] retro:font-pixel retro:text-[24px] retro:pixel-crisp lg:retro:font-display lg:retro:text-[30px]">{title}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-display text-[26px] leading-[1.25] retro:font-pixel retro:text-[24px] retro:pixel-crisp md:retro:font-display md:retro:text-[30px]">{title}</h1>
         {action}
       </div>
     </header>

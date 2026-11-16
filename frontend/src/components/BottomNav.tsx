@@ -6,7 +6,7 @@ import { NAV_ITEMS, useIsUnder } from '../lib/nav'
 import { useIsRetro } from '../lib/theme'
 import { PixelSprite } from './PixelSprite'
 
-/** Phone tab bar; the desktop layout uses `Sidebar` instead. The highlight slides over to the tab that opens. */
+/** Phone tab bar; tablets and desktop use `Sidebar` instead. The highlight slides over to the tab that opens. */
 export function BottomNav() {
   const isUnder = useIsUnder()
   const t = useT()
@@ -16,7 +16,7 @@ export function BottomNav() {
   // Pixel design: three tiles on dark grid lines, the open one filled.
   if (retro) {
     return (
-      <nav className="flex shrink-0 gap-[3px] bg-night pt-[3px] lg:hidden">
+      <nav className="flex shrink-0 gap-[3px] bg-night pt-[3px] md:hidden">
         {NAV_ITEMS.map(({ to, paths, sprite, key }) => {
           const isActive = isUnder(paths)
           return (
@@ -38,7 +38,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="flex shrink-0 border-t border-sand bg-surface pt-2 pb-[max(10px,env(safe-area-inset-bottom))] lg:hidden">
+    <nav className="flex shrink-0 border-t border-sand bg-surface pt-2 pb-[max(10px,env(safe-area-inset-bottom))] md:hidden">
       {NAV_ITEMS.map(({ to, paths, Icon, key }) => (
         <NavLink key={to} to={to} className="flex flex-1 flex-col items-center gap-1">
           {() => {

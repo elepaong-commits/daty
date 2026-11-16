@@ -23,7 +23,7 @@ export function PlaceEditPage() {
   const { data: place, isLoading, error } = usePlace(id)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[640px]">
+    <div className="flex min-h-0 flex-1 flex-col md:mx-auto md:w-full md:max-w-[640px]">
       {place ? (
         // Keyed so the form starts from the loaded values.
         <PlaceEditForm key={place.id} place={place} />

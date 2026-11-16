@@ -125,7 +125,7 @@ export function PhotoViewer({ albumId, photos, startIndex, coverPhotoId, onSetCo
     <div
       ref={scope}
       tabIndex={-1}
-      className={`absolute inset-0 z-50 flex flex-col text-white outline-none lg:fixed ${isPresent ? '' : 'pointer-events-none'}`}
+      className={`absolute inset-0 z-50 flex flex-col text-white outline-none md:fixed ${isPresent ? '' : 'pointer-events-none'}`}
       role="dialog"
       aria-modal="true"
       aria-label={t.albums.viewer}

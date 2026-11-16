@@ -30,6 +30,9 @@
 }
 
 @theme {
+  /* Tablet and up: the sidebar layout starts here (iPad mini upright is 744px). `lg` widens the sidebar. */
+  --breakpoint-md: 46rem;
+
   --font-sans: "IBM Plex Sans KR", system-ui, sans-serif;
   --font-display: "Jua", "IBM Plex Sans KR", sans-serif;
   /* Long text (memos, notes) in the pixel design, where `font-sans` becomes the bitmap font; see `ui-prose`. */
@@ -463,13 +466,13 @@
 
 /* Screen title. Galmuri11 at 2× on phones so long Japanese titles still fit beside the buttons. */
 @utility ui-title {
-  @apply font-display text-[26px] leading-[1.25] lg:text-[28px];
+  @apply font-display text-[26px] leading-[1.25] md:text-[28px];
   @variant retro {
     @apply font-pixel text-[24px] pixel-crisp lg:font-pixel-head lg:text-[30px];
   }
   /* The handwriting face runs small, so its headings are set larger. */
   @variant scrap {
-    @apply text-[32px] leading-[1.1] font-bold lg:text-[36px];
+    @apply text-[32px] leading-[1.1] font-bold md:text-[36px];
   }
 }
 
@@ -650,9 +653,9 @@
 }
 
 @utility ui-search {
-  @apply mt-3 h-10 w-full rounded-xl border border-sand bg-surface px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11;
+  @apply mt-3 h-10 w-full rounded-xl border border-sand bg-surface px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand md:h-11;
   @variant retro {
-    @apply mt-3.5 rounded-none border-0 font-pixel text-[12px] pixel-field pixel-crisp placeholder:text-faint lg:h-10;
+    @apply mt-3.5 rounded-none border-0 font-pixel text-[12px] pixel-field pixel-crisp placeholder:text-faint md:h-10;
   }
   @variant scrap {
     @apply rounded-md border-2 border-dashed border-handle focus:border-solid focus:border-ink;

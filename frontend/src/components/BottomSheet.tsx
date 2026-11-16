@@ -47,7 +47,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
     <div
       ref={focusRef}
       tabIndex={-1}
-      className={`absolute inset-0 z-50 flex flex-col justify-end outline-none lg:fixed lg:items-center lg:justify-center lg:p-8 ${
+      className={`absolute inset-0 z-50 flex flex-col justify-end outline-none md:fixed md:items-center md:justify-center md:p-8 ${
         isPresent ? '' : 'pointer-events-none'
       }`}
       role="dialog"
@@ -63,14 +63,14 @@ export function BottomSheet({ title, onClose, children }: Props) {
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0.04, bottom: 1 }}
         onDragEnd={endDrag}
-        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-surface px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] retro:border-t-3 retro:border-ink lg:max-h-full lg:w-[560px] lg:rounded-[28px] lg:px-7 lg:pt-6 lg:pb-7 lg:shadow-card lg:retro:border-t-0 lg:retro:pixel-box"
+        className="relative flex max-h-[92%] flex-col rounded-t-[28px] bg-surface px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))] retro:border-t-3 retro:border-ink md:max-h-full md:w-[560px] md:rounded-[28px] md:px-7 md:pt-6 md:pb-7 md:shadow-card md:retro:border-t-0 md:retro:pixel-box"
       >
-        <div onPointerDown={startDrag} className="touch-none lg:touch-auto">
-          <div className="flex justify-center pb-2 lg:hidden">
+        <div onPointerDown={startDrag} className="touch-none md:touch-auto">
+          <div className="flex justify-center pb-2 md:hidden">
             <div className="h-1.5 w-10 rounded-full bg-handle" />
           </div>
           <div className="flex items-center justify-between pb-4">
-            <h2 className="font-display text-[20px] leading-normal lg:text-[24px] retro:text-[15px] retro:pixel-crisp lg:retro:text-[15px]">{title}</h2>
+            <h2 className="font-display text-[20px] leading-normal md:text-[24px] retro:text-[15px] retro:pixel-crisp md:retro:text-[15px]">{title}</h2>
             <button
               type="button"
               onClick={onClose}
@@ -82,7 +82,7 @@ export function BottomSheet({ title, onClose, children }: Props) {
           </div>
         </div>
         {/* A little room at the top so pixel outlines of the first fields aren't cut off. */}
-        <div className="scrollbar-none -mx-5 overflow-y-auto px-5 retro:pt-1 lg:-mx-7 lg:px-7">{children}</div>
+        <div className="scrollbar-none -mx-5 overflow-y-auto px-5 retro:pt-1 md:-mx-7 md:px-7">{children}</div>
       </m.div>
     </div>
   )

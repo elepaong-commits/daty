@@ -13,7 +13,10 @@ import { useMe } from '../lib/queries'
 import { PixelSprite } from './PixelSprite'
 import { LanguageToggle, ThemeToggle } from './SettingToggles'
 
-/** Desktop navigation column: the couple, the three tabs, "add schedule", language and account. */
+/**
+ * Navigation column. On desktop: the couple, the three tabs, "add schedule", language and account.
+ * On tablets (`md` to `lg`) it narrows to a rail of icons: tabs, "add schedule" and the account.
+ */
 export function Sidebar() {
   const t = useT()
   const me = useMe().data
@@ -29,15 +32,15 @@ export function Sidebar() {
   const partner = couple.users.find((u) => u.id !== user.id)
 
   return (
-    <aside className="hidden w-[240px] shrink-0 flex-col gap-6 border-r border-sand bg-surface px-4 pt-7 pb-5 lg:flex">
-      <div className="flex items-center gap-2 px-2 retro:gap-2.5 retro:px-1">
+    <aside className="hidden w-[76px] shrink-0 flex-col gap-6 border-r border-sand bg-surface px-2 pt-5 pb-5 md:flex lg:w-[240px] lg:px-4 lg:pt-7">
+      <div className="flex items-center justify-center gap-2 lg:justify-start lg:px-2 retro:gap-2.5 lg:retro:px-1">
         <span className="flex size-8 items-center justify-center rounded-[10px] bg-brand-strong text-white retro:size-9 retro:rounded-none retro:pixel-outline retro:pixel-thin">
           {retro ? <PixelSprite name="heart" scale={2} /> : <Heart size={17} strokeWidth={1.75} fill="currentColor" />}
         </span>
-        <span className="font-display text-[28px] leading-none text-brand-text retro:font-pixel-head retro:text-[30px] retro:pixel-crisp">daty</span>
+        <span className="hidden font-display text-[28px] leading-none text-brand-text lg:inline retro:font-pixel-head retro:text-[30px] retro:pixel-crisp">daty</span>
       </div>
 
-      <div className="flex flex-col rounded-[20px] border border-card-border bg-cream p-4 retro:rounded-none retro:border-0 retro:pixel-box">
+      <div className="hidden flex-col rounded-[20px] border border-card-border bg-cream p-4 lg:flex retro:rounded-none retro:border-0 retro:pixel-box">
         {retro ? (
           <>
             <div className="flex items-end gap-1.5">
@@ -76,7 +79,7 @@ export function Sidebar() {
               key={to}
               to={to}
               aria-current={active ? 'page' : undefined}
-              className={`relative isolate flex h-[46px] items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold transition-colors duration-200 retro:h-11 retro:rounded-none retro:px-3 retro:font-pixel retro:text-[12px] retro:font-normal retro:pixel-crisp ${
+              className={`relative isolate flex h-[58px] flex-col items-center justify-center gap-1 rounded-[14px] text-[11px] font-semibold transition-colors duration-200 lg:h-[46px] lg:flex-row lg:justify-start lg:gap-3 lg:px-3.5 lg:text-[15px] retro:rounded-none retro:font-pixel retro:text-[11px] retro:font-normal retro:pixel-crisp lg:retro:h-11 lg:retro:px-3 lg:retro:text-[12px] ${
                 active ? 'text-brand-text retro:text-brand-text' : 'text-muted hover:bg-sand-soft hover:text-ink retro:text-ink'
               }`}
             >
@@ -88,7 +91,7 @@ export function Sidebar() {
                   className="absolute inset-0 -z-10 rounded-[14px] bg-brand-soft retro:rounded-none retro:pixel-outline retro:pixel-thin"
                 >
                   {retro && (
-                    <PixelSprite name="cursor" scale={2} className="absolute top-1/2 -left-3.5 -translate-y-1/2 motion-safe:animate-pixel-nudge" />
+                    <PixelSprite name="cursor" scale={2} className="absolute top-1/2 -left-3.5 hidden -translate-y-1/2 motion-safe:animate-pixel-nudge lg:block" />
                   )}
                 </m.span>
               )}
@@ -102,13 +105,18 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setScheduling(true)}
-        className="ui-cta flex items-center justify-center gap-1.5"
+        className="ui-cta flex w-[50px] items-center justify-center gap-1.5 self-center lg:w-auto lg:self-stretch retro:w-11 lg:retro:w-auto"
+        aria-label={t.calendar.addSchedule}
       >
         {retro ? <PixelSprite name="plus" scale={2} /> : <Plus size={18} strokeWidth={2.25} />}
-        {t.calendar.addSchedule}
+        <span className="hidden lg:inline">{t.calendar.addSchedule}</span>
       </button>
 
-      <div className="mt-auto flex flex-col gap-3">
+      <button type="button" onClick={() => setAccount(true)} className="mt-auto self-center lg:hidden" aria-label={t.common.myInfo}>
+        <Initial name={user.nickname} src={user.profileImageUrl} size={40} className="bg-brand-soft text-brand-text" />
+      </button>
+
+      <div className="mt-auto hidden flex-col gap-3 lg:flex">
         <div className="flex flex-wrap items-center gap-2 self-start retro:gap-3">
           <LanguageToggle />
           <ThemeToggle />

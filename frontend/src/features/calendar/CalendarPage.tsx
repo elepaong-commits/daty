@@ -86,8 +86,8 @@ export function CalendarPage() {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto pb-28 lg:pb-10">
-        <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
+      <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto pb-28 md:pb-10">
+        <div className="md:mx-auto md:max-w-[1240px] md:px-5">
         <ScreenHeader
           eyebrow={t.calendar.eyebrow}
           title={t.dates.yearMonth(month)}
@@ -107,8 +107,8 @@ export function CalendarPage() {
         />
 
         {/* The day panel sits beside the month from xl; below it on narrower desktops so the cells keep their width. */}
-        <div className="lg:px-5 xl:flex xl:items-start xl:gap-6">
-        <section className="ui-box mx-4 rounded-3xl bg-surface p-3 shadow-card lg:mx-0 lg:min-w-0 lg:flex-1 lg:p-5">
+        <div className="md:px-5 xl:flex xl:items-start xl:gap-6">
+        <section className="ui-box mx-4 rounded-3xl bg-surface p-3 shadow-card md:mx-0 md:min-w-0 md:flex-1 md:p-5">
           <div className="flex items-center gap-4 px-1 pb-3 text-[11px] leading-normal">
             <span className="flex items-center gap-1.5 font-semibold">
               {retro ? <span className="size-2 bg-brand" /> : <img src={markerRecord} alt="" width={8} height={8} />} {t.calendar.legendRecord}
@@ -131,7 +131,7 @@ export function CalendarPage() {
 
           <div className="flex flex-col gap-1">
             {weeks.map((week) => (
-              <div key={week[0]!.toISOString()} className="grid min-h-[60px] grid-cols-7 lg:min-h-[108px] lg:gap-1">
+              <div key={week[0]!.toISOString()} className="grid min-h-[60px] grid-cols-7 md:min-h-[108px] md:gap-1">
                 {week.map((day) => (
                   <DayCell
                     key={day.toISOString()}
@@ -149,7 +149,7 @@ export function CalendarPage() {
           </div>
         </section>
 
-        <div className="px-5 pt-6 lg:mt-6 lg:rounded-3xl lg:bg-surface lg:p-5 lg:shadow-card lg:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
+        <div className="px-5 pt-6 md:mt-6 md:rounded-3xl md:bg-surface md:p-5 md:shadow-card md:ui-box xl:sticky xl:top-0 xl:mt-0 xl:w-[360px] xl:shrink-0">
           {isLoading || error ? (
             <QueryState isLoading={isLoading} error={error} />
           ) : (
@@ -163,7 +163,7 @@ export function CalendarPage() {
       <button
         type="button"
         onClick={() => setSheetOpen(true)}
-        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand-strong pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 lg:hidden"
+        className="ui-btn absolute right-5 bottom-5 flex h-14 items-center gap-2 rounded-full bg-brand-strong pr-6 pl-5 text-white shadow-cta retro:h-12 retro:pr-5 retro:pl-4 md:hidden"
       >
         {retro ? <PixelSprite name="plus" scale={2} /> : <span className="text-[24px] leading-none">+</span>}
         <span className="text-[16px] font-semibold retro:text-[13px]">{t.calendar.addSchedule}</span>
@@ -263,12 +263,12 @@ function DayCell({
       disabled={!inMonth}
       aria-pressed={isSelected}
       aria-label={[t.calendar.dayLabel(t.dates.monthDay(day), records.length), ...milestones.map(t.calendar.milestone)].join(', ')}
-      className={`ui-pop flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 lg:gap-1 lg:border lg:px-1.5 lg:pt-1.5 ${
-        isSelected ? 'bg-brand-soft lg:border-brand' : 'lg:border-card-border'
-      } ${inMonth && !isSelected ? 'lg:hover:bg-cream' : ''}`}
+      className={`ui-pop flex min-w-0 flex-col items-stretch gap-0.5 rounded-xl px-0.5 pt-1 pb-1 md:gap-1 md:border md:px-1.5 md:pt-1.5 ${
+        isSelected ? 'bg-brand-soft md:border-brand' : 'md:border-card-border'
+      } ${inMonth && !isSelected ? 'md:hover:bg-cream' : ''}`}
     >
       <span
-        className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold lg:mx-0 ${numberColor} ${
+        className={`mx-auto flex size-7 items-center justify-center rounded-full text-[13px] leading-normal font-semibold md:mx-0 ${numberColor} ${
           isSelected ? 'bg-brand-strong' : isToday ? 'ring-1 ring-brand' : ''
         }`}
       >
@@ -277,16 +277,16 @@ function DayCell({
       {shownMilestones.map((m) => (
         <span
           key={`${m.kind}-${m.count}`}
-          className="h-4 truncate rounded bg-amber-soft px-1 text-left text-[10px] leading-4 font-bold text-amber-ink lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px]"
+          className="h-4 truncate rounded bg-amber-soft px-1 text-left text-[10px] leading-4 font-bold text-amber-ink md:h-5 md:px-1.5 md:text-[11px] md:leading-[18px]"
         >
-          <span className="hidden lg:inline">♥ </span>
+          <span className="hidden md:inline">♥ </span>
           {t.calendar.milestone(m)}
         </span>
       ))}
       {visible.map((r) => (
         <span
           key={r.id}
-          className={`h-4 truncate rounded px-1 text-left text-[10px] leading-4 font-semibold lg:h-5 lg:px-1.5 lg:text-[11px] lg:leading-[18px] ${
+          className={`h-4 truncate rounded px-1 text-left text-[10px] leading-4 font-semibold md:h-5 md:px-1.5 md:text-[11px] md:leading-[18px] ${
             r.type === 'RECORD'
               ? 'border border-transparent bg-brand-soft text-brand-text'
               : 'border border-coral/45 bg-coral-soft text-coral-strong'
@@ -295,7 +295,7 @@ function DayCell({
           {r.place?.name ?? r.title}
         </span>
       ))}
-      {hidden > 0 && <span className="text-left text-[10px] leading-normal font-semibold text-muted lg:text-[11px]">+{hidden}</span>}
+      {hidden > 0 && <span className="text-left text-[10px] leading-normal font-semibold text-muted md:text-[11px]">+{hidden}</span>}
     </button>
   )
 }

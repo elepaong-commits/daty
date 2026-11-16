@@ -47,7 +47,7 @@ export function AlbumsPage() {
         onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 400)}
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto"
       >
-        <div className="lg:mx-auto lg:max-w-[1240px] lg:px-5">
+        <div className="md:mx-auto md:max-w-[1240px] md:px-5">
         <ScreenHeader
           eyebrow={t.albums.eyebrow}
           title={t.albums.title}
@@ -75,18 +75,18 @@ export function AlbumsPage() {
           </p>
         </ScreenHeader>
 
-        <div className="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-5 lg:pb-12">
+        <div className="flex flex-col gap-5 px-4 pt-2 pb-8 md:px-5 md:pb-12">
           <MemoriesToday />
           <QueryState isLoading={isLoading} error={error} />
           {!isLoading && !error && albums.length > 0 && (
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t.albums.search}
                 aria-label={t.albums.search}
-                className="ui-search !mt-0 lg:max-w-[360px]"
+                className="ui-search !mt-0 md:max-w-[360px]"
               />
               {years.length > 1 && (
                 <div className="scrollbar-none flex gap-2 overflow-x-auto">
@@ -105,7 +105,7 @@ export function AlbumsPage() {
           {!isLoading && !error && groups.map((group, g) => (
             <section key={group.year} className="flex flex-col gap-3">
               {years.length > 1 && <h2 className="font-display text-[18px] retro:text-[15px]">{t.albums.year(group.year)}</h2>}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 md:gap-x-6 md:gap-y-8 xl:grid-cols-4">
                 {group.albums.map((album, i) => (
                   <AlbumCard key={album.id} album={album} className={RISE_IN} style={riseDelay(i)} />
                 ))}
@@ -114,7 +114,7 @@ export function AlbumsPage() {
             </section>
           ))}
           {!isLoading && !error && albums.length === 0 && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-8 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5 md:grid-cols-3 md:gap-x-6 md:gap-y-8 xl:grid-cols-4">
               <NewAlbumCard index={0} onClick={() => setSheetOpen(true)} />
             </div>
           )}
@@ -127,7 +127,7 @@ export function AlbumsPage() {
           type="button"
           aria-label={t.albums.toTop}
           onClick={() => scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="ui-btn-thin absolute right-4 bottom-4 z-10 flex size-11 items-center justify-center rounded-full bg-brand-strong text-white shadow-lg hover:bg-brand-deep lg:hidden"
+          className="ui-btn-thin absolute right-4 bottom-4 z-10 flex size-11 items-center justify-center rounded-full bg-brand-strong text-white shadow-lg hover:bg-brand-deep md:hidden"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 19V5M5 12l7-7 7 7" />
