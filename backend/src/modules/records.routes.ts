@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { PlaceCategory, Prisma, RecordType } from "../generated/prisma/client.js";
 import { HttpError } from "../middlewares/error-handler.js";
-import { idParam } from "../lib/http.js";
+import { idParam, webUrl } from "../lib/http.js";
 import { nicknameOf } from "../lib/feedback.js";
 import { prisma } from "../lib/prisma.js";
 import { notifyPartner } from "../lib/push.js";
@@ -23,7 +23,7 @@ const listQuery = z
 const placeFields = {
   placeId: z.number().int().positive().optional(),
   placeName: z.string().trim().min(1).max(100).optional(),
-  googleMapsUrl: z.url().max(500).optional(),
+  googleMapsUrl: webUrl().optional(),
   googlePlaceId: z.string().min(1).max(200).optional(),
   address: z.string().trim().max(200).optional(),
   latitude: z.number().min(-90).max(90).optional(),

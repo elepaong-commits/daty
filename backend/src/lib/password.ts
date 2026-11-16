@@ -1,9 +1,28 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
 
-const scrypt = (password: string, salt: Buffer, keylen: number, options: ScryptOptions) =>
+const scryptOnce = (password: string, salt: Buffer, keylen: number, options: ScryptOptions) =>
   new Promise<Buffer>((resolve, reject) =>
     scryptCb(password, salt, keylen, options, (err, key) => (err ? reject(err) : resolve(key))),
   );
+
+// Each hash takes ~32MB, so a burst of login attempts (from many IPs, past the per-IP limit) could run
+// the 1GB server out of memory. At most this many run at once; the rest wait their turn.
+const MAX_CONCURRENT = 2;
+let running = 0;
+const waiting: (() => void)[] = [];
+
+async function scrypt(password: string, salt: Buffer, keylen: number, options: ScryptOptions) {
+  // A finished hash hands its slot straight to the next in line, so `running` never goes over the cap.
+  if (running >= MAX_CONCURRENT) await new Promise<void>((resolve) => waiting.push(resolve));
+  else running++;
+  try {
+    return await scryptOnce(password, salt, keylen, options);
+  } finally {
+    const next = waiting.shift();
+    if (next) next();
+    else running--;
+  }
+}
 
 // N=2^15 keeps hashing around 100ms and 32MB of memory, safe for the 1GB server.
 const PARAMS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };

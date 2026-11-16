@@ -52,11 +52,11 @@
 
 ## API (`backend/src/modules/`)
 
-**인증:** 이메일 + 비밀번호. 로그인하면 `daty_session` 쿠키(httpOnly, SameSite=Lax, 30일, HS256 JWT)가 발급된다. 발급된 지 하루가 지난 세션은 `requireAuth`가 다음 요청에서 30일짜리로 다시 발급한다(30일 동안 쓰지 않아야 로그아웃). 비밀번호는 `node:crypto` scrypt로 해시(`src/lib/password.ts`). 로그인·가입·비밀번호 변경·재설정·계정 삭제·초대 코드 합류(`/api/couple/join`)는 IP당 15분에 10회 실패로 제한. 가입은 `SIGNUP_ENABLED=true`일 때만 열리고(기본은 닫힘, `403 SIGNUP_CLOSED`), 로그인 화면은 `GET /api/auth/signup`(`{ open }`)을 보고 가입 탭을 숨긴다.
+**인증:** 이메일 + 비밀번호. 로그인하면 `daty_session` 쿠키(httpOnly, SameSite=Lax, 30일, HS256 JWT)가 발급된다. 발급된 지 하루가 지난 세션은 `requireAuth`가 다음 요청에서 30일짜리로 다시 발급한다(30일 동안 쓰지 않아야 로그아웃). 비밀번호는 `node:crypto` scrypt로 해시(`src/lib/password.ts`, 해시 하나가 32MB라 동시에 2개까지만 돌고 나머지는 기다린다). 로그인·가입·비밀번호 변경·재설정·계정 삭제·초대 코드 합류(`/api/couple/join`)는 IP당 15분에 10회 실패로 제한. 가입은 `SIGNUP_ENABLED=true`일 때만 열리고(기본은 닫힘, `403 SIGNUP_CLOSED`), 로그인 화면은 `GET /api/auth/signup`(`{ open }`)을 보고 가입 탭을 숨긴다.
 
 - `requireAuth` → `req.userId`, `requireCouple` → `req.coupleId` (`src/middlewares/auth.ts`). 커플 데이터 라우터(places, records, albums)는 둘 다 거친다. `requireAuth`는 매 요청 사용자를 조회해서 `passwordChangedAt`보다 먼저 발급된 세션을 막는다(비밀번호를 바꾸면 다른 기기는 로그아웃)
 - 커플 데이터 쿼리는 반드시 `req.coupleId`로 범위를 제한한다 (`where: { id, coupleId }`)
-- 에러 응답은 `{ error, code }`. 프론트는 `code`(`UNAUTHENTICATED`, `COUPLE_REQUIRED`, `INVALID_CREDENTIALS` 등)로 분기한다. 검증 실패는 `INVALID_REQUEST`, 없는 대상은 `NOT_FOUND`, 서버 오류는 `INTERNAL`. 화면에 보이는 문구는 프론트 `errorMessage`(`src/lib/api.ts`)가 `messages.ts`의 `errors[code]`로 바꾸고, 문구가 없는 코드는 상태 코드별 `failures`, 네트워크 끊김(`TypeError`)은 `failures.network`로 보여 준다. 영어 원문은 화면에 내보내지 않는다
+- 에러 응답은 `{ error, code }`. 프론트는 `code`(`UNAUTHENTICATED`, `COUPLE_REQUIRED`, `INVALID_CREDENTIALS` 등)로 분기한다. 검증 실패와 깨진 JSON 본문은 `INVALID_REQUEST`, 없는 대상은 `NOT_FOUND`, 서버 오류는 `INTERNAL`. 화면에 보이는 문구는 프론트 `errorMessage`(`src/lib/api.ts`)가 `messages.ts`의 `errors[code]`로 바꾸고, 문구가 없는 코드는 상태 코드별 `failures`, 네트워크 끊김(`TypeError`)은 `failures.network`로 보여 준다. 영어 원문은 화면에 내보내지 않는다
 
 - `POST /api/auth/signup|login|logout`, `GET|PATCH /api/auth/me` — 응답은 `{ user, couple | null }`. `PATCH`는 닉네임(`{ nickname }`) 변경
 - 프로필 사진: `POST /api/auth/me/avatar/upload`(presigned PUT, 키 `avatars/{userId}/{uuid}.jpg`) → `PUT /api/auth/me/avatar`(`{ key }`, HEAD로 1MB 이하 이미지 확인) / `DELETE /api/auth/me/avatar`. 프론트가 가운데 정사각형 320px JPEG로 줄여 올린다. `User.profileImageUrl`에는 키를 저장하고 응답에서는 서명 URL로 바꾼다(`src/lib/avatar.ts`, 예전 URL 값은 그대로). 바꾸거나 지우거나 탈퇴하면 이전 파일을 지운다
@@ -65,7 +65,7 @@
 - 나가기·삭제: `POST /api/couple/leave`(커플에서 나가기), `DELETE /api/couple/partner`(짝꿍 내보내기), `DELETE /api/auth/me`(`{ password }`, 계정 삭제 → 나간 뒤 사용자 행 삭제, 204). 모두 `src/lib/membership.ts`의 `removeFromCouple`을 거친다: 기록은 남은 사람에게 남고, 나간 사람의 반응과 둘 사이의 짝꿍 재설정 코드는 지우고, 쓴 메모·댓글은 남긴다(계정 삭제면 작성자 `null`). 초대 코드는 새로 바뀐다. 마지막 사람이 나가면 커플과 모든 데이터·R2 파일을 지운다
 - `GET /api/couple/storage`(R2 사용량. `Photo.sizeBytes`의 합이고, 크기가 없는 예전 사진은 조회할 때 60개씩 R2 HEAD로 채운다), `GET /api/couple/export`(기록 전체 JSON 내려받기)
 - 오류 알림: API의 500과 브라우저 오류(`POST /api/client-errors`, 프론트 `src/lib/reportError.ts`가 보냄)는 `src/lib/alerts.ts`의 `reportError`로 로그에 남기고 `ADMIN_EMAIL`로 메일(종류별 한 시간에 한 통)
-- `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다). 짝꿍에게는 반응·댓글 말고도 새 일정·기록, 가고 싶은 곳 추가, 사진 업로드(`notifyPhotosAdded`: 올라오는 대로 세다가 2분 조용하면 한 번)를 `notifyPartner`로 알린다. 테스트에서는 `pushOutbox`에 쌓인다
+- `GET /api/push/key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` — 웹 푸시(`requireAuth`만). VAPID 키가 없으면 `503 PUSH_DISABLED`. 서버가 구독 주소로 요청을 보내므로 브라우저 푸시 서비스 호스트(`isPushServiceUrl`)만 받는다. 아침 알림(기념일·일정·N년 전 오늘)은 API 프로세스 안의 타이머 `src/lib/notifier.ts`가 보낸다(프로세스를 더 띄우지 않는다). 짝꿍에게는 반응·댓글 말고도 새 일정·기록, 가고 싶은 곳 추가, 사진 업로드(`notifyPhotosAdded`: 올라오는 대로 세다가 2분 조용하면 한 번)를 `notifyPartner`로 알린다. 테스트에서는 `pushOutbox`에 쌓인다
 - `GET /api/memories?date=&tz=`(N년 전 오늘의 방문·앨범), `GET /api/recap?year=&tz=`(연말 결산) — 날짜는 보는 사람 시간대(`tz`, IANA 이름)의 달력으로 센다. 동네 이름은 주소에서 읽는다(`src/lib/area.ts`, 한국·일본 주소)
 - 반응·댓글: `PUT|DELETE /api/albums/:id/photos/:photoId/reaction`, `POST .../comments`, `DELETE .../comments/:commentId`, 장소 메모는 `/api/places/:id/notes/:noteId/...`로 같다. 응답은 그 대상의 `{ reactions, comments }`. 댓글은 쓴 사람만 지운다
 - `GET /api/albums/:id/photos/downloads` — 파일마다 저장용 서명 URL(`response-content-disposition=attachment`, 1시간)
@@ -77,6 +77,7 @@
   - `PATCH /:id`의 `visit: { scheduledAt, rating }`은 그 장소의 최근 방문 기록을 고치고, 방문 기록이 없으면 새로 만든다 (장소 자체에는 날짜·평점 컬럼이 없다)
 - `GET /api/records?from=&to=` (ISO, 오프셋 포함), `POST`, `PATCH|DELETE /api/records/:id` — 생성과 수정 모두 `resolvePlace`로 장소를 찾거나 만든다. 수정 시 장소 이름이 바뀌거나 검색으로 고르면 다른 장소로 옮긴다
   - 생성 시 `placeId`(일정 등록의 "저장한 장소") 또는 `placeName`("새 장소"). 기존 장소는 `googlePlaceId` → 이름 순으로 찾아 재사용하고, 없으면 생성. 다른 장소로 옮기면 제목도 그 장소 이름이 된다
+  - `googleMapsUrl`은 `http(s)`만 받는다(`webUrl`, `src/lib/http.ts`). 프론트도 저장된 링크를 `href`에 넣기 전에 `webLink`(`src/lib/links.ts`)로 거른다
   - **지도 핀은 좌표가 있는 장소에만 생긴다.** 좌표·주소·`googlePlaceId`는 프론트의 Google 장소 검색(`PlaceSearch`)에서 온다. 장소 이름과 주소는 앱 언어와 상관없이 그 나라 말로 저장한다(일본 장소는 일본어, `LOCAL_LANGUAGE`). 이름만 있던 장소도 나중에 검색으로 고르면 좌표가 채워진다
   - `endsAt`은 `scheduledAt`보다 뒤여야 한다(`400 ENDS_BEFORE_START`, 수정에서 시작만 옮겨도 검사). `PATCH`에서 `null`이면 지운다
   - `RECORD`가 되면 장소를 `VISITED`로 올린다. `PLAN`은 장소 상태를 내리지 않는다

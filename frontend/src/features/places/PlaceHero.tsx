@@ -4,6 +4,7 @@ import { PhotoTile } from '../../components/PhotoTile'
 import { MAPS_API_KEY } from '../../lib/maps'
 import type { PlaceCategory } from '../../lib/types'
 import { useImageFailed } from '../../lib/useImageFailed'
+import { webLink } from '../../lib/links'
 
 interface Props {
   googlePlaceId: string | null
@@ -62,10 +63,10 @@ function GooglePlaceHero(props: Props & { googlePlaceId: string }) {
       <span className="absolute right-2 bottom-2 max-w-[70%] truncate rounded-full bg-night/70 px-2 py-0.5 text-[11px] text-white">
         Google Maps
         {photo.author &&
-          (photo.author.uri ? (
+          (webLink(photo.author.uri) ? (
             <>
               {' · '}
-              <a href={photo.author.uri} target="_blank" rel="noreferrer" className="underline">
+              <a href={webLink(photo.author.uri)} target="_blank" rel="noreferrer" className="underline">
                 {photo.author.name}
               </a>
             </>

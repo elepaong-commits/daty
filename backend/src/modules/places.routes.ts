@@ -13,7 +13,7 @@ import {
   reactionBody,
   setReaction,
 } from "../lib/feedback.js";
-import { idParam, toDateOnly } from "../lib/http.js";
+import { idParam, toDateOnly, webUrl } from "../lib/http.js";
 import { notifyPartner } from "../lib/push.js";
 import { HttpError } from "../middlewares/error-handler.js";
 import { prisma } from "../lib/prisma.js";
@@ -72,7 +72,7 @@ const placeBody = z.object({
   address: z.string().trim().max(200).nullish(),
   latitude: z.number().min(-90).max(90).nullish(),
   longitude: z.number().min(-180).max(180).nullish(),
-  googleMapsUrl: z.url().max(500).nullish(),
+  googleMapsUrl: webUrl().nullish(),
   googlePlaceId: z.string().max(200).nullish(),
 });
 
