@@ -36,7 +36,7 @@ jobs:
           --health-timeout 3s
           --health-retries 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -54,7 +54,7 @@ jobs:
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
       RESTART_COMMAND: ${{ vars.DEPLOY_RESTART_COMMAND || 'sudo systemctl restart daty-api' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
