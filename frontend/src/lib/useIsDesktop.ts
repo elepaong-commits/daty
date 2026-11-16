@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
-// Tailwind's `lg` breakpoint: from here the app uses the sidebar layout instead of the phone column.
-const QUERY = '(min-width: 1024px)'
+// The `md` breakpoint (see index.css): from tablets up the app uses the sidebar layout instead of the phone column.
+const QUERY = '(min-width: 46rem)'
 
 function subscribe(onChange: () => void) {
   const media = window.matchMedia(QUERY)
@@ -9,7 +9,7 @@ function subscribe(onChange: () => void) {
   return () => media.removeEventListener('change', onChange)
 }
 
-/** True on desktop-width screens, for layouts that differ in structure rather than just in `lg:` classes. */
+/** True on tablet and desktop widths, for layouts that differ in structure rather than just in `md:` classes. */
 export function useIsDesktop() {
   return useSyncExternalStore(subscribe, () => window.matchMedia(QUERY).matches)
 }

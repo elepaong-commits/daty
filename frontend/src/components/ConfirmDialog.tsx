@@ -28,7 +28,7 @@ export function ConfirmDialog({ title, message, confirmLabel, cancelLabel, error
     <div
       ref={focusRef}
       tabIndex={-1}
-      className={`outline-none ${fixed ? 'fixed' : 'absolute lg:fixed'} inset-0 z-[60] flex items-center justify-center px-8 ${isPresent ? '' : 'pointer-events-none'}`}
+      className={`outline-none ${fixed ? 'fixed' : 'absolute md:fixed'} inset-0 z-[60] flex items-center justify-center px-8 ${isPresent ? '' : 'pointer-events-none'}`}
       role="alertdialog"
       aria-modal="true"
       aria-label={title}

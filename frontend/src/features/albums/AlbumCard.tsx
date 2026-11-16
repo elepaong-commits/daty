@@ -73,7 +73,7 @@ function PhotoStack({ album, date }: { album: AlbumSummary; date: string }) {
   const print = 'absolute inset-0 overflow-hidden rounded-2xl border-4 border-white shadow-photo retro:border-0 retro:bg-surface retro:pixel-outline retro:pixel-thin'
 
   return (
-    <div className="relative h-[225px] w-full transition-transform duration-200 lg:h-[200px] lg:group-hover:-translate-y-1 retro:h-[120px] retro:lg:h-[160px]">
+    <div className="relative h-[225px] w-full transition-transform duration-200 md:h-[200px] md:group-hover:-translate-y-1 retro:h-[120px] retro:md:h-[160px]">
       {LAYERS.map((placement, i) => (
         <div key={placement} className={`${print} ${placement}`} aria-hidden="true">
           {layer(i + 1)}

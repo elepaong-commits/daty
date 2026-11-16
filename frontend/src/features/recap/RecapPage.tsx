@@ -19,7 +19,7 @@ export function RecapPage() {
   const { data: recap, isLoading, error } = useRecap(year)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[880px] lg:px-5">
+    <div className="flex min-h-0 flex-1 flex-col md:mx-auto md:w-full md:max-w-[880px] md:px-5">
       <SubHeader eyebrow={t.recap.eyebrow} title={t.recap.title(year)} fallback="/albums" />
       <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-8">
         {recap && recap.years.length > 1 && (
@@ -106,7 +106,7 @@ function RecapBody({ recap }: { recap: Recap }) {
         </Card>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {recap.mostVisited.length > 0 && (
           <Card title={t.recap.mostVisited}>
             <ol className="flex flex-col gap-1.5">
@@ -190,7 +190,7 @@ function MonthBars({ months }: { months: number[] }) {
           {/* Sits under the baseline; shown for every month on wide screens, every third on phones. */}
           <span
             aria-hidden="true"
-            className={`absolute top-full pt-1 text-[11px] whitespace-nowrap text-muted tabular-nums ${i % 3 === 0 ? '' : 'hidden lg:block'}`}
+            className={`absolute top-full pt-1 text-[11px] whitespace-nowrap text-muted tabular-nums ${i % 3 === 0 ? '' : 'hidden md:block'}`}
           >
             {t.recap.month(i + 1)}
           </span>

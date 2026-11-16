@@ -20,7 +20,7 @@ const DEFAULT_ZOOM = 12
 const WORLD: [number, number, number, number] = [-180, -85, 180, 85]
 // Leave room for the place sheet that covers the bottom of the map (phones only).
 const FIT_PADDING = { top: 60, right: 60, bottom: 260, left: 40 }
-const DESKTOP_FIT_PADDING = { top: 80, right: 80, bottom: 80, left: 80 }
+const DESKTOP_FIT_PADDING = { top: 60, right: 60, bottom: 60, left: 60 }
 
 interface Props {
   places: Place[]
@@ -285,7 +285,7 @@ function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLi
 
   return (
     <>
-      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-surface/90 lg:top-4 lg:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 lg:retro:top-5 lg:retro:left-5">
+      <div className="ui-float ui-label absolute top-3 left-3 flex gap-3 rounded-full bg-surface/90 md:top-4 md:left-4 px-3 py-1.5 text-[11px] leading-normal font-semibold retro:top-3.5 retro:left-3.5 retro:px-2.5 retro:py-1 md:retro:top-5 md:retro:left-5">
         <span className="flex items-center gap-1 retro:gap-1.5">
           {retro ? <span className="size-2 bg-brand" /> : <img src={dotVisited} alt="" width={10} height={10} />} {t.status.VISITED}
         </span>
@@ -294,7 +294,7 @@ function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLi
         </span>
       </div>
       {/* One rounded block in the classic design; two separate pixel buttons in the pixel one. */}
-      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-surface lg:top-4 lg:right-4 lg:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none lg:retro:top-5 lg:retro:right-5">
+      <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-xl bg-surface md:top-4 md:right-4 md:shadow-card retro:top-3.5 retro:right-3.5 retro:gap-3 retro:overflow-visible retro:rounded-none retro:bg-transparent retro:shadow-none md:retro:top-5 md:retro:right-5">
         <button type="button" onClick={() => zoom(1)} className="ui-float-button flex size-9 items-center justify-center retro:size-8" aria-label={t.map.zoomIn}>
           {retro ? <PixelSprite name="plus" scale={2} /> : <Plus size={18} strokeWidth={1.75} />}
         </button>
@@ -305,7 +305,7 @@ function MapControls({ onLocated }: { onLocated: (position: google.maps.LatLngLi
       <button
         type="button"
         onClick={locate}
-        className="ui-float-button absolute right-3 bottom-[250px] flex size-10 lg:right-4 lg:bottom-5 lg:size-11 lg:shadow-card items-center justify-center rounded-full retro:right-3.5 retro:bottom-[254px] retro:size-9 lg:retro:right-5 lg:retro:bottom-6 lg:retro:size-9"
+        className="ui-float-button absolute right-3 bottom-[250px] flex size-10 md:right-4 md:bottom-5 md:size-11 md:shadow-card items-center justify-center rounded-full retro:right-3.5 retro:bottom-[254px] retro:size-9 md:retro:right-5 md:retro:bottom-6 md:retro:size-9"
         aria-label={t.map.locate}
       >
         {retro ? <PixelSprite name="locate" scale={2} /> : <img src={locateIcon} alt="" width={18} height={18} />}

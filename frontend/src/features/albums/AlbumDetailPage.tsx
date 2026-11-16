@@ -158,7 +158,7 @@ export function AlbumDetailPage() {
       action={
         album && (
           // Desktop puts the edit button in the album card instead.
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <HeaderAction onClick={() => setEditing(true)}>{t.common.edit}</HeaderAction>
           </div>
         )
@@ -196,13 +196,13 @@ export function AlbumDetailPage() {
   const actionError = updateAlbum.error ?? deletePhotos.error ?? toFront.error ?? movePhotos.error ?? saveError
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1240px] lg:px-5">
+    <div className="relative flex min-h-0 flex-1 flex-col md:mx-auto md:w-full md:max-w-[1240px] md:px-5">
       {header}
       {/* Album info first (on desktop a wide card with the best cut beside it), then the photos below. */}
-      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 lg:gap-4 lg:pb-10">
-        <section className="flex gap-6 ui-box retro:m-1 retro:bg-surface retro:p-3 lg:rounded-2xl lg:border-[1.5px] lg:border-card-border lg:bg-surface lg:p-5">
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 pb-3 md:gap-4 md:pb-10">
+        <section className="flex gap-6 ui-box retro:m-1 retro:bg-surface retro:p-3 md:rounded-2xl md:border-[1.5px] md:border-card-border md:bg-surface md:p-5">
           {album.coverPhoto?.thumbnailUrl && (
-            <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline lg:block xl:w-[300px]">
+            <div className="relative hidden aspect-[4/3] w-[260px] shrink-0 overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline md:block xl:w-[300px]">
               <img src={album.coverPhoto.thumbnailUrl} alt={t.albums.bestCut} className="size-full object-cover" />
               {album.coverPhotoId !== null && (
                 <span className="absolute top-2 left-2 flex items-center gap-0.5 rounded-md bg-amber-soft px-1.5 py-[3px] text-[11px] font-bold text-amber-strong retro:top-1 retro:left-1 retro:bg-amber retro:px-1 retro:py-0 retro:font-normal retro:text-ink">
@@ -214,10 +214,10 @@ export function AlbumDetailPage() {
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex flex-col gap-[5px]">
               <div className="flex items-start gap-3">
-                <h2 className="min-w-0 flex-1 font-display text-[20px] leading-[1.38] lg:text-[26px]">
+                <h2 className="min-w-0 flex-1 font-display text-[20px] leading-[1.38] md:text-[26px]">
                   {albumHeading(album, t.dates.yearMonth)}
                 </h2>
-                <div className="hidden shrink-0 lg:block">
+                <div className="hidden shrink-0 md:block">
                   <HeaderAction onClick={() => setEditing(true)}>{t.albums.editAlbum}</HeaderAction>
                 </div>
               </div>
@@ -248,7 +248,7 @@ export function AlbumDetailPage() {
           </div>
         </section>
 
-        <div className="flex min-w-0 flex-col gap-3 lg:pt-3">
+        <div className="flex min-w-0 flex-col gap-3 md:pt-3">
 
         <div className="flex items-center justify-between">
           <h3 className="font-display text-[18px]">{album.monthly ? t.albums.momentsMonthly : t.albums.moments}</h3>
@@ -299,9 +299,9 @@ export function AlbumDetailPage() {
           <p className="text-[12px] text-muted">{t.albums.uploadSkipped(uploadPhotos.data.skipped)}</p>
         )}
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {album.photos.length > 0 && (
-          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-surface p-1 retro:mt-1 lg:w-[380px]" role="tablist">
+          <div className="ui-seg flex h-10 shrink-0 rounded-2xl bg-surface p-1 retro:mt-1 md:w-[380px]" role="tablist">
             {FILTERS.map((value) => (
               <button
                 key={value}
@@ -355,7 +355,7 @@ export function AlbumDetailPage() {
             <span className="text-[11px]">{t.albums.emptyHint}</span>
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-2 retro:p-0.5 lg:grid-cols-5 xl:grid-cols-7">
+          <div className="grid grid-cols-3 gap-2 retro:p-0.5 md:grid-cols-5 xl:grid-cols-7">
             {shown.map((photo, i) => {
               const isSelected = selected.has(photo.id)
               return (
@@ -366,7 +366,7 @@ export function AlbumDetailPage() {
                   onClick={() => (selecting ? toggle(photo.id) : setViewing(i))}
                   aria-pressed={selecting ? isSelected : undefined}
                   style={riseDelay(i)}
-                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline retro:pixel-thin lg:aspect-square lg:h-auto lg:hover:opacity-90 ${RISE_IN} ${
+                  className={`relative h-[116px] overflow-hidden rounded-xl bg-sand-soft retro:pixel-outline retro:pixel-thin md:aspect-square md:h-auto md:hover:opacity-90 ${RISE_IN} ${
                     isSelected ? 'ring-3 ring-brand ring-offset-1 retro:z-10 retro:[--pixel-border:var(--color-brand)] retro:[--pixel:3px]' : 'retro:[--pixel-border:var(--color-handle)]'
                   }`}
                 >
