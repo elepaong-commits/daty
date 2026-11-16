@@ -50,7 +50,7 @@ const ko = {
   },
   theme: {
     label: '디자인',
-    names: { classic: '기본', retro: '도트' },
+    names: { classic: '기본', retro: '도트', scrap: '스크랩북' },
     modeLabel: '화면 밝기',
     modes: { system: '자동', light: '밝게', dark: '어둡게' },
   },
@@ -523,7 +523,7 @@ const ja: Messages = {
   },
   theme: {
     label: 'デザイン',
-    names: { classic: 'ベーシック', retro: 'ドット' },
+    names: { classic: 'ベーシック', retro: 'ドット', scrap: 'スクラップ' },
     modeLabel: '画面の明るさ',
     modes: { system: '自動', light: 'ライト', dark: 'ダーク' },
   },

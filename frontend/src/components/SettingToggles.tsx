@@ -24,7 +24,7 @@ export function LanguageToggle() {
   )
 }
 
-/** Switches between the classic and the pixel design on this device. */
+/** Switches between the designs (classic, pixel, scrapbook) on this device. */
 export function ThemeToggle() {
   const t = useT()
   const { theme, setTheme } = useTheme()

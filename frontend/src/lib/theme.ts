@@ -1,7 +1,7 @@
 import { createContext, use } from 'react'
 
-export type Theme = 'classic' | 'retro'
-export const THEMES: Theme[] = ['classic', 'retro']
+export type Theme = 'classic' | 'retro' | 'scrap'
+export const THEMES: Theme[] = ['classic', 'retro', 'scrap']
 
 const STORAGE_KEY = 'daty.theme'
 
@@ -9,7 +9,7 @@ const STORAGE_KEY = 'daty.theme'
 function savedTheme(): Theme | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'classic' || saved === 'retro') return saved
+    if (THEMES.some((theme) => theme === saved)) return saved as Theme
   } catch {
     // Storage can be blocked (private mode); ask again on the next visit.
   }
@@ -27,7 +27,7 @@ export function rememberTheme(theme: Theme) {
 }
 
 /**
- * Marks the page with the design so CSS can restyle it (`retro:` variant and the `ui-*` classes in
+ * Marks the page with the design so CSS can restyle it (`retro:` / `scrap:` variants and the `ui-*` classes in
  * `index.css`). Called before the first render too, so a saved design shows without a flash.
  */
 export function applyTheme(theme: Theme | null) {

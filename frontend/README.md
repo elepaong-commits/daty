@@ -31,6 +31,7 @@ npm run dev                  # http://localhost:5173, /api는 127.0.0.1:4000(백
 | `VITE_GOOGLE_MAPS_API_KEY` | Maps JavaScript API + Places API(New). 사이트 referrer로 제한한다 |
 | `VITE_GOOGLE_MAPS_MAP_ID` | 기본 디자인의 지도 스타일 |
 | `VITE_GOOGLE_MAPS_MAP_ID_RETRO` | 도트 디자인의 지도 스타일(없으면 위 값) |
+| `VITE_GOOGLE_MAPS_MAP_ID_SCRAP` | 스크랩북 디자인의 지도 스타일(없으면 기본 값) |
 | `VITE_API_URL` | 운영 빌드의 API 주소. 비우면 같은 사이트의 `/api`(Vercel rewrite) |
 
 ## 구조
