@@ -90,7 +90,7 @@ export function PlaceSheet({ places, status, selectedId, onSelect }: Props) {
         </p>
       ) : (
         <div
-          className={`scrollbar-none flex gap-3 px-4 pt-0.5 pb-4 retro:gap-3.5 retro:px-5 retro:pt-1.5 ${
+          className={`scrollbar-none flex gap-3 px-4 pt-0.5 pb-4 retro:gap-3.5 retro:px-5 retro:pt-1.5 scrap:gap-4 scrap:px-5 scrap:pt-3 ${
             expanded ? 'min-h-0 flex-1 flex-col overflow-y-auto' : 'snap-x snap-mandatory scroll-px-4 overflow-x-auto retro:scroll-px-5'
           }`}
         >

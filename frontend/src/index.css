@@ -6,6 +6,8 @@
  * lists; shapes used in many places are the `ui-*` classes at the bottom, which carry both looks.
  */
 @custom-variant retro (&:is([data-theme="retro"], [data-theme="retro"] *));
+/* The scrapbook design (`data-theme="scrap"`): paper, handwriting and tape. Colours and fonts come from its tokens below. */
+@custom-variant scrap (&:is([data-theme="scrap"], [data-theme="scrap"] *));
 
 /* Galmuri bitmap fonts (OFL) for the pixel design, self-hosted from the npm package: only the cuts it uses. */
 @font-face {
@@ -83,6 +85,15 @@
   --color-pixel-leaf-dark: #3f8f5a;
   --color-pixel-water: #8fd3e0;
   --color-pixel-violet: #9b87e0;
+
+  /* Scrapbook design: strips of masking tape and the ink written on them (the same in light and dark). */
+  --color-tape-yellow: #f2d675;
+  --color-tape-pink: #f6c9b8;
+  --color-tape-mint: #bfdccf;
+  --color-tape-blue: #cbd3ee;
+  --color-tape-ink: #3b2f2a;
+  /* Grid lines of the scrapbook's paper. */
+  --color-paper-line: transparent;
 
   --shadow-card: 0 8px 22px rgba(45, 55, 72, 0.15);
   --shadow-photo: 0 5px 12px rgba(45, 55, 72, 0.25);
@@ -199,6 +210,62 @@
 }
 
 /*
+ * The scrapbook design changes the tokens more than the shapes: kraft paper for the ground, brown ink,
+ * tomato red where the classic design is teal, pink where it is coral (so visited and wish still tell
+ * apart), a handwriting face for headings and hard little shadows like cut paper.
+ */
+[data-theme="scrap"] {
+  --font-sans: "Gowun Dodum", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-display: "Gaegu", "Gowun Dodum", sans-serif;
+  --font-reading: "Gowun Dodum", "IBM Plex Sans KR", system-ui, sans-serif;
+  font-family: var(--font-sans);
+
+  --color-brand: #d2553c;
+  --color-brand-strong: #b03a24;
+  --color-brand-deep: #8f2d1b;
+  --color-brand-soft: #f8e0d6;
+  --color-brand-tint: #f1c9ba;
+  --color-brand-text: #a5341f;
+  --color-coral: #e0679a;
+  --color-coral-strong: #b0306a;
+  --color-coral-soft: #fbe3ee;
+
+  --color-surface: #fffdf7;
+  --color-ink: #3b2f2a;
+  --color-muted: #6b5b52;
+  --color-faint: #75655b;
+  --color-placeholder: #75655b;
+
+  --color-cream: #f4ebd9;
+  --color-sand: #e3d6bc;
+  --color-sand-soft: #ece1cb;
+  --color-segment: #ece1cb;
+  --color-field: #fbf5e8;
+  --color-field-border: #dccdb0;
+  --color-chip-border: #d8c9ab;
+  --color-card-border: #e3d6bc;
+  --color-handle: #cdbb9b;
+  --color-beige: #eadfc8;
+  --color-paper-line: #e6dac2;
+
+  /* The hard shadow under cut paper (buttons, the call to action). */
+  --scrap-drop: #3b2f2a;
+}
+/* Shadow utilities carry their values inline, so the scrapbook's are set here, as the pixel design's are. */
+[data-theme="scrap"] .shadow-cta {
+  box-shadow: 3px 4px 0 0 var(--scrap-drop);
+}
+[data-theme="scrap"] .shadow-button {
+  box-shadow: 2px 3px 0 0 var(--scrap-drop);
+}
+[data-theme="scrap"]:lang(ja),
+:lang(ja) > [data-theme="scrap"] {
+  --font-sans: "IBM Plex Sans JP", system-ui, sans-serif;
+  --font-display: "Yomogi", "IBM Plex Sans JP", sans-serif;
+  --font-reading: "IBM Plex Sans JP", system-ui, sans-serif;
+}
+
+/*
  * Dark mode (<html data-mode="dark">, see lib/colorMode.ts): the same tokens, night colours. Coloured
  * fills (brand-strong, coral, danger) keep their white text; `night` and the pixel sprites stay as they are.
  */
@@ -227,6 +294,31 @@
   --color-card-border: #2c3340;
   --color-handle: #434c5b;
   --color-beige: #262d39;
+}
+/* The scrapbook at night: dark kraft instead of blue-grey, the same tape. */
+:root[data-theme="scrap"][data-mode="dark"] {
+  --color-cream: #201a17;
+  --color-surface: #2b2420;
+  --color-ink: #f1e7d8;
+  --color-muted: #c2b3a3;
+  --color-faint: #a39484;
+  --color-placeholder: #948676;
+  --color-brand-text: #f29a84;
+  --color-brand-soft: #4a2a22;
+  --color-brand-tint: #5a3329;
+  --color-coral-soft: #3d2230;
+  --color-coral-strong: #ff9cc4;
+  --color-sand: #3a312b;
+  --color-sand-soft: #332b26;
+  --color-segment: #302823;
+  --color-field: #302823;
+  --color-field-border: #4a3f37;
+  --color-chip-border: #4a3f37;
+  --color-card-border: #3a312b;
+  --color-handle: #5a4d43;
+  --color-beige: #332b26;
+  --color-paper-line: #2a221d;
+  --scrap-drop: #0f0c0a;
 }
 
 @layer base {
@@ -336,7 +428,17 @@
   }
 }
 
-/* ---- Shared shapes in both designs. The classic look first, then the pixel one. ---- */
+/* ---- Shared shapes in every design. The classic look first, then the pixel one, then the scrapbook's. ---- */
+
+/* The app's ground: squared paper in the scrapbook design. */
+@utility ui-paper {
+  @variant scrap {
+    background-image:
+      linear-gradient(var(--color-paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-paper-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
 
 @utility ui-eyebrow {
   @apply text-[11px] leading-normal font-semibold tracking-[1.54px] text-brand-text;
@@ -352,6 +454,11 @@
       background: var(--color-brand);
     }
   }
+  /* A strip of tape with the day count written on it. */
+  @variant scrap {
+    @apply inline-block bg-tape-yellow px-2.5 py-px font-display text-[15px] font-bold tracking-normal text-tape-ink;
+    rotate: -1.5deg;
+  }
 }
 
 /* Screen title. Galmuri11 at 2× on phones so long Japanese titles still fit beside the buttons. */
@@ -360,6 +467,10 @@
   @variant retro {
     @apply font-pixel text-[24px] pixel-crisp lg:font-pixel-head lg:text-[30px];
   }
+  /* The handwriting face runs small, so its headings are set larger. */
+  @variant scrap {
+    @apply text-[32px] leading-[1.1] font-bold lg:text-[36px];
+  }
 }
 
 @utility ui-heading {
@@ -367,12 +478,18 @@
   @variant retro {
     @apply font-pixel-head text-[15px] pixel-crisp;
   }
+  @variant scrap {
+    @apply text-[22px] leading-[1.2] font-bold;
+  }
 }
 
 @utility ui-card-title {
   @apply font-display text-[19px] leading-[1.375];
   @variant retro {
     @apply font-pixel-head text-[15px] leading-[1.5] pixel-crisp;
+  }
+  @variant scrap {
+    @apply text-[22px] leading-[1.2] font-bold;
   }
 }
 
@@ -399,6 +516,26 @@
       --pixel-border: var(--color-brand);
     }
   }
+  /* Torn bits of tape in turn, each a little askew; the picked one is inked over. */
+  @variant scrap {
+    @apply rounded-[3px] border-0 bg-tape-yellow text-tape-ink;
+    rotate: -1deg;
+    &:nth-child(even) {
+      rotate: 1deg;
+    }
+    &:nth-child(4n + 2) {
+      @apply bg-tape-pink;
+    }
+    &:nth-child(4n + 3) {
+      @apply bg-tape-mint;
+    }
+    &:nth-child(4n) {
+      @apply bg-tape-blue;
+    }
+    &[aria-pressed="true"] {
+      @apply bg-ink text-surface;
+    }
+  }
 }
 
 /* Two-way switch (visited / wish): a white track with the picked tab filled, or two pixel buttons. */
@@ -406,6 +543,9 @@
   @apply flex h-12 rounded-2xl bg-surface p-1;
   @variant retro {
     @apply h-auto gap-3 rounded-none bg-transparent p-0;
+  }
+  @variant scrap {
+    @apply h-auto gap-2.5 bg-transparent p-0;
   }
 }
 
@@ -418,6 +558,13 @@
     @apply h-10 rounded-none bg-surface font-pixel text-[12px] font-normal pixel-btn pixel-crisp hover:bg-sand-soft;
     &[aria-selected="true"] {
       @apply bg-brand-strong hover:bg-brand-deep motion-safe:animate-pixel-pop;
+    }
+  }
+  /* Index tabs: pencilled in until picked. */
+  @variant scrap {
+    @apply h-11 border-2 border-dashed border-handle bg-surface font-display text-[19px] font-bold;
+    &[aria-selected="true"] {
+      @apply border-solid border-ink bg-ink text-surface;
     }
   }
 }
@@ -473,6 +620,11 @@
       @apply bg-ink text-surface;
     }
   }
+  @variant scrap {
+    &[aria-pressed="true"] {
+      @apply bg-ink text-surface;
+    }
+  }
 }
 
 /* Round icon button in screen headers; colour it with `bg-*`. */
@@ -480,6 +632,9 @@
   @apply flex size-10 shrink-0 items-center justify-center rounded-full;
   @variant retro {
     @apply size-9 rounded-none pixel-btn pixel-thin;
+  }
+  @variant scrap {
+    @apply border-2 border-dashed border-ink;
   }
 }
 
@@ -489,12 +644,18 @@
   @variant retro {
     @apply h-11 rounded-none font-pixel text-[12px] font-normal pixel-btn pixel-crisp;
   }
+  @variant scrap {
+    @apply font-display text-[20px];
+  }
 }
 
 @utility ui-search {
   @apply mt-3 h-10 w-full rounded-xl border border-sand bg-surface px-3 text-[14px] outline-none placeholder:text-placeholder focus:border-brand lg:h-11;
   @variant retro {
     @apply mt-3.5 rounded-none border-0 font-pixel text-[12px] pixel-field pixel-crisp placeholder:text-faint lg:h-10;
+  }
+  @variant scrap {
+    @apply rounded-md border-2 border-dashed border-handle focus:border-solid focus:border-ink;
   }
 }
 
@@ -510,12 +671,44 @@
       --pixel-border: var(--color-brand);
     }
   }
+  /* A card stuck on with tape, slightly crooked; the picked one is straightened and outlined. */
+  @variant scrap {
+    @apply relative rounded-[3px] border-0;
+    box-shadow: 2px 4px 10px rgb(59 47 42 / 0.28);
+    rotate: -1deg;
+    &:nth-child(even) {
+      rotate: 1deg;
+    }
+    &::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      width: 56px;
+      height: 16px;
+      margin-left: -28px;
+      rotate: -3deg;
+      background: color-mix(in srgb, var(--color-tape-yellow) 85%, transparent);
+    }
+    &:nth-child(even)::before {
+      rotate: 4deg;
+      background: color-mix(in srgb, var(--color-tape-mint) 90%, transparent);
+    }
+    &[aria-pressed="true"] {
+      rotate: 0deg;
+      outline: 2px solid var(--color-brand);
+      outline-offset: 0;
+    }
+  }
 }
 
 @utility ui-badge {
   @apply rounded-md bg-brand-soft px-2 py-0.5 text-[11px] leading-normal font-semibold text-brand-text;
   @variant retro {
     @apply rounded-none px-1.5 font-pixel font-normal pixel-crisp;
+  }
+  @variant scrap {
+    @apply rounded-[3px];
   }
 }
 
@@ -524,6 +717,9 @@
   @apply rounded-t-[26px] bg-surface shadow-sheet;
   @variant retro {
     @apply rounded-none border-t-3 border-ink shadow-none;
+  }
+  @variant scrap {
+    @apply rounded-t-lg border-t-2 border-ink shadow-none;
   }
 }
 
@@ -576,6 +772,14 @@
   @variant retro {
     @apply border-0 pixel-btn;
   }
+  /* Cut paper lying on the page; pressing it flattens it. */
+  @variant scrap {
+    box-shadow: 2px 3px 0 0 var(--scrap-drop);
+    &:active {
+      translate: 2px 3px;
+      box-shadow: none;
+    }
+  }
 }
 
 @utility ui-btn-thin {
@@ -589,6 +793,9 @@
   @apply h-11 w-full rounded-xl border border-field-border bg-field px-3 text-[14px] text-ink outline-none placeholder:text-placeholder focus:border-brand;
   @variant retro {
     @apply border-0 bg-surface pixel-field placeholder:text-faint;
+  }
+  @variant scrap {
+    @apply rounded-md border-dashed focus:border-solid;
   }
 }
 
@@ -627,6 +834,9 @@
       color: var(--color-coral);
       animation: var(--animate-pixel-blink);
     }
+  }
+  @variant scrap {
+    @apply border-2 border-dashed border-handle;
   }
 }
 

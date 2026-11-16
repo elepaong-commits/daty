@@ -7,6 +7,8 @@ export const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string |
 export const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined
 /** Map style for the pixel design (cream ground, pale water); falls back to `MAP_ID` until one is set up. */
 export const MAP_ID_RETRO = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID_RETRO as string | undefined
+/** Map style for the scrapbook design (paper ground); falls back to `MAP_ID` until one is set up. */
+export const MAP_ID_SCRAP = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID_SCRAP as string | undefined
 
 /** Loads the Maps JS API once for the whole app (map screen and place search share it). */
 export function MapsProvider({ children }: { children: ReactNode }) {

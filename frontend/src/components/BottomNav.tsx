@@ -56,7 +56,7 @@ export function BottomNav() {
                 <Icon size={20} strokeWidth={1.75} className="relative" />
               </span>
               <span
-                className={`text-[11px] leading-normal font-semibold transition-colors duration-200 ${isActive ? 'text-brand-text' : 'text-faint'}`}
+                className={`text-[11px] leading-normal font-semibold transition-colors duration-200 scrap:font-display scrap:text-[15px] scrap:leading-none scrap:font-bold ${isActive ? 'text-brand-text' : 'text-faint'}`}
               >
                 {t.nav[key]}
               </span>

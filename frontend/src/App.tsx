@@ -62,7 +62,7 @@ const queryClient = new QueryClient({
 function Frame({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
     <div
-      className={`mx-auto flex h-dvh w-full max-w-[428px] flex-col overflow-hidden bg-cream pt-[env(safe-area-inset-top)] sm:shadow-card ${
+      className={`mx-auto flex h-dvh w-full max-w-[428px] flex-col overflow-hidden bg-cream ui-paper pt-[env(safe-area-inset-top)] sm:shadow-card ${
         wide ? 'lg:max-w-none lg:flex-row lg:shadow-none' : ''
       }`}
     >

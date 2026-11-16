@@ -8,10 +8,10 @@ import locateIcon from '../../assets/icons/locate.svg'
 import selectedHalo from '../../assets/icons/selected-halo.svg'
 import { PixelSprite } from '../../components/PixelSprite'
 import { categoryOf } from '../../lib/categories'
-import { MAP_ID, MAP_ID_RETRO, MAPS_API_KEY } from '../../lib/maps'
+import { MAP_ID, MAP_ID_RETRO, MAP_ID_SCRAP, MAPS_API_KEY } from '../../lib/maps'
 import { HOME } from '../../lib/home'
 import { CATEGORY_SPRITES } from '../../lib/sprites'
-import { useIsRetro } from '../../lib/theme'
+import { useIsRetro, useTheme } from '../../lib/theme'
 import type { Place, PlaceStatus } from '../../lib/types'
 import { useT } from '../../lib/i18n'
 import { useIsDesktop } from '../../lib/useIsDesktop'
@@ -35,8 +35,8 @@ export function DateMap(props: Props) {
   // Where this device is, once the locate button has been used; it then follows along.
   const [me, setMe] = useState<google.maps.LatLngLiteral | null>(null)
   const t = useT()
-  const retro = useIsRetro()
-  const mapId = (retro ? (MAP_ID_RETRO ?? MAP_ID) : MAP_ID) ?? 'DEMO_MAP_ID'
+  const { theme } = useTheme()
+  const mapId = ({ classic: MAP_ID, retro: MAP_ID_RETRO, scrap: MAP_ID_SCRAP }[theme] ?? MAP_ID) ?? 'DEMO_MAP_ID'
   if (!MAPS_API_KEY) {
     return (
       <div className="flex size-full items-start justify-center bg-beige pt-16 text-center text-[12px] text-muted">
