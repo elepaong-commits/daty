@@ -47,7 +47,7 @@ docker exec -i date_app_postgres pg_restore -U <user> -d <db> --clean --if-exist
 ## CI와 배포 (GitHub Actions)
 
 - `.github/workflows/ci.yml`: PR과 `main` 푸시마다 프론트 lint·build, 백엔드 build·test(서비스 컨테이너 Postgres)를 돌린다
-- `.github/workflows/deploy-backend.yml`: `main`에 `backend/**`가 바뀌면 Actions에서 빌드한 `dist/`를 서버로 보내고, 서버에서는 `git pull` → `npm install` → `prisma migrate deploy` → 재시작만 한다. 서버에서 TypeScript를 빌드하지 않는다. **저장소 변수 `DEPLOY_HOST`를 넣기 전에는 동작하지 않는다**
+- `.github/workflows/deploy-backend.yml`: `main`에 `backend/**`가 바뀌면 Actions에서 빌드한 `dist/`를 서버로 보내고, 서버에서는 `git pull` → `npm install` → `prisma migrate deploy` → 재시작만 한다. 서버에서 TypeScript를 빌드하지 않는다. 배포 전에 같은 커밋으로 백엔드 테스트를 돌리고, 실패하면 배포하지 않는다. **저장소 변수 `DEPLOY_HOST`를 넣기 전에는 동작하지 않는다**
 
 배포를 켜려면 GitHub 저장소 Settings → Secrets and variables → Actions에 넣는다.
 
@@ -61,6 +61,8 @@ docker exec -i date_app_postgres pg_restore -U <user> -d <db> --clean --if-exist
 | Secret | `DEPLOY_KNOWN_HOSTS` | `ssh-keyscan <서버>` 출력. 비우면 배포 때마다 새로 받아 온다 |
 
 재시작 명령에 `sudo`가 들어가면 그 명령만 비밀번호 없이 실행되도록 sudoers에 허용해 둔다. 이 워크플로는 실제 서버로 돌려 보지 못했으니 처음 한 번은 Actions 탭에서 수동 실행(`Run workflow`)으로 확인한다.
+
+- `.github/dependabot.yml`: 한 달에 한 번 프론트·백엔드·Actions 의존성 업데이트 PR을 연다(minor·patch는 패키지별로 한 PR에 묶는다)
 
 ## 알림 (웹 푸시)
 

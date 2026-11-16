@@ -60,6 +60,19 @@ test("moving a record to another place puts the place memo on the new place", as
   assert.equal(newPlace.notes[0].content, "Better parking");
 });
 
+test("another branch with the same name gets its own place; a place saved by name is filled in", async () => {
+  const branch = (googlePlaceId: string, latitude: number) => ({ ...plan, placeName: "Chain Cafe", googlePlaceId, latitude, longitude: 127 });
+  const first = await a.ok("POST", "/records", branch("gp-branch-1", 37.5));
+  const second = await a.ok("POST", "/records", branch("gp-branch-2", 37.6));
+  assert.notEqual(second.placeId, first.placeId);
+  assert.equal((await a.ok("POST", "/records", branch("gp-branch-1", 37.5))).placeId, first.placeId);
+
+  const byName = await a.ok("POST", "/records", { ...plan, placeName: "Typed Cafe" });
+  const located = await a.ok("POST", "/records", { ...plan, placeName: "Typed Cafe", googlePlaceId: "gp-typed", latitude: 37.4, longitude: 127 });
+  assert.equal(located.placeId, byName.placeId);
+  assert.equal((await a.ok("GET", `/places/${byName.placeId}`)).googlePlaceId, "gp-typed");
+});
+
 test("a blank place memo is refused", async () => {
   const res = await a.request("POST", "/records", { ...plan, placeName: "Blank Cafe", placeNote: "   " });
   assert.equal(res.status, 400);

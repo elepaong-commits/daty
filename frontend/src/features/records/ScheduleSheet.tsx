@@ -68,7 +68,8 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
   // The date's own memo; the place memo is a new note added to the place, so it always starts empty.
   const [memo, setMemo] = useState(() => decodeMemo(record?.memo, t))
   const [placeMemo, setPlaceMemo] = useState('')
-  const [rating, setRating] = useState(record?.rating ?? 5)
+  // A new record starts at five stars; one saved without a rating stays unrated until a star is picked.
+  const [rating, setRating] = useState<number | null>(record ? record.rating : 5)
 
   const placeSource = source ?? (places.length > 0 ? 'saved' : 'new')
   const mutation = editing ? updateRecord : createRecord
@@ -125,7 +126,7 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
         ...(placeSource === 'saved' ? { placeId: savedId! } : newPlace),
         memo: content || undefined,
         placeNote,
-        rating: type === 'RECORD' ? rating : undefined,
+        rating: type === 'RECORD' ? (rating ?? undefined) : undefined,
       },
       done,
     )
@@ -271,12 +272,12 @@ export function ScheduleSheet({ record, initialDate = new Date(), initialTime = 
                   aria-checked={rating === n}
                   aria-label={t.common.points(n)}
                   onClick={() => setRating(n)}
-                  className={`ui-pop ${n <= rating ? 'text-amber' : 'text-chip-border'}`}
+                  className={`ui-pop ${rating !== null && n <= rating ? 'text-amber' : 'text-chip-border'}`}
                 >
                   {retro ? (
-                    <PixelSprite name={n <= rating ? 'star' : 'starOff'} scale={3} />
+                    <PixelSprite name={rating !== null && n <= rating ? 'star' : 'starOff'} scale={3} />
                   ) : (
-                    <Star size={26} strokeWidth={1.5} fill={n <= rating ? 'currentColor' : 'none'} />
+                    <Star size={26} strokeWidth={1.5} fill={rating !== null && n <= rating ? 'currentColor' : 'none'} />
                   )}
                 </button>
               ))}

@@ -14,8 +14,40 @@ on:
 concurrency: deploy-backend
 
 jobs:
+  # Nothing ships unless the tests pass on the commit being deployed (CI runs beside this, not before it).
+  test:
+    if: vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: daty
+          POSTGRES_PASSWORD: daty
+          POSTGRES_DB: daty_dev
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U daty -d daty_dev"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
   deploy:
     if: vars.DEPLOY_HOST != ''
+    needs: test
     runs-on: ubuntu-latest
     env:
       TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}

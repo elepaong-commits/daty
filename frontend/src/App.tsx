@@ -112,7 +112,8 @@ function AppShell() {
 /** Login → couple setup → app, depending on who is signed in. */
 function AuthGate() {
   const { data: me, isLoading, error } = useMe()
-  if (isLoading || error) {
+  // A failed refresh keeps the app on what it already knows; only the first load has nothing to show.
+  if (isLoading || (error && me === undefined)) {
     return (
       <Frame>
         <div className="flex flex-1 items-center justify-center">

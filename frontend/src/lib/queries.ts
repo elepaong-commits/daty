@@ -32,7 +32,9 @@ export const useMe = () =>
         if (err instanceof ApiError && err.status === 401) return null
         throw err
       }),
-    staleTime: Infinity,
+    // The partner changes it too (joining, the anniversary, their name and photo), so it is asked for
+    // again when the app comes back after a while.
+    staleTime: 5 * 60_000,
   })
 
 /** Login, signup, profile edits, and couple setup all answer with the fresh `Me`. */
@@ -267,6 +269,21 @@ export function useDeleteRecord() {
 export function useUpdateAlbum(id: number) {
   const invalidate = useInvalidateDateData()
   return useMutation({ mutationFn: (input: UpdateAlbumInput) => api.updateAlbum(id, input), onSuccess: invalidate })
+}
+
+/** Its photos and videos go with it; the visits it bundled stay on the calendar. */
+export function useDeleteAlbum(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.deleteAlbum(id),
+    onSuccess: () =>
+      // Skip the deleted album's own queries: refetching them would only 404 while the page leaves.
+      queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          ['records', keys.places[0], keys.albums[0], keys.storage[0], 'memories', 'recap'].includes(queryKey[0] as string) &&
+          !(queryKey[0] === keys.albums[0] && queryKey[1] === id),
+      }),
+  })
 }
 
 export function useCaptionPhoto(albumId: number) {
