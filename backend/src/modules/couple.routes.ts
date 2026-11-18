@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
-import { env } from "../config/env.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { hashCode, randomCode } from "../lib/codes.js";
 import { toDateOnly } from "../lib/http.js";
 import { feedbackInclude } from "../lib/feedback.js";
 import { withAvatarUrls } from "../lib/avatar.js";
+import { failureLimiter, userLimiter } from "../lib/limits.js";
 import { removeFromCouple } from "../lib/membership.js";
 import { prisma } from "../lib/prisma.js";
 import { statObject, storageEnabled } from "../lib/storage.js";
@@ -70,17 +69,12 @@ coupleRouter.post("/", async (req, res) => {
   throw new HttpError(503, "Could not generate a couple code");
 });
 
-// Invite codes are 6 characters, so wrong guesses are limited like passwords: 10 per IP every 15 minutes.
-const joinLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: env.NODE_ENV === "test" ? 1000 : 10,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  message: { error: "Too many attempts", code: "RATE_LIMITED" },
-});
+// Invite codes are 6 characters, so wrong guesses are limited like passwords: 10 every 15 minutes,
+// per IP and per person (see src/lib/limits.ts).
+const joinLimiter = failureLimiter(10);
+const joinUserLimiter = userLimiter(10);
 
-coupleRouter.post("/join", joinLimiter, async (req, res) => {
+coupleRouter.post("/join", joinLimiter, joinUserLimiter, async (req, res) => {
   const { code } = joinBody.parse(req.body);
   await prisma.$transaction(
     async (tx) => {

@@ -1,7 +1,7 @@
 import { signedImageUrl, storageEnabled } from "./storage.js";
 
-// Profile photos live in R2 under avatars/{userId}/, outside the couples/ files the orphan sweep looks
-// after. `User.profileImageUrl` holds the object key (or, for an old row, a full URL).
+// Profile photos live in R2 under avatars/{userId}/. `User.profileImageUrl` holds the object key (or, for
+// an old row, a full URL); the orphan sweep (orphans.ts) deletes uploads that never got confirmed.
 
 export const AVATAR_MAX_BYTES = 1024 * 1024;
 

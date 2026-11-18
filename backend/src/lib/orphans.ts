@@ -1,8 +1,9 @@
 import { prisma } from "./prisma.js";
 import { deleteObjects, listObjects, storageEnabled, type StoredObject } from "./storage.js";
 
-// Files go to R2 before the API records them (POST /api/albums/:id/photos). An upload whose confirm never
-// arrives (tab closed, network gone) leaves a file nothing points to. Once a day such files are deleted.
+// Files go to R2 before the API records them (POST /api/albums/:id/photos, PUT /api/auth/me/avatar). An
+// upload whose confirm never arrives (tab closed, network gone) leaves a file nothing points to. Once a day
+// such files are deleted: album files under couples/, profile photos under avatars/.
 
 // Upload URLs last 10 minutes and the confirm follows right after; a day is far past any upload in flight.
 const GRACE_MS = 24 * 60 * 60 * 1000;
@@ -10,25 +11,31 @@ const SWEEP_EVERY_MS = 24 * 60 * 60 * 1000;
 // Not right at startup, so a deploy's restart isn't also the moment the bucket gets listed.
 const FIRST_SWEEP_AFTER_MS = 10 * 60 * 1000;
 
-/** The keys on one page of the listing that no photo, thumbnail or old stored URL refers to. */
+/** The keys on one page of the listing that no photo, thumbnail, old stored URL or profile photo refers to. */
 async function unreferenced(objects: StoredObject[], now: number) {
   const old = objects.filter((o) => now - o.lastModified.getTime() > GRACE_MS).map((o) => o.key);
   if (old.length === 0) return [];
-  const [photos, legacy] = await Promise.all([
+  const [photos, legacy, avatars] = await Promise.all([
     prisma.photo.findMany({
       where: { OR: [{ storageKey: { in: old } }, { thumbnailKey: { in: old } }] },
       select: { storageKey: true, thumbnailKey: true },
     }),
     // Rows from before storage keys keep a full URL; never delete a file one of those may point at.
     prisma.photo.findMany({ where: { imageUrl: { not: null } }, select: { imageUrl: true } }),
+    prisma.user.findMany({ where: { profileImageUrl: { in: old } }, select: { profileImageUrl: true } }),
   ]);
-  const used = new Set(photos.flatMap((p) => [p.storageKey, p.thumbnailKey]));
+  const used = new Set([...photos.flatMap((p) => [p.storageKey, p.thumbnailKey]), ...avatars.map((u) => u.profileImageUrl)]);
   return old.filter((key) => !used.has(key) && !legacy.some((p) => p.imageUrl!.includes(key)));
+}
+
+async function* uploadedFiles() {
+  yield* listObjects("couples/");
+  yield* listObjects("avatars/");
 }
 
 /** Deletes uploaded files nothing refers to. Returns how many went. The listing is injectable for tests. */
 export async function sweepOrphanUploads({
-  pages = listObjects("couples/"),
+  pages = uploadedFiles(),
   remove = deleteObjects,
   now = Date.now(),
 }: { pages?: AsyncIterable<StoredObject[]>; remove?: (keys: string[]) => Promise<void>; now?: number } = {}) {

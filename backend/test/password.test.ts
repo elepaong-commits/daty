@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { outbox } from "../src/lib/mail.js";
+import { resetMailsSettled } from "../src/modules/auth.routes.js";
 import { prisma } from "../src/lib/prisma.js";
 import { Client, coupleMember, resetDatabase, startServer } from "./helpers.js";
 
@@ -118,7 +119,12 @@ describe("reset with a code from the partner", () => {
 });
 
 describe("reset with an emailed link", () => {
-  const forgot = (email: string) => new Client(server.baseUrl).request("POST", "/auth/forgot-password", { email });
+  // It answers before the link is made, so wait for that before looking at the outbox.
+  const forgot = async (email: string) => {
+    const res = await new Client(server.baseUrl).request("POST", "/auth/forgot-password", { email });
+    await resetMailsSettled();
+    return res;
+  };
   const tokenFrom = (text: string) => new URL(/https?:\/\/\S+/.exec(text)![0]).searchParams.get("token")!;
   const redeem = (token: string, newPassword = "mailpassword1") =>
     new Client(server.baseUrl).request("POST", "/auth/reset-password", { token, newPassword });
