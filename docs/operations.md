@@ -64,6 +64,21 @@ docker exec -i date_app_postgres pg_restore -U <user> -d <db> --clean --if-exist
 
 - `.github/dependabot.yml`: 한 달에 한 번 프론트·백엔드·Actions 의존성 업데이트 PR을 연다(minor·patch는 패키지별로 한 PR에 묶는다)
 
+## 요청 횟수 제한과 `TRUST_PROXY`
+
+로그인·가입·비밀번호 변경·재설정·계정 삭제·초대 코드 합류는 실패를 **IP별로, 그리고 계정별로**(입력한 이메일, 또는 로그인한 사용자) 15분에 10번까지 센다(`backend/src/lib/limits.ts`). 비밀번호 찾기 메일은 IP당 15분에 5번이다.
+
+IP는 Express가 `X-Forwarded-For`에서 읽는다. API 앞에 프록시가 몇 개 있는지를 서버 `.env`의 `TRUST_PROXY`로 알려 줘야 한다.
+
+| 프론트가 API를 부르는 방식 | 요청 경로 | `TRUST_PROXY` |
+|---|---|---|
+| `VITE_API_URL`을 비움 → `vercel.json` rewrite | 브라우저 → Vercel → Nginx → API | `2` |
+| `VITE_API_URL=https://api.ourdaty.com` | 브라우저 → Nginx → API | `1` |
+
+- Nginx는 받은 헤더 뒤에 붙이도록 `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`를 쓴다. `$remote_addr`로 덮어쓰면 Vercel을 거칠 때 Vercel의 IP만 남는다
+- 값이 작으면(기본값 `0`을 그대로 두는 경우 등) 모든 요청이 프록시 IP 하나로 보인다. 그러면 아무나 비밀번호를 10번만 틀려도 두 사람 모두 15분 동안 로그인하지 못한다. Express는 이때 로그에 `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` 경고를 남긴다
+- 값이 크면 `api.ourdaty.com`을 직접 부르는 사람이 `X-Forwarded-For`를 꾸며 IP 제한을 피할 수 있다. `2`에서는 이 위험이 남는데, 계정별 제한은 IP와 상관없이 걸린다
+
 ## 알림 (웹 푸시)
 
 ```bash

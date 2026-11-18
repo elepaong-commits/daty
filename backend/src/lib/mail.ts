@@ -27,6 +27,8 @@ export async function sendMail(mail: Mail) {
     method: "POST",
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
     body: JSON.stringify({ from: env.MAIL_FROM, to: [mail.to], subject: mail.subject, text: mail.text }),
+    // Reset links are sent one after another (auth.routes.ts), so a hung request mustn't hold the rest.
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) throw new Error(`Resend answered ${res.status}: ${await res.text()}`);
 }

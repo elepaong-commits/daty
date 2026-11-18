@@ -1,10 +1,10 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { env } from "../config/env.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { hashCode } from "../lib/codes.js";
+import { accountLimiter, failureLimiter, userLimiter } from "../lib/limits.js";
 import { toDateOnly } from "../lib/http.js";
 import { appUrl, mailEnabled, sendMail } from "../lib/mail.js";
 import { AVATAR_MAX_BYTES, avatarKeyPattern, isAvatarKey, withAvatarUrls } from "../lib/avatar.js";
@@ -18,15 +18,11 @@ import { HttpError } from "../middlewares/error-handler.js";
 
 export const authRouter = Router();
 
-// Slows down password guessing: 10 failed attempts per IP every 15 minutes (tests fail on purpose more often).
-const credentialsLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: env.NODE_ENV === "test" ? 1000 : 10,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  message: { error: "Too many attempts", code: "RATE_LIMITED" },
-});
+// Slows down password guessing: 10 failed attempts every 15 minutes per IP, and as many per account
+// (see src/lib/limits.ts for why both).
+const credentialsLimiter = failureLimiter(10);
+const perAccount = accountLimiter(10);
+const perUser = userLimiter(10);
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
 const password = z.string().min(8, "8자 이상").max(72);
@@ -86,7 +82,7 @@ authRouter.post("/signup", credentialsLimiter, async (req, res) => {
   }
 });
 
-authRouter.post("/login", credentialsLimiter, async (req, res) => {
+authRouter.post("/login", credentialsLimiter, perAccount, async (req, res) => {
   const body = loginBody.parse(req.body);
   const user = await prisma.user.findUnique({ where: { email: body.email } });
   // Same work and same error whether or not the email exists.
@@ -114,7 +110,7 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
 const deleteMeBody = z.object({ password: z.string().min(1).max(72) });
 
 /** Deletes the account: leaves the couple first (see removeFromCouple); memos and comments stay without a writer. */
-authRouter.delete("/me", credentialsLimiter, requireAuth, async (req, res) => {
+authRouter.delete("/me", credentialsLimiter, requireAuth, perUser, async (req, res) => {
   const { password } = deleteMeBody.parse(req.body);
   const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId } });
   // 400 rather than 401: the client treats any 401 as being logged out.
@@ -166,7 +162,7 @@ const passwordUpdate = async (newPassword: string) => ({
 const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(72), newPassword: password });
 
 /** Change password while logged in. This device gets a fresh session; other devices are logged out. */
-authRouter.post("/password", credentialsLimiter, requireAuth, async (req, res) => {
+authRouter.post("/password", credentialsLimiter, requireAuth, perUser, async (req, res) => {
   const { currentPassword, newPassword } = changePasswordBody.parse(req.body);
   const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId } });
   // 400 rather than 401: the client treats any 401 as being logged out.
@@ -211,7 +207,7 @@ async function findReset(body: z.infer<typeof resetBody>) {
  * Forgot password: redeem a code the partner issued or the token from an emailed link, and log in.
  * Any failure gives the same answer, so it doesn't reveal which emails exist.
  */
-authRouter.post("/reset-password", credentialsLimiter, async (req, res) => {
+authRouter.post("/reset-password", credentialsLimiter, perAccount, async (req, res) => {
   const body = resetBody.parse(req.body);
   const invalid = new HttpError(400, "Invalid or expired reset code", "INVALID_RESET_CODE");
   const reset = await findReset(body);
@@ -237,13 +233,7 @@ const RESET_LINK_TTL_MS = 30 * 60 * 1000;
 const RESET_MAIL_INTERVAL_MS = 2 * 60 * 1000;
 
 // Every request counts here (they all answer 204), so one address can't be used to flood inboxes.
-const forgotLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: env.NODE_ENV === "test" ? 1000 : 5,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  message: { error: "Too many attempts", code: "RATE_LIMITED" },
-});
+const forgotLimiter = failureLimiter(5, { all: true });
 
 const forgotBody = z.object({ email, lang: z.enum(["ko", "ja"]).default("ko") });
 
@@ -258,29 +248,42 @@ const resetMail = {
   }),
 };
 
-/** Always 204, whether or not the email is registered. */
+/** Makes a fresh link for a registered email and mails it, unless one went out a moment ago. */
+async function issueResetLink(email: string, lang: keyof typeof resetMail) {
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (!user) return;
+  const recent = await prisma.passwordResetCode.findFirst({
+    where: { userId: user.id, viaEmail: true, createdAt: { gt: new Date(Date.now() - RESET_MAIL_INTERVAL_MS) } },
+    select: { id: true },
+  });
+  if (recent) return;
+  const token = randomBytes(32).toString("base64url");
+  // Only the newest link works; a code from the partner stays usable beside it.
+  await prisma.$transaction([
+    prisma.passwordResetCode.deleteMany({ where: { userId: user.id, viaEmail: true } }),
+    prisma.passwordResetCode.create({
+      data: { userId: user.id, viaEmail: true, codeHash: hashCode(token), expiresAt: new Date(Date.now() + RESET_LINK_TTL_MS) },
+    }),
+  ]);
+  await sendMail({ to: email, ...resetMail[lang](appUrl(`/reset-password?token=${token}`)) });
+}
+
+// Links are made one at a time, so two quick requests for the same address can't both pass the
+// "one went out a moment ago" check and send two mails.
+let resetQueue: Promise<void> = Promise.resolve();
+
+/** Resolves once every link asked for so far has been made and sent. For tests. */
+export const resetMailsSettled = () => resetQueue;
+
+/**
+ * Always 204, whether or not the email is registered. It answers before looking the email up, so how
+ * long it takes doesn't tell either.
+ */
 authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
   const { email, lang } = forgotBody.parse(req.body);
   if (!mailEnabled) throw new HttpError(503, "Email is not configured", "MAIL_DISABLED");
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  const recent =
-    user &&
-    (await prisma.passwordResetCode.findFirst({
-      where: { userId: user.id, viaEmail: true, createdAt: { gt: new Date(Date.now() - RESET_MAIL_INTERVAL_MS) } },
-      select: { id: true },
-    }));
-  if (user && !recent) {
-    const token = randomBytes(32).toString("base64url");
-    // Only the newest link works; a code from the partner stays usable beside it.
-    await prisma.$transaction([
-      prisma.passwordResetCode.deleteMany({ where: { userId: user.id, viaEmail: true } }),
-      prisma.passwordResetCode.create({
-        data: { userId: user.id, viaEmail: true, codeHash: hashCode(token), expiresAt: new Date(Date.now() + RESET_LINK_TTL_MS) },
-      }),
-    ]);
-    const link = appUrl(`/reset-password?token=${token}`);
-    // Not awaited: the answer shouldn't take longer for an address that exists.
-    sendMail({ to: email, ...resetMail[lang](link) }).catch((err: unknown) => console.error("Reset mail failed:", err));
-  }
   res.status(204).end();
+  resetQueue = resetQueue.then(() =>
+    issueResetLink(email, lang).catch((err: unknown) => console.error("Reset link failed:", err)),
+  );
 });
